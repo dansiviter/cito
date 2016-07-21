@@ -27,6 +27,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import javax.ws.rs.core.MediaType;
+
 import org.junit.Test;
 
 /**
@@ -72,10 +74,10 @@ public class FrameTest {
 
 	@Test
 	public void toString_() {
-		final Frame frame0 = Frame.builder(Command.MESSAGE).header("header1", "value").body("body").build();
+		final Frame frame0 = Frame.builder(Command.MESSAGE).header("header1", "value").body(MediaType.TEXT_PLAIN_TYPE, "body").build();
 		assertEquals("MESSAGE\nheader1:value\n\nbody" + NULL, frame0.toString());
 
-		final Frame frame1 = Frame.builder(Command.MESSAGE).body("body").build();
+		final Frame frame1 = Frame.builder(Command.MESSAGE).body(MediaType.TEXT_PLAIN_TYPE, "body").build();
 		assertEquals("MESSAGE\n\nbody" + NULL, frame1.toString());
 	}
 
@@ -98,7 +100,7 @@ public class FrameTest {
 
 		for (Command command : commands) {
 			try {
-				Frame.builder(command).body("");
+				Frame.builder(command).body(MediaType.TEXT_PLAIN_TYPE, "");
 				fail("IllegalArgumentException expected!");
 			} catch (RuntimeException e) {
 				assertEquals(IllegalArgumentException.class, e.getClass());
@@ -107,7 +109,7 @@ public class FrameTest {
 		}
 
 		for (Command command : new Command[] { SEND, MESSAGE, ERROR}) {
-			Frame.builder(command).body("");
+			Frame.builder(command).body(MediaType.TEXT_PLAIN_TYPE, "blagh");
 		}
 	}
 

@@ -18,28 +18,39 @@ import javax.websocket.Session;
 @ApplicationScoped
 public class WebSocketSessionRegistry {
 	private static final Principal NULL_PRINCIPLE = new NullPrinciple();
-	private final ConcurrentMap<Principal, Collection<Session>> sessionMap = new ConcurrentHashMap<>();
+	private final ConcurrentMap<String, Session> sessionMap = new ConcurrentHashMap<>();
+	private final ConcurrentMap<Principal, Collection<Session>> principalSessionMap = new ConcurrentHashMap<>();
 
 	/**
 	 * 
-	 * @param principal
 	 * @param session
 	 */
-	public void register(Principal principal, Session session) {
+	public void register(Session session) {
+		final Session oldSession = this.sessionMap.put(session.getId(), session);
+		if (oldSession != null)
+			throw new IllegalArgumentException("Session already registered! [" + session.getId() + "]");
+		Principal principal = session.getUserPrincipal();
 		if (principal == null)
 			principal = NULL_PRINCIPLE;
-		this.sessionMap.compute(principal, (k, v) -> { v = v != null ? v : new HashSet<>(); v.add(session); return v; });
+		this.principalSessionMap.compute(principal, (k, v) -> { v = v != null ? v : new HashSet<>(); v.add(session); return v; });
 	}
 
 	/**
 	 * 
-	 * @param principal
 	 * @param session
 	 */
-	public void unregister(Principal principal, Session session) {
+	public void unregister(Session session) {
+		final Session oldSession = this.sessionMap.remove(session.getId());
+		if (oldSession == null)
+			throw new IllegalArgumentException("Session not registered! [" + session.getId() + "]");
+		Principal principal = session.getUserPrincipal();
 		if (principal == null)
 			principal = NULL_PRINCIPLE;
-		this.sessionMap.computeIfPresent(principal, (k, v) -> { v.remove(session); return v.isEmpty() ? null : v; });
+		this.principalSessionMap.computeIfPresent(principal, (k, v) -> { v.remove(session); return v.isEmpty() ? null : v; });
+	}
+	
+	public Session getSession(String id) {
+		return this.sessionMap.get(id);
 	}
 
 	/**
@@ -48,7 +59,7 @@ public class WebSocketSessionRegistry {
 	 * @return
 	 */
 	public Collection<Session> getSessions(Principal principal) {
-		return Collections.unmodifiableCollection(this.sessionMap.get(principal));
+		return Collections.unmodifiableCollection(this.principalSessionMap.get(principal));
 	}
 
 

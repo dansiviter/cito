@@ -20,6 +20,8 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import civvi.messaging.annotation.OnConnect;
+
 /**
  * A basic STOMP WebSocket client.
  * 
@@ -29,12 +31,12 @@ import org.slf4j.LoggerFactory;
 @ClientEndpoint(subprotocols = "STOMP", encoders = FrameEncoding.class, decoders = FrameEncoding.class)
 public class Client implements Closeable {
 	private final static Logger LOG = LoggerFactory.getLogger(Client.class);
-	
+
 	private final AtomicInteger recieptId = new AtomicInteger();
 	private final URI uri;
 	private State state = State.DISCONNECTED;
 	private Session session;
-	
+
 	private CompletableFuture<Frame> connectFuture;
 
 	public Client(URI uri) {
@@ -51,7 +53,7 @@ public class Client implements Closeable {
 		}
 		this.session = ContainerProvider.getWebSocketContainer().connectToServer(this, this.uri);
 		this.state = State.CONNECTING;
-		send(Frame.connect(this.uri.getHost()));
+		send(Frame.connect(this.uri.getHost()).header(Headers.ACCEPT_VERSION, "1.2").build());
 		this.connectFuture = new CompletableFuture<>();
 		this.connectFuture.get(timeout, unit);
 		this.connectFuture = null;
@@ -68,9 +70,15 @@ public class Client implements Closeable {
 	public void unsubscribe(String topic) {
 		throw new UnsupportedOperationException();
 	}
+	
+	@OnConnect
+	public void onConnect(Session session) {
+		this.session = session;
+	}
 
 	@OnMessage
 	public void onMessage(Frame frame) {
+		LOG.info("Message recieved! [command={}]", frame.getCommand());
 		switch (frame.getCommand()) {
 		case CONNECTED:
 			if (getState() != State.CONNECTING || this.connectFuture == null) {
@@ -107,7 +115,7 @@ public class Client implements Closeable {
 	 * @throws EncodeException
 	 */
 	public void send(String destination, MediaType contentType, String body) throws IOException, EncodeException {
-		send(Frame.send(destination, contentType, body));
+		send(Frame.send(destination, contentType, body).build());
 	}
 
 	/**
@@ -118,7 +126,7 @@ public class Client implements Closeable {
 	 */
 	public void disconnect(long time, TimeUnit unit) {
 		try {
-			send(Frame.disconnect(recieptId.incrementAndGet()));
+			send(Frame.disconnect().reciept(recieptId.incrementAndGet()).build());
 		} catch (IOException | EncodeException e) {
 			LOG.warn("Unable to send DISCONNECT!", e);
 		}
@@ -134,7 +142,7 @@ public class Client implements Closeable {
 	 */
 	public void forceDisconnect() {
 		try {
-			send(Frame.disconnect(null));
+			send(Frame.disconnect().build());
 		} catch (IOException | EncodeException e) {
 			LOG.warn("Unable to send DISCONNECT!", e);
 		}
@@ -150,13 +158,21 @@ public class Client implements Closeable {
 	 */
 	@Override
 	public void close() throws IOException {
-		if (getState() != State.DISCONNECTED) {
+		if (getState() == State.DISCONNECTED) {
 			throw new IllegalStateException();
 		}
 		if (this.session != null)
 			this.session.close();
 		this.session = null;
 		this.state = State.DISCONNECTED;
+	}
+
+	public static void main(String[] args) throws Exception {
+		try (final Client client = new Client(URI.create("http://localhost:8080/websocket"))) {
+			client.connect(15, TimeUnit.SECONDS);
+			
+			Thread.sleep(10_000);
+		}
 	}
 
 

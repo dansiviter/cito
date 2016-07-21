@@ -17,6 +17,20 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
+	<repositories>
+		<repository>
+			<id>projectodd-snapshot</id>
+			<name>projectodd Release Repository</name>
+			<url>https://repository-projectodd.forge.cloudbees.com/snapshot/</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -45,6 +59,10 @@
 			<groupId>org.wildfly.swarm</groupId>
 			<artifactId>cdi</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.wildfly.swarm</groupId>
+			<artifactId>jaxrs</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.apache.deltaspike.core</groupId>
@@ -53,10 +71,34 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.apache.activemq</groupId>
+			<artifactId>activemq-http</artifactId>
+			<version>5.13.3</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.eclipse.jetty.aggregate</groupId>
+					<artifactId>jetty-all</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.activemq</groupId>
+			<artifactId>artemis-jms-server</artifactId>
+			<version>1.3.0</version>
+		</dependency>
+
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.12</version>
 			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>1.7.21</version>
+		<!-- 	<scope>test</scope> -->
 		</dependency>
 
 		<dependency>
@@ -74,7 +116,13 @@
 			<groupId>io.undertow</groupId>
 			<artifactId>undertow-websockets-jsr</artifactId>
 			<version>1.3.15.Final</version>
-			<scope>test</scope>
+			<!-- <scope>test</scope> -->
+		</dependency>
+
+		<dependency>
+			<groupId>org.codehaus.stomp</groupId>
+			<artifactId>stompconnect</artifactId>
+			<version>1.0</version>
 		</dependency>
 	</dependencies>
 
@@ -83,7 +131,6 @@
 			<plugin>
 				<groupId>org.wildfly.swarm</groupId>
 				<artifactId>wildfly-swarm-plugin</artifactId>
-				<version>${version.wildfly.swarm}</version>
 				<executions>
 					<execution>
 						<goals>

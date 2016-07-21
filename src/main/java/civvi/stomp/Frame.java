@@ -4,11 +4,9 @@ import static civvi.stomp.Command.CONNECT;
 import static civvi.stomp.Command.CONNECTED;
 import static civvi.stomp.Command.DISCONNECT;
 import static civvi.stomp.Command.SEND;
-import static civvi.stomp.Headers.ACCEPT_VERSION;
 import static civvi.stomp.Headers.CONTENT_TYPE;
 import static civvi.stomp.Headers.HEART_BEAT;
 import static civvi.stomp.Headers.HOST;
-import static civvi.stomp.Headers.RECEIPT_ID;
 import static civvi.stomp.Headers.SERVER;
 import static civvi.stomp.Headers.SESSION;
 import static civvi.stomp.Headers.VERSION;
@@ -19,14 +17,17 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringJoiner;
 
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 
 import civvi.LinkedCaseInsensitiveMap;
 
@@ -41,8 +42,8 @@ public class Frame {
 	static final char NEW_LINE = '\n';
 
 	private final Command command;
-	private final Map<String, List<String>> headers;
-	private final String body;
+	private final MultivaluedMap<String, String> headers;
+	private final ByteBuffer body;
 
 	public Frame() {
 		this(null, null, null);
@@ -54,7 +55,7 @@ public class Frame {
 	 * @param command
 	 * @param headers
 	 */
-	Frame(Command command, Map<String, List<String>> headers) {
+	Frame(Command command, MultivaluedMap<String, String> headers) {
 		this(command, headers, null);
 	}
 
@@ -64,7 +65,7 @@ public class Frame {
 	 * @param headers
 	 * @param body
 	 */
-	Frame(Command command, Map<String, List<String>> headers, String body) {
+	Frame(Command command, MultivaluedMap<String, String> headers, ByteBuffer body) {
 		this.command = command;
 		this.headers = headers;
 		this.body = body;
@@ -82,7 +83,7 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public Map<String, List<String>> getHeaders() {
+	public MultivaluedMap<String, String> getHeaders() {
 		return headers;
 	}
 
@@ -90,8 +91,17 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public String getBody() {
+	public ByteBuffer getBody() {
 		return body;
+	}
+
+	/**
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public boolean containsHeader(String key) {
+		return getHeaders(key) != null;
 	}
 
 	/**
@@ -109,8 +119,7 @@ public class Frame {
 	 * @return
 	 */
 	public String getFirstHeader(String key) {
-		final List<String> values = getHeaders(key);
-		return values != null && !values.isEmpty() ? values.get(0) : null;
+		return getHeaders().getFirst(key);
 	}
 
 	/**
@@ -154,7 +163,11 @@ public class Frame {
 		}
 
 		if (getBody() != null) {
-			writer.append(NEW_LINE).append(getBody());
+			final ByteBuffer buffer = getBody();
+			buffer.flip(); // flip the buffer for reading
+			byte[] bytes = new byte[buffer.remaining()]; // create a byte array the length of the number of bytes written to the buffer
+			buffer.get(bytes); // read the bytes that were written
+			writer.append(NEW_LINE).append(new String(bytes, StandardCharsets.UTF_8));
 		}
 
 		writer.append(NULL);
@@ -204,7 +217,7 @@ public class Frame {
 		final BufferedReader reader = new BufferedReader(in);
 		final Command command = Command.valueOf(reader.readLine());
 
-		final Map<String, List<String>> headers = new LinkedCaseInsensitiveMap<>();
+		final MultivaluedMap<String, String> headers = new MultivaluedHashMap<>(new LinkedCaseInsensitiveMap<>());
 
 		String headerLine;
 		while (!(headerLine = reader.readLine()).isEmpty() && !Character.toString(NULL).equals(headerLine)) {
@@ -216,14 +229,14 @@ public class Frame {
 			values.add(tokens[1]);
 		}
 
-		final StringBuilder buffer = new StringBuilder();
+		final StringBuilder buf = new StringBuilder();
 		final char[] arr = new char[8 * 1024];
 		int numCharsRead;
 		while ((numCharsRead = reader.read(arr, 0, arr.length)) != -1) {
-			buffer.append(arr, 0, numCharsRead);
+			buf.append(arr, 0, numCharsRead);
 		}
-
-		return new Frame(command, Collections.unmodifiableMap(headers), buffer.length() == 0 ? null : buffer.toString());
+		final ByteBuffer byteBuf = buf.length() == 0 ? null : ByteBuffer.wrap(buf.toString().getBytes(StandardCharsets.UTF_8));
+		return new Frame(command, headers, byteBuf);
 	}
 
 	/**
@@ -231,8 +244,8 @@ public class Frame {
 	 * @param host
 	 * @return
 	 */
-	public static Frame connect(String host) {
-		return builder(CONNECT).header(ACCEPT_VERSION, "1.1").header(HOST, host).build();
+	public static Builder connect(String host) {
+		return builder(CONNECT).header(HOST, host);
 	}
 
 	/**
@@ -240,11 +253,17 @@ public class Frame {
 	 * @param receiptId
 	 * @return
 	 */
-	public static Frame disconnect(Integer receiptId) {
-		final Builder builder = builder(DISCONNECT);
-		if (receiptId != null)
-			builder.header(RECEIPT_ID, receiptId.toString());
-		return builder.build();
+	public static Builder disconnect() {
+		return builder(DISCONNECT);
+	}
+
+	/**
+	 * 
+	 * @param receiptId
+	 * @return
+	 */
+	public static Builder error() {
+		return builder(Command.ERROR);
 	}
 
 	/**
@@ -254,11 +273,8 @@ public class Frame {
 	 * @param body
 	 * @return
 	 */
-	public static Frame send(String destination, MediaType contentType, String body) {
-		final Builder builder = builder(SEND).body(body);
-		if (contentType != null)
-			builder.header(CONTENT_TYPE, contentType.toString());
-		return builder.build();
+	public static Builder send(String destination, MediaType contentType, String body) {
+		return builder(SEND).body(contentType, body);
 	}
 
 	/**
@@ -269,15 +285,13 @@ public class Frame {
 	 * @param heartBeat
 	 * @return
 	 */
-	public static Object connnected(String version, String session, String server, String heartBeat) {
+	public static Builder connnected(String version, String session, String server) {
 		final Builder builder = builder(CONNECTED).header(VERSION, version);
 		if (session != null)
 			builder.header(SESSION, session);
 		if (server != null)
 			builder.header(SERVER, server);
-		if (heartBeat != null)
-			builder.header(HEART_BEAT, heartBeat);
-		return builder.build();
+		return builder;
 	}
 
 	/**
@@ -310,7 +324,7 @@ public class Frame {
 	public static class Builder {
 		private final Command command;
 		private final Map<String, List<String>> headers = new LinkedCaseInsensitiveMap<>();
-		private String body;
+		private ByteBuffer body;
 
 		/**
 		 * Create a {@link Frame} builder from the given {@link Frame}.
@@ -342,9 +356,13 @@ public class Frame {
 		 * @return
 		 */
 		public Builder header(String key, String... values) {
+			if (values == null || values.length == 0)
+				throw new IllegalArgumentException("'values' cannot be null or empty!");
+
 			final StringJoiner joiner = new StringJoiner(",");
-			for (String value : values)
-				joiner.add(value);
+			for (String v : values) {
+				joiner.add(v);
+			}
 
 			this.headers.compute(key, (k, v) -> { v = v != null ? v : new ArrayList<>(); v.add(joiner.toString()); return v; });
 			return this;
@@ -354,24 +372,66 @@ public class Frame {
 		 * 
 		 * @param body
 		 * @return
-		 * @throws IllegalArgumentException if the command type does not accept a body.
+		 * @throws IllegalArgumentException if the command type does not accept a body or {@code body} is {@code null}.
 		 */
-		public Builder body(String body) {
-			if (!this.command.body())
+		public Builder body(MediaType contentType, String body) {
+			return body(contentType, ByteBuffer.wrap(body.getBytes(StandardCharsets.UTF_8)));
+		}
+
+		/**
+		 * 
+		 * @param body
+		 * @return
+		 * @throws IllegalArgumentException if the command type does not accept a body or {@code body} is {@code null}.
+		 */
+		public Builder body(MediaType contentType, ByteBuffer body) {
+			if (!this.command.body()) {
 				throw new IllegalArgumentException(this.command + " does not accept a body!");
+			}
+			if (body == null) {
+				throw new IllegalArgumentException("'body' cannot be null!");
+			}
 			this.body = body;
-			return this;
+			return header(CONTENT_TYPE, contentType.toString());
+		}
+
+		/**
+		 * 
+		 * @param outgoing
+		 * @param incoming
+		 * @return
+		 */
+		public Builder heartbeat(int outgoing, int incoming ) {
+			return header(HEART_BEAT, Integer.toString(outgoing), Integer.toString(incoming));
+		}
+
+		/**
+		 * 
+		 * @param versions
+		 * @return
+		 */
+		public Builder version(String... versions) {
+			return header(VERSION, versions);
+		}
+
+		/**
+		 * 
+		 * @param receiptId
+		 * @return
+		 */
+		public Builder reciept(int receiptId) {
+			return header(Headers.RECEIPT, Integer.toString(receiptId));
 		}
 
 		/**
 		 * @return a newly created {@link Frame}.
 		 */
 		public Frame build() {
-			final Map<String, List<String>> headers = new LinkedCaseInsensitiveMap<>();
+			final MultivaluedMap<String, String> headers = new MultivaluedHashMap<>(new LinkedCaseInsensitiveMap<>());
 			for (Entry<String, List<String>> e : this.headers.entrySet()) {
-				headers.put(e.getKey(),  Collections.unmodifiableList(new ArrayList<>(e.getValue())));
+				headers.put(e.getKey(),  new ArrayList<>(e.getValue()));
 			}
-			return new Frame(this.command, Collections.unmodifiableMap(headers), this.body);
+			return new Frame(this.command, headers, this.body);
 		}
 	}
 }

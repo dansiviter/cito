@@ -23,7 +23,6 @@ import org.wildfly.swarm.arquillian.adapter.InVM;
 import org.wildfly.swarm.container.Container;
 
 import civvi.stomp.Client;
-import io.undertow.servlet.api.ServletContainer;
 
 /**
  * 
@@ -79,7 +78,7 @@ public class AbstractTest implements ContainerFactory {
 	}
 
 	private void setUpClient() {
-		this.client = new Client(URI.create(this.baseURL.toString() + "/websocket"));
+		this.client = new Client(URI.create(this.baseURL.toString() + "websocket"));
 	}
 
 	protected Client getClient() {

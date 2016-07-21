@@ -15,7 +15,7 @@ import javax.websocket.EndpointConfig;
  * @author Daniel Siviter
  * @since v1.0 [12 Jul 2016]
  */
-public class FrameEncoding implements Encoder.TextStream<Frame>, Decoder.TextStream {
+public class FrameEncoding implements Encoder.TextStream<Frame>, Decoder.TextStream<Frame> {
 	@Override
 	public void init(EndpointConfig config) { }
 
