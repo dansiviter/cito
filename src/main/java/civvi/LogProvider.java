@@ -12,6 +12,11 @@ import org.slf4j.LoggerFactory;
  * @since v1.0 [15 Jul 2016]
  */
 public class LogProvider {
+	/**
+	 * 
+	 * @param ip
+	 * @return
+	 */
 	@Produces
 	public Logger logger(InjectionPoint ip) {
 		return LoggerFactory.getLogger(ip.getMember().getDeclaringClass());

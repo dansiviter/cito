@@ -15,6 +15,8 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<failOnMissingWebXml>false</failOnMissingWebXml>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+		<deltaspike.version>1.7.0</deltaspike.version>
 	</properties>
 
 	<repositories>
@@ -67,7 +69,7 @@
 		<dependency>
 			<groupId>org.apache.deltaspike.core</groupId>
 			<artifactId>deltaspike-core-api</artifactId>
-			<version>1.7.0</version>
+			<version>${deltaspike.version}</version>
 		</dependency>
 
 		<dependency>
@@ -98,7 +100,7 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
 			<version>1.7.21</version>
-		<!-- 	<scope>test</scope> -->
+			<!-- <scope>test</scope> -->
 		</dependency>
 
 		<dependency>
@@ -120,9 +122,10 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.codehaus.stomp</groupId>
-			<artifactId>stompconnect</artifactId>
-			<version>1.0</version>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-all</artifactId>
+			<version>1.10.19</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 

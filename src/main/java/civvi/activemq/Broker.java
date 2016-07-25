@@ -20,13 +20,6 @@ import org.apache.activemq.broker.region.policy.PolicyMap;
  */
 @ApplicationScoped
 public class Broker {
-//	@Inject
-//	@ConfigProperty(name = "activemq.port", defaultValue = "61613")
-	private int port = 61613;
-//	@Inject
-//	@ConfigProperty(name = "activemq.gracePeriodmultiplier", defaultValue = "2")
-	private float gracePeriodmultiplier = 1.5f;
-
 	private BrokerService broker;
 
 	// small hack to force startup
@@ -39,7 +32,6 @@ public class Broker {
 			this.broker.setUseShutdownHook(false);
 			this.broker.setPersistent(false);
 			this.broker.getManagementContext().setCreateConnector(false);
-			this.broker.addConnector("stomp+nio://localhost:" + port + "?transport.hbGracePeriodMultiplier=" + gracePeriodmultiplier);
 			this.broker.setSchedulePeriodForDestinationPurge(60 * 1_000);
 			final PolicyEntry defaultEntry = new PolicyEntry();
 			defaultEntry.setGcInactiveDestinations(true); // purge destination
@@ -65,10 +57,4 @@ public class Broker {
 	public ConnectionFactory connectionFactory() {
 		return new ActiveMQConnectionFactory("vm://localhost?create=false");
 	}
-	//
-	//	@Produces @Inject
-	//	public ActiveMQConnection connection(ActiveMQConnectionFactory connectionFactory) throws JMSException {
-	//		return (ActiveMQConnection) connectionFactory.createConnection();
-	//	}
-
 }

@@ -5,10 +5,11 @@ import static civvi.stomp.Command.CONNECTED;
 import static civvi.stomp.Command.DISCONNECT;
 import static civvi.stomp.Command.SEND;
 import static civvi.stomp.Headers.CONTENT_TYPE;
-import static civvi.stomp.Headers.HEART_BEAT;
 import static civvi.stomp.Headers.HOST;
+import static civvi.stomp.Headers.RECEIPT_ID;
 import static civvi.stomp.Headers.SERVER;
 import static civvi.stomp.Headers.SESSION;
+import static civvi.stomp.Headers.*;
 import static civvi.stomp.Headers.VERSION;
 
 import java.io.BufferedReader;
@@ -21,7 +22,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringJoiner;
 
@@ -40,15 +40,11 @@ import civvi.LinkedCaseInsensitiveMap;
 public class Frame {
 	static final char NULL = '\u0000';
 	static final char NEW_LINE = '\n';
+	public static final Frame HEART_BEAT = new Frame(null, null, null);
 
 	private final Command command;
 	private final MultivaluedMap<String, String> headers;
 	private final ByteBuffer body;
-
-	public Frame() {
-		this(null, null, null);
-	}
-
 
 	/**
 	 * 
@@ -69,6 +65,14 @@ public class Frame {
 		this.command = command;
 		this.headers = headers;
 		this.body = body;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isHeartBeat() {
+		return this.command == null;
 	}
 
 	/**
@@ -150,10 +154,31 @@ public class Frame {
 
 	/**
 	 * 
+	 * @return
+	 */
+	public HeartBeat getHeartBeat() {
+		return new HeartBeat(getFirstHeader(Headers.HEART_BEAT));
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public String getTransaction() {
+		return getFirstHeader(TRANSACTION);
+	}
+
+	/**
+	 * 
 	 * @param writer
 	 * @throws IOException 
 	 */
 	public void to(Writer writer) throws IOException {
+		if (isHeartBeat()) {
+			writer.append(NEW_LINE).append(NULL);
+			return;
+		}
+
 		writer.append(getCommand().name()).append(NEW_LINE);
 		// FIXME need to ensure this orders in same order as it came in (case insensitive LinkedHashMap?)
 		for (Entry<String, List<String>> e : getHeaders().entrySet()) {
@@ -215,7 +240,14 @@ public class Frame {
 	 */
 	public static Frame from(Reader in) throws IOException {
 		final BufferedReader reader = new BufferedReader(in);
-		final Command command = Command.valueOf(reader.readLine());
+
+		final String firstLine = reader.readLine();
+
+		if (firstLine.isEmpty()) {
+			return HEART_BEAT;
+		}
+
+		final Command command = Command.valueOf(firstLine);
 
 		final MultivaluedMap<String, String> headers = new MultivaluedHashMap<>(new LinkedCaseInsensitiveMap<>());
 
@@ -242,10 +274,11 @@ public class Frame {
 	/**
 	 * 
 	 * @param host
+	 * @param acceptVersion
 	 * @return
 	 */
-	public static Builder connect(String host) {
-		return builder(CONNECT).header(HOST, host);
+	public static Builder connect(String host, String... acceptVersion) {
+		return builder(CONNECT).header(HOST, host).header(ACCEPT_VERSION, acceptVersion);
 	}
 
 	/**
@@ -296,6 +329,15 @@ public class Frame {
 
 	/**
 	 * 
+	 * @param receiptId
+	 * @return
+	 */
+	public static Builder receipt(String receiptId) {
+		return builder(CONNECTED).header(RECEIPT_ID, receiptId);
+	}
+
+	/**
+	 * 
 	 * @param command
 	 * @return
 	 */
@@ -323,7 +365,7 @@ public class Frame {
 	 */
 	public static class Builder {
 		private final Command command;
-		private final Map<String, List<String>> headers = new LinkedCaseInsensitiveMap<>();
+		private final MultivaluedMap<String, String> headers = new MultivaluedHashMap<>(new LinkedCaseInsensitiveMap<>());
 		private ByteBuffer body;
 
 		/**
@@ -364,7 +406,7 @@ public class Frame {
 				joiner.add(v);
 			}
 
-			this.headers.compute(key, (k, v) -> { v = v != null ? v : new ArrayList<>(); v.add(joiner.toString()); return v; });
+			this.headers.putSingle(key, joiner.toString());
 			return this;
 		}
 
@@ -401,8 +443,8 @@ public class Frame {
 		 * @param incoming
 		 * @return
 		 */
-		public Builder heartbeat(int outgoing, int incoming ) {
-			return header(HEART_BEAT, Integer.toString(outgoing), Integer.toString(incoming));
+		public Builder heartbeat(int outgoing, int incoming) {
+			return header(Headers.HEART_BEAT, Integer.toString(outgoing), Integer.toString(incoming));
 		}
 
 		/**
@@ -424,14 +466,93 @@ public class Frame {
 		}
 
 		/**
+		 * Verifies the minimum headers are present.
+		 */
+		private void verify() {
+			switch (this.command) {
+			case ACK:
+			case NACK:
+				assertExists(Headers.ID);
+				break;
+			case BEGIN:
+			case COMMIT:
+			case ABORT:
+				assertExists(Headers.TRANSACTION);
+				break;	
+			case CONNECT:
+			case STOMP:
+				assertExists(Headers.ACCEPT_VERSION);
+				assertExists(Headers.HOST);
+				break;
+			case CONNECTED:
+				assertExists(Headers.VERSION);
+				break;
+			case DISCONNECT:
+			case ERROR:
+				break;
+			case MESSAGE:
+				assertExists(Headers.DESTINATION);
+				assertExists(Headers.MESSAGE_ID);
+				break;
+			case RECEIPT:
+				assertExists(Headers.RECEIPT_ID);
+				break;
+			case SEND:
+				assertExists(Headers.DESTINATION);
+				break;
+			case SUBSCRIBE:
+				assertExists(Headers.DESTINATION);
+				assertExists(Headers.ID);
+				break;
+			case UNSUBSCRIBE:
+				assertExists(Headers.ID);
+				break;
+			}
+
+		}
+
+		/**
+		 * 
+		 * @param key
+		 */
+		private void assertExists(String key) {
+			if (!this.headers.containsKey(key))
+				throw new IllegalStateException("Not set! [" + key + "]");
+		}
+
+		/**
 		 * @return a newly created {@link Frame}.
 		 */
 		public Frame build() {
+			verify();
+
 			final MultivaluedMap<String, String> headers = new MultivaluedHashMap<>(new LinkedCaseInsensitiveMap<>());
 			for (Entry<String, List<String>> e : this.headers.entrySet()) {
 				headers.put(e.getKey(),  new ArrayList<>(e.getValue()));
 			}
 			return new Frame(this.command, headers, this.body);
+		}
+	}
+
+	/**
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [25 Jul 2016]
+	 */
+	public static class HeartBeat {
+		public final long x, y;
+
+		private HeartBeat(String heartBeat) { 
+			if (heartBeat == null) {
+				this.x = 0;
+				this.y = 0;
+				return;
+			}
+			final String[] tokens = heartBeat.split(",");
+			if (tokens.length != 2)
+				throw new IllegalStateException("Invalid number of heart beat elements!");
+			this.x = Long.parseLong(tokens[0]);
+			this.y = Long.parseLong(tokens[1]);
 		}
 	}
 }

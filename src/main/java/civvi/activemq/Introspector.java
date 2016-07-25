@@ -3,7 +3,13 @@ package civvi.activemq;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
+import javax.jms.JMSException;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -16,39 +22,37 @@ import org.apache.activemq.advisory.DestinationListener;
 import org.apache.activemq.advisory.DestinationSource;
 import org.apache.activemq.command.ActiveMQDestination;
 import org.apache.activemq.command.ConsumerId;
-
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
+import org.slf4j.Logger;
 
 /**
  * 
  * @author Daniel Siviter
  * @since v1.0 [18 Jul 2016]
  */
-//@ApplicationScoped
+@ApplicationScoped
 public class Introspector implements DestinationListener, ConsumerListener {
-	private final BiMap<String, String> sessionLookup = HashBiMap.create();
-	private final MultivaluedMap<String, String> sessionMap = new MultivaluedHashMap<>();
-
 	private final Map<ActiveMQDestination, ConsumerEventSource> eventSources = new ConcurrentHashMap<>();
 	private final MultivaluedMap<Destination, ConsumerId> consumerMap = new MultivaluedHashMap<>();
 
+	@Inject
+	private Logger log;
+	@Inject
+	private ConnectionFactory factory;
 
-//	@Inject
 	private ActiveMQConnection conn;
-
 	private DestinationSource source;
 
-//	@PostConstruct
-	public void init() throws Exception {
-		this.source = new DestinationSource(this.conn);
-		this.source.setDestinationListener(this);
-		this.source.start();
+	@PostConstruct
+	public void init() {
+		try {
+			this.conn = (ActiveMQConnection) this.factory.createConnection();
+			this.source = new DestinationSource(this.conn);
+			this.source.setDestinationListener(this);
+			this.source.start();
+		} catch (JMSException e) {
+			throw new IllegalStateException("Unable to open connection to broker!", e);
+		}
 	}
-
-//	public Map<String, Set<String>> destinations(String key) {
-//
-//	}
 
 	@Override
 	public void onDestinationEvent(DestinationEvent e) {
@@ -73,6 +77,15 @@ public class Introspector implements DestinationListener, ConsumerListener {
 			this.consumerMap.add(e.getDestination(), e.getConsumerId());
 		} else {
 			this.consumerMap.get(e.getDestination()).remove(e.getConsumerId());
+		}
+	}
+
+	@PreDestroy
+	public void destroy() {
+		try {
+			this.conn.close();
+		} catch (JMSException e) {
+			this.log.warn("Unable to close connection!", e);
 		}
 	}
 }

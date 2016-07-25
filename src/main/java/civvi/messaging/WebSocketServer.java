@@ -5,15 +5,10 @@ import static civvi.messaging.annotation.Qualifiers.onClose;
 import static civvi.messaging.annotation.Qualifiers.onError;
 import static civvi.messaging.annotation.Qualifiers.onOpen;
 
-import java.io.IOException;
-
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.websocket.CloseReason;
-import javax.websocket.EncodeException;
 import javax.websocket.EndpointConfig;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -46,11 +41,6 @@ public class WebSocketServer {
 	@Inject
 	private Event<Session> sessionEvent;
 
-	@PostConstruct
-	public void init() {
-		log.info("WebSocketServer#init()");
-	}
-
 	@OnOpen
 	public void open(Session session, EndpointConfig config) {
 		this.log.info("WebSocket connection opened. [id={},principle={}]", session.getId(), session.getUserPrincipal());
@@ -82,10 +72,21 @@ public class WebSocketServer {
 	 * @param msg
 	 */
 	public void message(@Observes @FromBroker Message msg) {
-		this.log.info("Sending message to client. [sessionId={},command={}]", msg.sessionId, msg.frame.getCommand());
+		if (msg.frame.isHeartBeat()) {
+			this.log.debug("Sending heartbear to client. [sessionId={}]", msg.sessionId);
+		} else {
+			this.log.info("Sending message to client. [sessionId={},command={}]", msg.sessionId, msg.frame.getCommand());
+		}
+
 		try {
-			registry.getSession(msg.sessionId).getBasicRemote().sendObject(msg.frame);
-		} catch (EncodeException | IOException e) {
+			final Session session = registry.getSession(msg.sessionId);
+			if (session == null) {
+				this.log.warn("Session does not exist! [{}]", msg.sessionId);
+				return;
+			}
+			session.getBasicRemote().sendObject(msg.frame);
+		} catch (Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
 	}
