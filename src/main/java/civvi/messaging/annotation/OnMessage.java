@@ -20,10 +20,10 @@ import javax.inject.Qualifier;
 @Retention(RUNTIME)
 public @interface OnMessage {
 	/**
-	 * Represents a topic pattern. Empty string means match all.
+	 * A regular expression of the topic pattern required.
 	 * 
 	 * @return
 	 */
 	@Nonbinding
-	String value() default "";
+	String value() default ".*";
 }

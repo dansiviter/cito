@@ -54,6 +54,7 @@ public class Relay {
 					return;
 				case DISCONNECT:
 					this.log.info("DISCONNECT recieved. Closing connection to broker. [sessionId={}]", msg.sessionId);
+					this.sessions.get(msg.sessionId).get().on(msg);
 					close(msg.sessionId);
 					return;
 				default:
@@ -63,6 +64,7 @@ public class Relay {
 			this.sessions.get(msg.sessionId).get().on(msg);
 		} catch (JMSException | RuntimeException e) {
 			this.log.error("Unable to process message! [sessionId={},command={}]", msg.sessionId, msg.frame.getCommand(), e);
+			close(msg.sessionId);
 		}
 	}
 

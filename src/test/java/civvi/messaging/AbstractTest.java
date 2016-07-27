@@ -52,6 +52,10 @@ public class AbstractTest implements ContainerFactory {
 		return ShrinkWrap
 				.create(WebArchive.class)
 				.addPackages(true, "javax.ws.rs")
+				.addPackages(true, "javax.jms")
+				.addPackages(true, "org.apache.activemq")
+				.addPackages(true, "io.netty")
+				.addPackages(true, "org.apache.deltaspike")
 				.addPackages(true, "civvi")
 				.addPackages(true, "io.undertow.websockets")
 				//				.addClasses(WebSocketServer.class, FrameEncoding.class, LogProvider.class, WebSocketSessionRegistry.class)

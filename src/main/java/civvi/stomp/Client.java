@@ -2,13 +2,16 @@ package civvi.stomp;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 
 import javax.websocket.ClientEndpoint;
 import javax.websocket.CloseReason;
@@ -31,11 +34,17 @@ import civvi.messaging.annotation.OnConnect;
  * @author Daniel Siviter
  * @since v1.0 [14 Jul 2016]
  */
-@ClientEndpoint(subprotocols = "STOMP", encoders = FrameEncoding.class, decoders = FrameEncoding.class)
+@ClientEndpoint(
+		subprotocols = { "v11.stomp", "v12.stomp" },
+		encoders = FrameEncoding.class,
+		decoders = FrameEncoding.class
+)
 public class Client implements Connection {
 	private final static Logger LOG = LoggerFactory.getLogger(Client.class);
 
-	private final AtomicInteger recieptId = new AtomicInteger();
+	private final Map<Integer, CompletableFuture<Frame>> receipts = new ConcurrentHashMap<>();
+
+	private final AtomicInteger receiptId = new AtomicInteger();
 	private final ScheduledExecutorService scheduler;
 	private final HeartBeatMonitor heartBeatMonitor;
 
@@ -50,10 +59,10 @@ public class Client implements Connection {
 		this.scheduler = Executors.newScheduledThreadPool(1);
 		this.heartBeatMonitor = new HeartBeatMonitor(this, scheduler);
 	}
-	
+
 	@Override
 	public String getSessionId() {
-		if (getState() != State.CONNECTED)
+		if (getState() == State.DISCONNECTED)
 			throw new IllegalStateException("Not connected!");
 		return this.session.getId();
 	}
@@ -68,7 +77,7 @@ public class Client implements Connection {
 		}
 		this.session = ContainerProvider.getWebSocketContainer().connectToServer(this, this.uri);
 		this.state = State.CONNECTING;
-		final Frame connectFrame = Frame.connect(this.uri.getHost()).header(Headers.ACCEPT_VERSION, "1.2").heartbeat(5_000, 5_000).build();
+		final Frame connectFrame = Frame.connect(this.uri.getHost(), "1.2").heartbeat(5_000, 5_000).build();
 		send(connectFrame);
 		this.connectFuture = new CompletableFuture<>();
 		final Frame connectedFrame = this.connectFuture.get(timeout, unit);
@@ -110,8 +119,13 @@ public class Client implements Connection {
 
 	@OnMessage
 	public void onMessage(Frame frame) {
-		LOG.info("Message recieved! [command={}]", frame.getCommand());
 		this.heartBeatMonitor.resetRead();
+		if (frame.isHeartBeat()) {
+			LOG.debug("Heartbeart recieved. [sessionId={}]", getSessionId());
+			return;
+		} else {
+			LOG.info("Message recieved! [command={},sessionId={}] {}", frame.getCommand(), getSessionId(), frame);
+		}
 		switch (frame.getCommand()) {
 		case CONNECTED:
 			if (getState() != State.CONNECTING || this.connectFuture == null) {
@@ -123,8 +137,8 @@ public class Client implements Connection {
 		case MESSAGE:
 			System.out.println("MESSAGE recieved!");
 			break;
-		case RECEIPT:
-			System.out.println("RECEIPT recieved!");
+		case RECIEPT:
+			this.receipts.get(frame.getReceiptId()).complete(frame);
 			break;
 		case ERROR:
 			System.out.println("ERROR recieved!");
@@ -145,25 +159,66 @@ public class Client implements Connection {
 	 * @param contentType
 	 * @param body
 	 * @throws IOException
-	 * @throws EncodeException
 	 */
-	public void send(String destination, MediaType contentType, String body) throws IOException, EncodeException {
+	public void send(String destination, MediaType contentType, String body) throws IOException {
 		send(Frame.send(destination, contentType, body).build());
+	}
+
+	/**
+	 * 
+	 * @param destination
+	 * @param contentType
+	 * @param body
+	 * @throws IOException
+	 * @throws TimeoutException 
+	 * @throws ExecutionException 
+	 * @throws InterruptedException 
+	 */
+	public void send(String destination, MediaType contentType, String body, long timeout, TimeUnit unit)
+			throws IOException, InterruptedException, ExecutionException, TimeoutException
+	{
+		final int receiptId = this.receiptId.incrementAndGet();
+		send(Frame.send(destination, contentType, body).build());
+		awaitReceipt(receiptId, timeout, unit);
+	}
+
+	/**
+	 * 
+	 * @param destination
+	 * @param contentType
+	 * @param body
+	 * @param timeout
+	 * @param unit
+	 * @param fn
+	 * @throws IOException
+	 * @throws TimeoutException 
+	 * @throws ExecutionException 
+	 * @throws InterruptedException 
+	 */
+	public void send(
+			String destination, MediaType contentType, String body, long timeout, TimeUnit unit,
+			BiFunction<? super Frame, Throwable, ? extends Frame> fn)
+	throws IOException, InterruptedException, ExecutionException, TimeoutException
+	{
+		final int receiptId = this.receiptId.incrementAndGet();
+		send(Frame.send(destination, contentType, body).reciept(receiptId).build());
+		onReceipt(receiptId, timeout, unit, fn);
 	}
 
 	/**
 	 * Perform graceful shutdown.
 	 * 
-	 * @param time
+	 * @param timeout
 	 * @param unit
+	 * @throws TimeoutException 
+	 * @throws ExecutionException 
+	 * @throws InterruptedException 
 	 */
-	public void disconnect(long time, TimeUnit unit) {
+	public void disconnect(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
 		try {
-			send(Frame.disconnect().reciept(recieptId.incrementAndGet()).build());
-		} catch (IOException e) {
-			LOG.warn("Unable to send DISCONNECT!", e);
-		}
-		try { // TODO wait for receipt
+			final int recieptId = this.receiptId.incrementAndGet();
+			send(Frame.disconnect().reciept(recieptId).build());
+			awaitReceipt(recieptId, timeout, unit);
 			close(new CloseReason(CloseCodes.NORMAL_CLOSURE, null));
 		} catch (IOException e) {
 			LOG.error("Unable to close!", e);
@@ -207,6 +262,38 @@ public class Client implements Connection {
 			this.session.close(reason);
 		this.session = null;
 		this.state = State.DISCONNECTED;
+	}
+
+	/**
+	 * 
+	 * @param receiptId
+	 * @param timeout
+	 * @param unit
+	 * @return
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 * @throws TimeoutException
+	 */
+	private Frame awaitReceipt(int receiptId, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+		final CompletableFuture<Frame> future = new CompletableFuture<>();
+		this.receipts.put(receiptId, future);
+		return future.get(timeout, unit);
+	}
+
+	/**
+	 * 
+	 * @param receiptId
+	 * @param timeout
+	 * @param unit
+	 * @return
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 * @throws TimeoutException
+	 */
+	private void onReceipt(int receiptId, long timeout, TimeUnit unit, BiFunction<? super Frame, Throwable, ? extends Frame> fn) throws InterruptedException, ExecutionException, TimeoutException {
+		final CompletableFuture<Frame> future = new CompletableFuture<>();
+		this.receipts.put(receiptId, future);
+		future.handleAsync(fn);
 	}
 
 

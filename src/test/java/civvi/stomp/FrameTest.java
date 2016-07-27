@@ -10,7 +10,7 @@ import static civvi.stomp.Command.DISCONNECT;
 import static civvi.stomp.Command.ERROR;
 import static civvi.stomp.Command.MESSAGE;
 import static civvi.stomp.Command.NACK;
-import static civvi.stomp.Command.RECEIPT;
+import static civvi.stomp.Command.RECIEPT;
 import static civvi.stomp.Command.SEND;
 import static civvi.stomp.Command.STOMP;
 import static civvi.stomp.Command.SUBSCRIBE;
@@ -21,8 +21,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -40,8 +41,9 @@ import org.junit.Test;
 public class FrameTest {
 	@Test
 	public void from_reader() throws IOException {
+		final String input = "MESSAGE\nheader2:value\nheader1:value2\nheader1:value1\n\nbody" + NULL;
 		final Frame frame;
-		try (InputStreamReader reader = new InputStreamReader(load("basic.stomp")))  {
+		try (StringReader reader = new StringReader(input))  {
 			frame = Frame.from(reader);
 		}
 		assertEquals(Command.MESSAGE, frame.getCommand());
@@ -58,12 +60,12 @@ public class FrameTest {
 		assertEquals(2, header1.getValue().size());
 		assertEquals("value2", header1.getValue().get(0));
 		assertEquals("value1", header1.getValue().get(1));
-		assertEquals("body", frame.getBody());
+		assertEquals(ByteBuffer.wrap("body".getBytes(StandardCharsets.UTF_8)), frame.getBody());
 	}
 
 	@Test
 	public void from_string() {
-		Frame frame = Frame.from("ACK\nheader1:value\n" + NULL);
+		Frame frame = Frame.from("ACK\nheader1:value\n\n" + NULL);
 		assertEquals(Command.ACK, frame.getCommand());
 		assertEquals(1, frame.getHeaders().size());
 		final List<String> header1 = frame.getHeaders("header1");
@@ -92,7 +94,7 @@ public class FrameTest {
 				CONNECTED,
 				DISCONNECT,
 				NACK,
-				RECEIPT,
+				RECIEPT,
 				STOMP,
 				SUBSCRIBE,
 				UNSUBSCRIBE
@@ -111,14 +113,5 @@ public class FrameTest {
 		for (Command command : new Command[] { SEND, MESSAGE, ERROR}) {
 			Frame.builder(command).body(MediaType.TEXT_PLAIN_TYPE, "blagh");
 		}
-	}
-
-	/**
-	 * 
-	 * @param id
-	 * @return
-	 */
-	private InputStream load(String id) {
-		return getClass().getResourceAsStream(getClass().getSimpleName() + "_" + id);
 	}
 }

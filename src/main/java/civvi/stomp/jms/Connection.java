@@ -1,11 +1,12 @@
 package civvi.stomp.jms;
 
 import static civvi.stomp.Headers.ACCEPT_VERSION;
-
-import static org.apache.deltaspike.core.api.provider.BeanProvider.*;
 import static civvi.stomp.Headers.HEART_BEAT;
+import static org.apache.deltaspike.core.api.provider.BeanProvider.getContextualReference;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -21,7 +22,6 @@ import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.deltaspike.core.api.provider.BeanProvider;
 import org.slf4j.Logger;
 
 import civvi.messaging.event.Message;
@@ -36,7 +36,7 @@ import civvi.stomp.HeartBeatMonitor;
  */
 @Dependent
 public class Connection implements civvi.stomp.Connection {
-	private static final String SUPPORTED_VERSION = "1.2";
+	private static final String[] SUPPORTED_VERSIONS = { "1.1", "1.2" };
 
 	private final Map<String, Subscription> subscriptions = new ConcurrentHashMap<>();
 	private final Map<String, Session> txSessions = new ConcurrentHashMap<>();
@@ -73,7 +73,7 @@ public class Connection implements civvi.stomp.Connection {
 	@Override
 	public void send(Frame frame) {
 		this.heartBeatMonitor.resetSend();
-		this.log.info("Senging message to client. [sessionId={},command={}]", sessionId, frame.getCommand());
+		this.log.info("Senging message to client. [sessionId={},command={}]", this.sessionId, frame.getCommand());
 		this.relay.send(new Message(this.sessionId, frame));
 	}
 
@@ -85,12 +85,12 @@ public class Connection implements civvi.stomp.Connection {
 	public Session getSession(boolean ack) throws JMSException {
 		if (ack) {
 			if (this.ackSession == null) {
-				this.ackSession = new Session(this, this.delegate.createSession(javax.jms.Session.CLIENT_ACKNOWLEDGE));
+				this.ackSession = new Session(this, this.delegate.createSession(false, javax.jms.Session.CLIENT_ACKNOWLEDGE));
 			}
 			return this.ackSession;
 		}
 		if (this.session == null) {
-			this.session = new Session(this, this.delegate.createSession());
+			this.session = new Session(this, this.delegate.createSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE));
 		}
 		return this.session;
 	}
@@ -106,7 +106,7 @@ public class Connection implements civvi.stomp.Connection {
 		if (tx != null)
 			return this.txSessions.get(tx);
 
-		String ackMode = in.getFirstHeader(Headers.ACK);
+		final String ackMode = in.getFirstHeader(Headers.ACK);
 		return getSession(ackMode != null && "client".equalsIgnoreCase(ackMode));
 	}
 
@@ -123,19 +123,27 @@ public class Connection implements civvi.stomp.Connection {
 		}
 
 		this.sessionId = msg.sessionId;
+		String version = null;
+		final Collection<String> clientSupportedVersion = Arrays.asList(msg.frame.getFirstHeader(ACCEPT_VERSION).split(","));
+		for (int i = SUPPORTED_VERSIONS.length - 1; i >= 0; i--) {
+			if (clientSupportedVersion.contains(SUPPORTED_VERSIONS[i])) {
+				version = SUPPORTED_VERSIONS[i];
+				break;
+			}
+		}
 
-		if (!msg.frame.containsHeader(ACCEPT_VERSION) || !msg.frame.getHeaders(ACCEPT_VERSION).contains(SUPPORTED_VERSION)) {
-			final Frame.Builder error = Frame.error().version(SUPPORTED_VERSION);
+		if (version == null) {
+			final Frame.Builder error = Frame.error().version(SUPPORTED_VERSIONS);
 			error.body(MediaType.TEXT_PLAIN_TYPE, "Only STOMP v1.2 supported!");
 			send(error.build());
 			throw new IllegalStateException("Only STOMP v1.2 supported!" + msg.frame.getHeaders(Headers.ACCEPT_VERSION));
 		}
 
-		final Frame.Builder connected = Frame.connnected(SUPPORTED_VERSION, this.sessionId, "localhost");
+		final Frame.Builder connected = Frame.connnected(version, this.sessionId, "localhost");
 
 		final boolean heartBeatEnabled = msg.frame.containsHeader(HEART_BEAT);
 		if (heartBeatEnabled) {
-			connected.heartbeat(5000,  5000);
+			connected.heartbeat(10_000, 10_000);
 		}
 
 		final String login = msg.frame.getFirstHeader(Headers.PASSCODE);
@@ -153,8 +161,8 @@ public class Connection implements civvi.stomp.Connection {
 		send(connected.build());
 
 		if (heartBeatEnabled) {
-			final long readDelay = Math.max(msg.frame.getHeartBeat().x, 5000);
-			final long writeDelay = Math.max(5000, msg.frame.getHeartBeat().y);
+			final long readDelay = Math.max(msg.frame.getHeartBeat().x, 10_000);
+			final long writeDelay = Math.max(10_000, msg.frame.getHeartBeat().y);
 			this.heartBeatMonitor.start(readDelay, writeDelay);
 		}
 		return this;
@@ -165,21 +173,23 @@ public class Connection implements civvi.stomp.Connection {
 	 * @param msg
 	 */
 	public void on(Message msg) {
+		if (!this.sessionId.equals(msg.sessionId)) {
+			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + this.sessionId + ",actual=" + msg.sessionId + "]");
+		}
+
 		this.heartBeatMonitor.resetRead();
 
 		if (msg.frame.isHeartBeat()) {
-			this.log.debug("Heartbeat recieved.");
+			this.log.debug("Heartbeat recieved. [sessionId={}]", this.sessionId);
 			return;
 		}
 
-		this.log.info("Message received. [{}]", msg.frame.getCommand());
+		this.log.info("Message received. [sessionId={},command={}]", this.sessionId, msg.frame.getCommand());
 
 		try {
-			final Session session = getSession(msg.frame);
-
 			switch (msg.frame.getCommand()) {
 			case SEND:
-				session.send(msg.frame);
+				getSession(msg.frame).send(msg.frame);
 				break;
 			case ACK: {
 				final String messageId = msg.frame.getFirstHeader(Headers.ID);
@@ -194,7 +204,6 @@ public class Connection implements civvi.stomp.Connection {
 				if (this.txSessions.containsKey(msg.frame.getTransaction())) {
 					throw new IllegalStateException("Transaction already started! [" + msg.frame.getTransaction() + "]");
 				}
-
 				final Session txSession = new Session(this, this.delegate.createSession(true, javax.jms.Session.SESSION_TRANSACTED));
 				this.txSessions.put(msg.frame.getTransaction(), txSession);
 				break;
@@ -212,20 +221,22 @@ public class Connection implements civvi.stomp.Connection {
 			case SUBSCRIBE: {
 				final String subscriptionId = msg.frame.getFirstHeader(Headers.ID);
 				final Subscription subscription = this.subscriptions.putIfAbsent(
-						subscriptionId, new Subscription(session, subscriptionId, msg.frame));
+						subscriptionId, new Subscription(getSession(msg.frame), subscriptionId, msg.frame));
 				if (subscription != null)
 					throw new IllegalStateException("Subscription already exists! [" + subscriptionId + "]");
 				break;
 			}
 			case UNSUBSCRIBE: {
 				final String subscriptionId = msg.frame.getFirstHeader(Headers.ID);
-				final Subscription subscription = subscriptions.remove(subscriptionId);
+				final Subscription subscription = this.subscriptions.remove(subscriptionId);
 				if (subscription == null)
 					throw new IllegalStateException("Subscription does not exist! [" + subscriptionId + "]");
-
 				subscription.close();
 				break;
 			}
+			case DISCONNECT:
+				// only here to short-cut potential receipt sending
+				break;
 			default:
 				throw new IllegalArgumentException("Unexpected frame! [" + msg.frame.getCommand());
 			}
@@ -241,7 +252,7 @@ public class Connection implements civvi.stomp.Connection {
 	 * @throws Exception
 	 */
 	private void sendReceipt(Frame frame)  {
-		final String receiptId = frame.getFirstHeader(Headers.RECEIPT);
+		final String receiptId = frame.getFirstHeader(Headers.RECIEPT);
 		if (receiptId != null) {
 			send(Frame.receipt(receiptId).build());
 		}

@@ -103,12 +103,14 @@ public class Session {
 	 */
 	private Message toMessage(Frame frame) throws JMSException {
 		final Message msg;
+		byte[] bytes = frame.getBody().array();
 		if (frame.containsHeader(Headers.CONTENT_LENGTH)) {
 			BytesMessage bm = this.delegate.createBytesMessage();
-			bm.writeBytes(frame.getBody().array());
+			bm.writeBytes(bytes);
 			msg = bm;
 		} else {
-			msg = this.delegate.createTextMessage(new String(frame.getBody().array(), StandardCharsets.UTF_8));
+			final String body = new String(bytes, StandardCharsets.UTF_8);
+			msg = this.delegate.createTextMessage(body);
 		}
 		copyHeaders(frame, msg);
 		return msg;
@@ -127,17 +129,20 @@ public class Session {
 		copyHeaders(message, frame);
 
 		final String contentType = message.getStringProperty(Headers.CONTENT_TYPE);
-
+		final ByteBuffer buf;
 		if (message instanceof TextMessage) {
 			final TextMessage msg = (TextMessage) message;
-			frame.body(MediaType.valueOf(contentType), ByteBuffer.wrap(msg.getText().getBytes("UTF-8")));
+			buf = ByteBuffer.wrap(msg.getText().getBytes(StandardCharsets.UTF_8));
 		} else if (message instanceof BytesMessage) {
 			final BytesMessage msg = (BytesMessage) message;
 			byte[] data = new byte[(int) msg.getBodyLength()];
 			msg.readBytes(data);
 			frame.header(Headers.CONTENT_LENGTH, Integer.toString(data.length));
-			frame.body(MediaType.valueOf(contentType), ByteBuffer.wrap(data));
+			buf = ByteBuffer.wrap(data);
+		} else {
+			throw new IllegalArgumentException("Unexpected type! [" + message.getClass() + "]");
 		}
+		frame.body(contentType == null ? null : MediaType.valueOf(contentType), buf);
 		return frame.build();
 	}
 
@@ -150,7 +155,7 @@ public class Session {
 	 */
 	Destination toDestination(String name) throws JMSException {
 		final int separatorIndex = name.indexOf('/', 1);
-		final String type = name.substring(0, separatorIndex);   
+		final String type = name.substring(0, separatorIndex + 1).toLowerCase();   
 		name = name.substring(separatorIndex + 1, name.length());
 		switch (type) {
 		case "/queue/":

@@ -30,7 +30,12 @@ import civvi.stomp.FrameEncoding;
  * @author Daniel Siviter
  * @since v1.0 [15 Jul 2016]
  */
-@ServerEndpoint(value = "/websocket", subprotocols = "STOMP", encoders = FrameEncoding.class, decoders = FrameEncoding.class)
+@ServerEndpoint(
+		value = "/websocket",
+		subprotocols = { "v11.stomp", "v12.stomp" },
+		encoders = FrameEncoding.class,
+		decoders = FrameEncoding.class
+)
 public class WebSocketServer {
 	@Inject
 	private Logger log;
@@ -49,14 +54,14 @@ public class WebSocketServer {
 	}
 
 	@OnMessage
-	public void message(Session session, Frame msg) {
-		this.log.info("WebSocket message. [id={},principle={}]", session.getId(), session.getUserPrincipal());
-		this.messageEvent.select(fromClient()).fire(new Message(session.getId(), msg));
+	public void message(Session session, Frame frame) {
+		this.log.info("WebSocket message. [id={},principle={},command={}]", session.getId(), session.getUserPrincipal(), frame.getCommand());
+		this.messageEvent.select(fromClient()).fire(new Message(session.getId(), frame));
 	}
 
 	@OnClose
 	public void close(Session session, CloseReason reason) {
-		this.log.info("WebSocket closed. [id={},principle={},reason={}]", session.getId(), session.getUserPrincipal(), reason.getReasonPhrase());
+		this.log.info("WebSocket closed. [id={},principle={},code={},reason={}]", session.getId(), session.getUserPrincipal(), reason.getCloseCode(), reason.getReasonPhrase());
 		this.registry.unregister(session);
 		this.sessionEvent.select(onClose()).fire(session);
 	}
@@ -73,7 +78,7 @@ public class WebSocketServer {
 	 */
 	public void message(@Observes @FromBroker Message msg) {
 		if (msg.frame.isHeartBeat()) {
-			this.log.debug("Sending heartbear to client. [sessionId={}]", msg.sessionId);
+			this.log.debug("Sending heartbeart to client. [sessionId={}]", msg.sessionId);
 		} else {
 			this.log.info("Sending message to client. [sessionId={},command={}]", msg.sessionId, msg.frame.getCommand());
 		}

@@ -11,6 +11,7 @@ import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
 /**
+ * Qualifier to distinguish subscription events.
  * 
  * @author Daniel Siviter
  * @since v1.0 [12 Jul 2016]
@@ -20,10 +21,10 @@ import javax.inject.Qualifier;
 @Retention(RUNTIME)
 public @interface OnSubscribe {
 	/**
-	 * Represents a topic pattern.
+	 * A regular expression of the topic pattern required.
 	 * 
 	 * @return
 	 */
 	@Nonbinding
-	String value() default "";
+	String value() default ".*";
 }

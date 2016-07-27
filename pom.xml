@@ -55,15 +55,7 @@
 
 		<dependency>
 			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>undertow</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>cdi</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>jaxrs</artifactId>
+			<artifactId>jaxrs-cdi</artifactId>
 		</dependency>
 
 		<dependency>
@@ -126,6 +118,12 @@
 			<artifactId>mockito-all</artifactId>
 			<version>1.10.19</version>
 			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.codehaus.stomp</groupId>
+			<artifactId>stompconnect</artifactId>
+			<version>1.0</version>
 		</dependency>
 	</dependencies>
 

@@ -3,13 +3,16 @@ package civvi.stomp;
 import static civvi.stomp.Command.CONNECT;
 import static civvi.stomp.Command.CONNECTED;
 import static civvi.stomp.Command.DISCONNECT;
+import static civvi.stomp.Command.RECIEPT;
 import static civvi.stomp.Command.SEND;
+import static civvi.stomp.Headers.ACCEPT_VERSION;
 import static civvi.stomp.Headers.CONTENT_TYPE;
 import static civvi.stomp.Headers.HOST;
-import static civvi.stomp.Headers.RECEIPT_ID;
+import static civvi.stomp.Headers.RECIEPT_ID;
 import static civvi.stomp.Headers.SERVER;
+import static civvi.stomp.Headers.DESTINATION;
 import static civvi.stomp.Headers.SESSION;
-import static civvi.stomp.Headers.*;
+import static civvi.stomp.Headers.TRANSACTION;
 import static civvi.stomp.Headers.VERSION;
 
 import java.io.BufferedReader;
@@ -39,7 +42,7 @@ import civvi.LinkedCaseInsensitiveMap;
  */
 public class Frame {
 	static final char NULL = '\u0000';
-	static final char NEW_LINE = '\n';
+	static final char LINE_FEED = '\n';
 	public static final Frame HEART_BEAT = new Frame(null, null, null);
 
 	private final Command command;
@@ -125,6 +128,10 @@ public class Frame {
 	public String getFirstHeader(String key) {
 		return getHeaders().getFirst(key);
 	}
+	
+	public String getDestination() {
+		return getFirstHeader(DESTINATION);
+	}
 
 	/**
 	 * 
@@ -148,8 +155,8 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public String getReceipt() {
-		return getFirstHeader(Headers.RECEIPT);
+	public int getReceiptId() {
+		return Integer.parseInt(getFirstHeader(Headers.RECIEPT_ID));
 	}
 
 	/**
@@ -175,24 +182,22 @@ public class Frame {
 	 */
 	public void to(Writer writer) throws IOException {
 		if (isHeartBeat()) {
-			writer.append(NEW_LINE).append(NULL);
+			writer.append(LINE_FEED);
 			return;
 		}
 
-		writer.append(getCommand().name()).append(NEW_LINE);
+		writer.append(getCommand().name()).append(LINE_FEED);
 		// FIXME need to ensure this orders in same order as it came in (case insensitive LinkedHashMap?)
 		for (Entry<String, List<String>> e : getHeaders().entrySet()) {
 			for (String value : e.getValue()) {
-				writer.append(e.getKey()).append(':').append(value).append(NEW_LINE);
+				writer.append(e.getKey()).append(':').append(value).append(LINE_FEED);
 			}
 		}
 
+		writer.append(LINE_FEED);
+
 		if (getBody() != null) {
-			final ByteBuffer buffer = getBody();
-			buffer.flip(); // flip the buffer for reading
-			byte[] bytes = new byte[buffer.remaining()]; // create a byte array the length of the number of bytes written to the buffer
-			buffer.get(bytes); // read the bytes that were written
-			writer.append(NEW_LINE).append(new String(bytes, StandardCharsets.UTF_8));
+			writer.append(LINE_FEED).append(new String(getBody().array(), StandardCharsets.UTF_8));
 		}
 
 		writer.append(NULL);
@@ -267,6 +272,7 @@ public class Frame {
 		while ((numCharsRead = reader.read(arr, 0, arr.length)) != -1) {
 			buf.append(arr, 0, numCharsRead);
 		}
+		buf.setLength(buf.lastIndexOf(Character.toString(NULL)));
 		final ByteBuffer byteBuf = buf.length() == 0 ? null : ByteBuffer.wrap(buf.toString().getBytes(StandardCharsets.UTF_8));
 		return new Frame(command, headers, byteBuf);
 	}
@@ -333,7 +339,7 @@ public class Frame {
 	 * @return
 	 */
 	public static Builder receipt(String receiptId) {
-		return builder(CONNECTED).header(RECEIPT_ID, receiptId);
+		return builder(RECIEPT).header(RECIEPT_ID, receiptId);
 	}
 
 	/**
@@ -422,6 +428,7 @@ public class Frame {
 
 		/**
 		 * 
+		 * @param contentType
 		 * @param body
 		 * @return
 		 * @throws IllegalArgumentException if the command type does not accept a body or {@code body} is {@code null}.
@@ -434,7 +441,7 @@ public class Frame {
 				throw new IllegalArgumentException("'body' cannot be null!");
 			}
 			this.body = body;
-			return header(CONTENT_TYPE, contentType.toString());
+			return contentType == null ? this : header(CONTENT_TYPE, contentType.toString());
 		}
 
 		/**
@@ -458,11 +465,11 @@ public class Frame {
 
 		/**
 		 * 
-		 * @param receiptId
+		 * @param recieptId
 		 * @return
 		 */
-		public Builder reciept(int receiptId) {
-			return header(Headers.RECEIPT, Integer.toString(receiptId));
+		public Builder reciept(int recieptId) {
+			return header(Headers.RECIEPT, Integer.toString(recieptId));
 		}
 
 		/**
@@ -494,8 +501,8 @@ public class Frame {
 				assertExists(Headers.DESTINATION);
 				assertExists(Headers.MESSAGE_ID);
 				break;
-			case RECEIPT:
-				assertExists(Headers.RECEIPT_ID);
+			case RECIEPT:
+				assertExists(Headers.RECIEPT_ID);
 				break;
 			case SEND:
 				assertExists(Headers.DESTINATION);

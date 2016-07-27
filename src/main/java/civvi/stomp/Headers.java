@@ -14,8 +14,8 @@ public enum Headers { ;
 
 	public static final String VERSION = "version";
 	public static final String HOST = "host";
-	public static final String RECEIPT = "receipt";
-	public static final String RECEIPT_ID = "receipt-id";
+	public static final String RECIEPT = "receipt";
+	public static final String RECIEPT_ID = "receipt-id";
 
 	public static final String LOGIN = "login";
 	public static final String PASSCODE = "passcode";
