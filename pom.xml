@@ -3,14 +3,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>siviter</groupId>
-	<artifactId>streamer</artifactId>
-	<name>Wildfly Swarm Demo</name>
+	<groupId>civvi.streamer</groupId>
+	<artifactId>streamer-root</artifactId>
+	<name>Streamer</name>
 	<version>1.0.0-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<packaging>pom</packaging>
 
 	<properties>
-		<version.wildfly.swarm>1.0.0.CR1</version.wildfly.swarm>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<failOnMissingWebXml>false</failOnMissingWebXml>
@@ -18,6 +17,10 @@
 
 		<deltaspike.version>1.7.0</deltaspike.version>
 	</properties>
+
+	<modules>
+		<module>core</module>
+	</modules>
 
 	<repositories>
 		<repository>
@@ -38,9 +41,22 @@
 			<dependency>
 				<groupId>org.wildfly.swarm</groupId>
 				<artifactId>bom</artifactId>
-				<version>${version.wildfly.swarm}</version>
+				<version>2016.7-SNAPSHOT</version>
 				<scope>import</scope>
 				<type>pom</type>
+			</dependency>
+
+			<dependency>
+				<groupId>org.wildfly.swarm</groupId>
+				<artifactId>arquillian</artifactId>
+				<version>2016.7-SNAPSHOT</version>
+				<scope>test</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.apache.deltaspike.core</groupId>
+				<artifactId>deltaspike-core-api</artifactId>
+				<version>${deltaspike.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -52,94 +68,5 @@
 			<version>7.0</version>
 			<scope>provided</scope>
 		</dependency>
-
-		<dependency>
-			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>jaxrs-cdi</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.deltaspike.core</groupId>
-			<artifactId>deltaspike-core-api</artifactId>
-			<version>${deltaspike.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.activemq</groupId>
-			<artifactId>activemq-http</artifactId>
-			<version>5.13.3</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.eclipse.jetty.aggregate</groupId>
-					<artifactId>jetty-all</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.activemq</groupId>
-			<artifactId>artemis-jms-server</artifactId>
-			<version>1.3.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.12</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-simple</artifactId>
-			<version>1.7.21</version>
-			<!-- <scope>test</scope> -->
-		</dependency>
-
-		<dependency>
-			<groupId>org.wildfly.swarm</groupId>
-			<artifactId>arquillian</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jboss.arquillian.junit</groupId>
-			<artifactId>arquillian-junit-container</artifactId>
-			<version>1.1.11.Final</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.undertow</groupId>
-			<artifactId>undertow-websockets-jsr</artifactId>
-			<version>1.3.15.Final</version>
-			<!-- <scope>test</scope> -->
-		</dependency>
-
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-all</artifactId>
-			<version>1.10.19</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.codehaus.stomp</groupId>
-			<artifactId>stompconnect</artifactId>
-			<version>1.0</version>
-		</dependency>
 	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.wildfly.swarm</groupId>
-				<artifactId>wildfly-swarm-plugin</artifactId>
-				<executions>
-					<execution>
-						<goals>
-							<goal>package</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
 </project>
