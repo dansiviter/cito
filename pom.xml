@@ -3,9 +3,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>civvi.streamer</groupId>
-	<artifactId>streamer-root</artifactId>
-	<name>Streamer</name>
+	<groupId>flngr</groupId>
+	<artifactId>flngr-root</artifactId>
+	<name>flngr</name>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
@@ -15,7 +15,8 @@
 		<failOnMissingWebXml>false</failOnMissingWebXml>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-		<deltaspike.version>1.7.0</deltaspike.version>
+		<deltaSpike.version>1.7.0</deltaSpike.version>
+		<wildflySwarm.version>2016.7-SNAPSHOT</wildflySwarm.version>
 	</properties>
 
 	<modules>
@@ -41,22 +42,33 @@
 			<dependency>
 				<groupId>org.wildfly.swarm</groupId>
 				<artifactId>bom</artifactId>
-				<version>2016.7-SNAPSHOT</version>
+				<version>${wildflySwarm.version}</version>
 				<scope>import</scope>
 				<type>pom</type>
 			</dependency>
 
 			<dependency>
-				<groupId>org.wildfly.swarm</groupId>
-				<artifactId>arquillian</artifactId>
-				<version>2016.7-SNAPSHOT</version>
-				<scope>test</scope>
+				<groupId>org.jboss.resteasy</groupId>
+				<artifactId>resteasy-bom</artifactId>
+				<version>3.0.18.Final</version>
+				<type>pom</type>
+				<scope>import</scope>
 			</dependency>
 
 			<dependency>
 				<groupId>org.apache.deltaspike.core</groupId>
 				<artifactId>deltaspike-core-api</artifactId>
-				<version>${deltaspike.version}</version>
+				<version>${deltaSpike.version}</version>
+			</dependency>
+
+
+			<!-- Test Dependencies -->
+
+			<dependency>
+				<groupId>org.wildfly.swarm</groupId>
+				<artifactId>arquillian</artifactId>
+				<version>${wildflySwarm.version}</version>
+				<scope>test</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
