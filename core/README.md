@@ -1,6 +1,6 @@
-# flngr Core
+# Citō Core
 
-flngr uses a number of technologies from the JEE 7 catalogue, namely:
+Citō uses a number of technologies from the JEE 7 catalogue, namely:
 
 * JMS - Interface between the Broker and STOMP,
 * JAX-RS - MediaTypes (will potentially be removed to reduce dependencies),
@@ -11,7 +11,7 @@ Both JMS, JAX-RS and CDI implementations must exist for it to work, and JAX-B fo
 
 ## Deployment Models ##
 
-flngr can be deployed in fours ways: 
+Citō can be deployed in fours ways: 
 
 * Standalone, embedded broker,
 * Clustered, embedded broker,
