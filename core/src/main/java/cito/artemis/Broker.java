@@ -2,6 +2,7 @@ package cito.artemis;
 
 import java.util.Collections;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
@@ -36,7 +37,10 @@ public class Broker {
 
 	private EmbeddedJMS broker;
 
-	public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
+	public void startup(@Observes @Initialized(ApplicationScoped.class) Object init) { }
+
+	@PostConstruct
+	public void init() {
 		try {
 			final Configuration config = new ConfigurationImpl()
 					.setPersistenceEnabled(false)

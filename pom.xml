@@ -60,6 +60,11 @@
 				<artifactId>deltaspike-core-api</artifactId>
 				<version>${deltaSpike.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>org.apache.deltaspike.core</groupId>
+				<artifactId>deltaspike-core-impl</artifactId>
+				<version>${deltaSpike.version}</version>
+			</dependency>
 
 
 			<!-- Test Dependencies -->

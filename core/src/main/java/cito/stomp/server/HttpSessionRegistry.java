@@ -20,9 +20,7 @@ public class HttpSessionRegistry {
 	 * @param session
 	 */
 	public void register(HttpSession session) {
-		final HttpSession existing = this.sessions.computeIfAbsent(session.getId(), (v) -> { return session; });
-		if (existing != null)
-			throw new IllegalArgumentException("Session already registered! [" + session.getId() + "]");
+		this.sessions.computeIfAbsent(session.getId(), (v) -> { return session; });
 	}
 
 	/**
@@ -39,8 +37,6 @@ public class HttpSessionRegistry {
 	 * @param session
 	 */
 	public void unregister(HttpSession session) {
-		final HttpSession existing = this.sessions.computeIfPresent(session.getId(), (k, v) -> { return null; });
-		if (existing == null)
-			throw new IllegalArgumentException("Session not registered! [" + session.getId() + "]");
+		this.sessions.computeIfPresent(session.getId(), (k, v) -> { return null; });
 	}
 }

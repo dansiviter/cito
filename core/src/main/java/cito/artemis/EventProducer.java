@@ -9,6 +9,7 @@ import static org.apache.activemq.artemis.jms.server.management.JMSNotificationT
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.TOPIC_CREATED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.TOPIC_DESTROYED;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
@@ -39,7 +40,10 @@ public class EventProducer implements NotificationListener {
 	@Inject
 	private Event<cito.DestinationEvent> destinationEvent;
 
-	public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
+	public void startip(@Observes @Initialized(ApplicationScoped.class) Object init) { }
+
+	@PostConstruct
+	public void init() {
 		this.broker.getActiveMQServer().getManagementService().addNotificationListener(this);
 	}
 
