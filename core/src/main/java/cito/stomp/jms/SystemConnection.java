@@ -40,8 +40,9 @@ public class SystemConnection extends AbstractConnection {
 
 	@Override
 	public void on(Message msg) {
-		if (!getSessionId().equals(msg.sessionId)) {
-			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + getSessionId() + ",actual=" + msg.sessionId + "]");
+		final String sessionId = msg.getFrame().session();
+		if (!getSessionId().equals(sessionId) && sessionId != null) {
+			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + getSessionId() + " OR null,actual=" + msg.sessionId + "]");
 		}
 
 		try {

@@ -149,7 +149,7 @@ public class Connection extends AbstractConnection {
 	 */
 	@Override
 	public void on(Message msg) {
-		if (!this.sessionId.equals(msg.sessionId)) {
+		if (!getSessionId().equals(msg.frame.session())) {
 			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + this.sessionId + ",actual=" + msg.sessionId + "]");
 		}
 

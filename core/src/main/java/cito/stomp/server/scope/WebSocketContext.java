@@ -1,4 +1,4 @@
-package cito.stomp.server;
+package cito.stomp.server.scope;
 
 import java.lang.annotation.Annotation;
 
@@ -18,16 +18,21 @@ import cito.stomp.server.annotation.WebSocketScope;
  * @author Daniel Siviter
  * @since v1.0 [17 Aug 2016]
  */
-public class WebSocketScopeContext extends AbstractContext {
-	private final ThreadLocal<Session> session = new ThreadLocal<>();
+public class WebSocketContext extends AbstractContext {
 	private final Holder holder = new Holder();
-	
-	private final BeanManager beanManager;
 
-	protected WebSocketScopeContext(BeanManager beanManager) {
+	private final BeanManager beanManager;
+	private WebSocketSessionHolder sessionHolder;
+
+	public WebSocketContext(BeanManager beanManager) {
 		super(beanManager);
 		this.beanManager = beanManager;
 	}
+
+	public void init(WebSocketSessionHolder sessionHolder) {
+		this.sessionHolder = sessionHolder;
+	}
+
 
 	@Override
 	public Class<? extends Annotation> getScope() {
@@ -45,10 +50,7 @@ public class WebSocketScopeContext extends AbstractContext {
 	 * @return
 	 */
 	public QuietClosable activate(Session session) {
-		if (this.session.get() != null) {
-			throw new IllegalStateException("Session already set!");
-		}
-		this.session.set(session);
+		this.sessionHolder.set(session);
 
 		final Thread thread = Thread.currentThread();
 		return new QuietClosable() {
@@ -57,14 +59,14 @@ public class WebSocketScopeContext extends AbstractContext {
 				if (Thread.currentThread() != thread) {
 					throw new IllegalStateException("Different thread! Potential resource leak!");
 				}
-				WebSocketScopeContext.this.session.remove();
+				WebSocketContext.this.sessionHolder.remove();
 			}
 		};
 	}
 
 	@Override
 	protected ContextualStorage getContextualStorage(Contextual<?> contextual, boolean createIfNotExist) {
-		final Session session = this.session.get();
+		final Session session = this.sessionHolder.get();
 		if (session == null) {
 			throw new IllegalStateException("No session available!");
 		}
@@ -80,6 +82,6 @@ public class WebSocketScopeContext extends AbstractContext {
 	 * @since v1.0 [17 Aug 2016]
 	 */
 	private static class Holder extends AbstractBeanHolder<String> {
-
+		private static final long serialVersionUID = 8050340714947625398L;
 	}
 }

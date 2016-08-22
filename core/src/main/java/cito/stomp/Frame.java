@@ -183,6 +183,14 @@ public class Frame {
 
 	/**
 	 * 
+	 * @return
+	 */
+	public String session() {
+		return getFirstHeader(SESSION);
+	}
+
+	/**
+	 * 
 	 * @param writer
 	 * @throws IOException 
 	 */
@@ -535,7 +543,6 @@ public class Frame {
 		 * @return
 		 */
 		public Builder subscription(String id) {
-			
 			if (!this.command.subscriptionId()) {
 				throw new IllegalArgumentException(this.command + " does not accept a subscription!");
 			}
