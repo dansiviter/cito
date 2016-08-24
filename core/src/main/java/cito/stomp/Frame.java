@@ -336,6 +336,17 @@ public class Frame {
 	 * @param body
 	 * @return
 	 */
+	public static Builder send(String destination, MediaType contentType, ByteBuffer body) {
+		return builder(SEND).destination(destination).body(contentType, body);
+	}
+
+	/**
+	 * 
+	 * @param destination
+	 * @param contentType
+	 * @param body
+	 * @return
+	 */
 	public static Builder send(String destination, MediaType contentType, String body) {
 		return builder(SEND).destination(destination).body(contentType, body);
 	}

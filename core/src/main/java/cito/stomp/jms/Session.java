@@ -24,6 +24,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import cito.LinkedCaseInsensitiveMap;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Headers;
@@ -237,7 +238,8 @@ public class Session {
 	 * @throws JMSException
 	 */
 	protected void copyHeaders(Frame frame, Message msg) throws JMSException {
-		final MultivaluedMap<String, String> headers = new MultivaluedHashMap<>(frame.getHeaders());
+		final MultivaluedMap<String, String> headers = new MultivaluedHashMap<>(new LinkedCaseInsensitiveMap<>());
+		headers.putAll(frame.getHeaders());
 
 		msg.setJMSCorrelationID(removeAndGetFirst(headers, Headers.CORRELATION_ID));
 

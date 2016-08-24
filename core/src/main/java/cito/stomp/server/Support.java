@@ -2,6 +2,9 @@ package cito.stomp.server;
 
 import static cito.stomp.server.annotation.Qualifiers.fromClient;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Map;
@@ -13,6 +16,7 @@ import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 
 import cito.stomp.Frame;
+import cito.stomp.ext.Serialiser;
 import cito.stomp.server.event.Message;
 
 /**
@@ -26,6 +30,8 @@ public abstract class Support {
 	private Event<Message> msgEvent;
 	@Inject
 	private SessionRegistry registry;
+	@Inject
+	private Serialiser serialiser;
 
 	/**
 	 * Broadcast to all users and all sessions subscribed to the {@code destination}.
@@ -69,7 +75,7 @@ public abstract class Support {
 	 */
 	public void broadcast(String destination, MediaType type, Object payload, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
-		final Frame frame = Frame.send(destination, type, payload.toString()).headers(headers).build();
+		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
 		this.msgEvent.select(fromClient()).fire(new Message(frame));
 	}
 
@@ -143,8 +149,24 @@ public abstract class Support {
 	 */
 	public void sendTo(String sessionId, String destination, MediaType type, Object payload, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
-		final Frame frame = Frame.send(destination, type, payload.toString()).session(sessionId).headers(headers).build();
+		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();
 		this.msgEvent.select(fromClient()).fire(new Message(frame));
+	}
+
+	/**
+	 * 
+	 * @param obj
+	 * @param type
+	 * @return
+	 */
+	private ByteBuffer toByteBuffer(Object obj, MediaType type) {
+		try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+			this.serialiser.writeTo(obj, obj.getClass(), type, os);
+			return ByteBuffer.wrap(os.toByteArray());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		
 	}
 
 

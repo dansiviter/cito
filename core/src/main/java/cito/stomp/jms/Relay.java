@@ -53,12 +53,16 @@ public class Relay {
 	public void message(@Observes @FromClient Message msg) {
 		final String sessionId = msg.sessionId != null ? msg.sessionId : SystemConnection.SESSION_ID;
 		try {
-			final DependentProvider<? extends AbstractConnection> conn = this.sessions.get(sessionId);
+			DependentProvider<? extends AbstractConnection> conn = this.sessions.get(sessionId);
 			if (msg.frame.getCommand() != null) {
 				switch (msg.frame.getCommand()) {
 				case CONNECT:
 				case STOMP:
 					this.log.info("CONNECT/STOMP recieved. Opening connection to broker. [sessionId={}]", sessionId);
+					if (conn != null) {
+						throw new IllegalStateException("Connection already exists! [sessionId=" + sessionId + "]");
+					}
+					conn = BeanProvider.getDependent(this.manager, Connection.class);
 					((Connection) conn.get()).connect(msg);
 					this.sessions.put(sessionId, conn);
 					return;

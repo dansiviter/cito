@@ -17,11 +17,6 @@ import javax.enterprise.inject.spi.ProcessObserverMethod;
 import javax.websocket.Session;
 
 import org.apache.deltaspike.core.api.provider.BeanProvider;
-import org.apache.deltaspike.core.impl.scope.conversation.GroupedConversationContext;
-import org.apache.deltaspike.core.impl.scope.viewaccess.ViewAccessContext;
-import org.apache.deltaspike.core.impl.scope.window.WindowContextImpl;
-import org.apache.deltaspike.core.impl.scope.window.WindowIdHolder;
-import org.apache.deltaspike.core.util.ClassDeactivationUtils;
 
 import cito.QuietClosable;
 import cito.stomp.server.annotation.OnConnected;

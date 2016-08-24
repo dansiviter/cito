@@ -13,6 +13,7 @@ public enum Util { ;
 	 * @param t
 	 * @return
 	 */
+	@SafeVarargs
 	public static <T> T getFirst(T... t) {
 		return t != null && t.length > 0 ? t[0] : null;
 	}

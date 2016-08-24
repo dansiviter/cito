@@ -18,9 +18,9 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
-import org.wildfly.swarm.ContainerFactory;
+import org.wildfly.swarm.Swarm;
+import org.wildfly.swarm.arquillian.CreateSwarm;
 import org.wildfly.swarm.arquillian.adapter.InVM;
-import org.wildfly.swarm.container.Container;
 
 import cito.stomp.client.Client;
 
@@ -32,7 +32,7 @@ import cito.stomp.client.Client;
 @RunWith(Arquillian.class)
 @RunAsClient 
 @InVM
-public abstract class AbstractIT implements ContainerFactory {
+public abstract class AbstractIT {
 	@Inject
 	protected Logger log;
 	////	private final int port;
@@ -88,16 +88,12 @@ public abstract class AbstractIT implements ContainerFactory {
 	protected Client getClient() {
 		return this.client;
 	}
-	//
-	////	protected int getPort() {
-	////		return this.port;
-	////	}
-	//
-	@Override
-	public Container newContainer(String... arg0) throws Exception {
-		Container container = new Container();
-		// ... configure the container ...
-		return container;
+
+	@CreateSwarm
+	public static Swarm newContainer() throws Exception {
+		Swarm swarm = new Swarm();
+		// ... configure Swarm ...
+		return swarm;
 	}
 
 	//	/**

@@ -9,6 +9,7 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 
+import cito.stomp.ext.Serialiser;
 import cito.stomp.server.annotation.OnConnected;
 import cito.stomp.server.annotation.OnDisconnect;
 import cito.stomp.server.annotation.OnMessage;
@@ -37,30 +38,35 @@ public class EventProducer {
 		switch (msg.frame.getCommand()) {
 		case CONNECTED: {
 			getExtension().getObservers(OnConnected.class).forEach(e -> e.notify(msg));
+			break;
 		}
 		case MESSAGE: {
 			final String destination = msg.frame.getDestination();
 			getExtension().getObservers(OnMessage.class).stream().filter(
 					e ->  matches(destination, getAnnotation(OnMessage.class, e.getObservedQualifiers()).value())).forEach(
 							e -> e.notify(msg));
+			break;
 		}
 		case SUBSCRIBE: {
 			final String destination = msg.frame.getDestination();
 			getExtension().getObservers(OnSubscribe.class).stream().filter(
 					e ->  matches(destination, getAnnotation(OnSubscribe.class, e.getObservedQualifiers()).value())).forEach(
 							e -> e.notify(msg));
+			break;
 		}
 		case UNSUBSCRIBE: {
 			final String destination = msg.frame.getDestination();
 			getExtension().getObservers(OnUnsubscribe.class).stream().filter(
 					e ->  matches(destination, getAnnotation(OnUnsubscribe.class, e.getObservedQualifiers()).value())).forEach(
 							e -> e.notify(msg));
+			break;
 		}
 		case DISCONNECT: {
 			getExtension().getObservers(OnDisconnect.class).forEach(e -> e.notify(msg));
+			break;
 		}
 		default:
-			return;
+			break;
 		}
 	}
 

@@ -109,7 +109,7 @@ public class FrameTest {
 				Frame.builder(command).body(MediaType.TEXT_PLAIN_TYPE, "");
 				fail("IllegalArgumentException expected!");
 			} catch (RuntimeException e) {
-				assertEquals(AssertionError.class, e.getClass());
+				assertEquals(IllegalArgumentException.class, e.getClass());
 				assertEquals(command + " does not accept a body!", e.getMessage());
 			}
 		}

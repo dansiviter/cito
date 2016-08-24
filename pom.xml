@@ -16,7 +16,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<deltaSpike.version>1.7.0</deltaSpike.version>
-		<wildflySwarm.version>2016.7-SNAPSHOT</wildflySwarm.version>
+		<wildflySwarm.version>2016.8.1</wildflySwarm.version>
 	</properties>
 
 	<modules>
