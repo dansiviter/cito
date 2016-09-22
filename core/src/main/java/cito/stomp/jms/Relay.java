@@ -38,6 +38,8 @@ public class Relay {
 	private BeanManager manager;
 	@Inject @FromBroker
 	private Event<Message> messageEvent;
+	@Inject
+	private ErrorHandler errorHandler;
 
 	@PostConstruct
 	public void init() {
@@ -78,15 +80,15 @@ public class Relay {
 			conn.get().on(msg);
 		} catch (JMSException | RuntimeException e) {
 			this.log.error("Unable to process message! [sessionId={},command={}]", sessionId, msg.frame.getCommand(), e);
-			close(sessionId);
+			this.errorHandler.onError(this, sessionId, msg.frame, e);
 		}
 	}
 
 	/**
 	 * 
-	 * @param msg
+	 * @param sessionId
 	 */
-	private void close(String sessionId) {
+	public void close(String sessionId) {
 		this.sessions.computeIfPresent(sessionId, (k, v) -> {
 			log.info("Destroying JMS connection. [{}]", k);
 			v.destroy();

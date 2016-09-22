@@ -18,6 +18,7 @@ import javax.websocket.CloseReason;
 import javax.ws.rs.core.MediaType;
 
 import cito.stomp.Frame;
+import cito.stomp.Frame.HeartBeat;
 import cito.stomp.Headers;
 import cito.stomp.HeartBeatMonitor;
 import cito.stomp.server.event.Message;
@@ -29,7 +30,8 @@ import cito.stomp.server.event.Message;
  */
 @Dependent
 public class Connection extends AbstractConnection {
-	private static final String[] SUPPORTED_VERSIONS = { "1.1", "1.2" };
+	private static final String[] SUPPORTED_VERSIONS = { "1.0", "1.1", "1.2" };
+	private static final int HEARTBEAT_READ_DEFAULT = 10_000, HEARTBEAT_WRITE_DEFAULT = 10_000;
 
 	private final Map<String, Subscription> subscriptions = new ConcurrentHashMap<>();
 	private final Map<String, Session> txSessions = new ConcurrentHashMap<>();
@@ -123,21 +125,21 @@ public class Connection extends AbstractConnection {
 
 		final Frame.Builder connected = Frame.connnected(version, this.sessionId, "localhost");
 
-		final boolean heartBeatEnabled = msg.frame.containsHeader(HEART_BEAT);
-		if (heartBeatEnabled) {
-			connected.heartbeat(10_000, 10_000);
+		final HeartBeat heartBeat = msg.frame.getHeartBeat();
+		if (!version.equals("1.0") && heartBeat != null) {
+			connected.heartbeat(HEARTBEAT_READ_DEFAULT, HEARTBEAT_WRITE_DEFAULT);
 		}
 
-		final String login = msg.frame.getFirstHeader(Headers.PASSCODE);
+		final String login = msg.frame.getFirstHeader(Headers.LOGIN);
 		final String passcode = msg.frame.getFirstHeader(Headers.PASSCODE);
 
 		createDelegate(login, passcode);
 
 		send(connected.build());
 
-		if (heartBeatEnabled) {
-			final long readDelay = Math.max(msg.frame.getHeartBeat().x, 10_000);
-			final long writeDelay = Math.max(10_000, msg.frame.getHeartBeat().y);
+		if (!version.equals("1.0") && heartBeat != null) {
+			final long readDelay = Math.max(heartBeat.x, HEARTBEAT_READ_DEFAULT);
+			final long writeDelay = Math.max(HEARTBEAT_WRITE_DEFAULT, heartBeat.y);
 			this.heartBeatMonitor.start(readDelay, writeDelay);
 		}
 		return this;

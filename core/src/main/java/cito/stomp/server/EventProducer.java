@@ -27,6 +27,8 @@ import cito.stomp.server.event.Message;
 public class EventProducer {
 	@Inject
 	private BeanManager manager;
+	@Inject
+	private DestinationMatcher matcher;
 
 	/**
 	 * 
@@ -43,21 +45,21 @@ public class EventProducer {
 		case MESSAGE: {
 			final String destination = msg.frame.getDestination();
 			getExtension().getObservers(OnMessage.class).stream().filter(
-					e ->  matches(destination, getAnnotation(OnMessage.class, e.getObservedQualifiers()).value())).forEach(
+					e ->  this.matcher.matches(getAnnotation(OnMessage.class, e.getObservedQualifiers()).value(), destination)).forEach(
 							e -> e.notify(msg));
 			break;
 		}
 		case SUBSCRIBE: {
 			final String destination = msg.frame.getDestination();
 			getExtension().getObservers(OnSubscribe.class).stream().filter(
-					e ->  matches(destination, getAnnotation(OnSubscribe.class, e.getObservedQualifiers()).value())).forEach(
+					e ->  this.matcher.matches(getAnnotation(OnSubscribe.class, e.getObservedQualifiers()).value(), destination)).forEach(
 							e -> e.notify(msg));
 			break;
 		}
 		case UNSUBSCRIBE: {
 			final String destination = msg.frame.getDestination();
 			getExtension().getObservers(OnUnsubscribe.class).stream().filter(
-					e ->  matches(destination, getAnnotation(OnUnsubscribe.class, e.getObservedQualifiers()).value())).forEach(
+					e ->  this.matcher.matches(getAnnotation(OnUnsubscribe.class, e.getObservedQualifiers()).value(), destination)).forEach(
 							e -> e.notify(msg));
 			break;
 		}
@@ -77,16 +79,6 @@ public class EventProducer {
 
 	// --- Static Methods ---
 
-	/**
-	 * 
-	 * @param topic
-	 * @param test
-	 * @return
-	 */
-	private static boolean matches(String topic, String test) {
-		// FIXME this is a performance hog, we need to either reduce functionality or at least cache the compiled regex
-		return Pattern.matches(test, topic);
-	}
 
 	/**
 	 * 

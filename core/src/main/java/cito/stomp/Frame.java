@@ -161,6 +161,14 @@ public class Frame {
 	 * 
 	 * @return
 	 */
+	public int getReceipt() {
+		return Integer.parseInt(getFirstHeader(Headers.RECIEPT));
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
 	public int getReceiptId() {
 		return Integer.parseInt(getFirstHeader(Headers.RECIEPT_ID));
 	}
@@ -170,7 +178,8 @@ public class Frame {
 	 * @return
 	 */
 	public HeartBeat getHeartBeat() {
-		return new HeartBeat(getFirstHeader(Headers.HEART_BEAT));
+		final String heartBeat = getFirstHeader(Headers.HEART_BEAT);
+		return heartBeat != null ? new HeartBeat(heartBeat) : null;
 	}
 
 	/**
@@ -593,6 +602,15 @@ public class Frame {
 		 */
 		public Builder reciept(int recieptId) {
 			return header(Headers.RECIEPT, Integer.toString(recieptId));
+		}
+
+		/**
+		 * 
+		 * @param recieptId
+		 * @return
+		 */
+		public Builder recieptId(int recieptId) {
+			return header(Headers.RECIEPT_ID, Integer.toString(recieptId));
 		}
 
 		/**

@@ -9,6 +9,8 @@ import javax.websocket.Session;
 import cito.stomp.server.annotation.WebSocketScope;
 
 /**
+ * Defines a way of accessing security related information via an injectable context. This can be accessed in the
+ * {@link WebSocketScope}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [17 Aug 2016]
