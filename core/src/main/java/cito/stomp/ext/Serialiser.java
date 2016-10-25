@@ -16,7 +16,7 @@ import javax.ws.rs.core.MediaType;
 
 import org.fusesource.hawtbuf.ByteArrayInputStream;
 
-import cito.stomp.server.event.Message;
+import cito.stomp.server.event.MessageEvent;
 
 /**
  * 

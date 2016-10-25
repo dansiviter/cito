@@ -17,7 +17,7 @@ import javax.ws.rs.core.MediaType;
 
 import cito.stomp.Frame;
 import cito.stomp.ext.Serialiser;
-import cito.stomp.server.event.Message;
+import cito.stomp.server.event.MessageEvent;
 
 /**
  * Either extend or inject this class where you wish to use it.
@@ -27,7 +27,7 @@ import cito.stomp.server.event.Message;
  */
 public abstract class Support {
 	@Inject
-	private Event<Message> msgEvent;
+	private Event<MessageEvent> msgEvent;
 	@Inject
 	private SessionRegistry registry;
 	@Inject
@@ -76,7 +76,7 @@ public abstract class Support {
 	public void broadcast(String destination, MediaType type, Object payload, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
-		this.msgEvent.select(fromClient()).fire(new Message(frame));
+		this.msgEvent.select(fromClient()).fire(new MessageEvent(frame));
 	}
 
 	/**
@@ -150,7 +150,7 @@ public abstract class Support {
 	public void sendTo(String sessionId, String destination, MediaType type, Object payload, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();
-		this.msgEvent.select(fromClient()).fire(new Message(frame));
+		this.msgEvent.select(fromClient()).fire(new MessageEvent(frame));
 	}
 
 	/**

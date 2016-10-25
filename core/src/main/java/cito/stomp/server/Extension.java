@@ -25,7 +25,7 @@ import cito.stomp.server.annotation.OnMessage;
 import cito.stomp.server.annotation.OnSubscribe;
 import cito.stomp.server.annotation.OnUnsubscribe;
 import cito.stomp.server.annotation.WebSocketScope;
-import cito.stomp.server.event.Message;
+import cito.stomp.server.event.MessageEvent;
 import cito.stomp.server.scope.WebSocketContext;
 import cito.stomp.server.scope.WebSocketSessionHolder;
 
@@ -35,7 +35,7 @@ import cito.stomp.server.scope.WebSocketSessionHolder;
  * @since v1.0 [12 Jul 2016]
  */
 public class Extension implements javax.enterprise.inject.spi.Extension {
-	private final Map<Class<? extends Annotation>, Set<ObserverMethod<Message>>> frameObservers = new ConcurrentHashMap<>();
+	private final Map<Class<? extends Annotation>, Set<ObserverMethod<MessageEvent>>> frameObservers = new ConcurrentHashMap<>();
 
 	private WebSocketContext webSocketScopeContext;
 
@@ -44,8 +44,8 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param cls
 	 * @param e
 	 */
-	<A extends Annotation> void registerFrameObserver(Class<A> cls, ProcessObserverMethod<Message, ?> e) {
-		Set<ObserverMethod<Message>> annotations = this.frameObservers.get(cls);
+	<A extends Annotation> void registerFrameObserver(Class<A> cls, ProcessObserverMethod<MessageEvent, ?> e) {
+		Set<ObserverMethod<MessageEvent>> annotations = this.frameObservers.get(cls);
 		if (annotations == null) {
 			annotations = new HashSet<>();
 			this.frameObservers.put(cls, annotations);
@@ -58,7 +58,7 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param e
 	 * @param beanManager
 	 */
-	public void register(@Observes ProcessObserverMethod<Message, ?> e, BeanManager beanManager) {
+	public void register(@Observes ProcessObserverMethod<MessageEvent, ?> e, BeanManager beanManager) {
 		for (Annotation a : e.getObserverMethod().getObservedQualifiers()) {
 			if (a instanceof OnConnected)
 				registerFrameObserver(OnConnected.class, e);
@@ -78,8 +78,8 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param qualifier
 	 * @return
 	 */
-	public Set<ObserverMethod<Message>> getObservers(Class<? extends Annotation> qualifier) {
-		final Set<ObserverMethod<Message>> observers = this.frameObservers.get(qualifier);
+	public Set<ObserverMethod<MessageEvent>> getObservers(Class<? extends Annotation> qualifier) {
+		final Set<ObserverMethod<MessageEvent>> observers = this.frameObservers.get(qualifier);
 		return observers == null ? Collections.emptySet() : observers;
 	}
 

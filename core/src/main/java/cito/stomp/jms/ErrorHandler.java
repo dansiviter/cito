@@ -5,7 +5,7 @@ import javax.ws.rs.core.MediaType;
 import cito.stomp.Frame;
 import cito.stomp.Headers;
 import cito.stomp.Frame.Builder;
-import cito.stomp.server.event.Message;
+import cito.stomp.server.event.MessageEvent;
 
 /**
  * 
@@ -26,7 +26,7 @@ public class ErrorHandler {
 			error.recieptId(cause.getReceipt());
 		}
 		error.body(MediaType.TEXT_PLAIN_TYPE, e.getMessage());
-		relay.send(new Message(sessionId, error.build()));
+		relay.send(new MessageEvent(sessionId, error.build()));
 		relay.close(sessionId);
 	}
 }

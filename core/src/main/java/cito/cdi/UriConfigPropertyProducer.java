@@ -1,4 +1,4 @@
-package cito.deltaspike;
+package cito.cdi;
 
 import java.net.URI;
 

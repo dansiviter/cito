@@ -10,9 +10,9 @@ import javax.jms.JMSException;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 
-import org.slf4j.Logger;
+import org.apache.logging.log4j.Logger;
 
-import cito.stomp.server.event.Message;
+import cito.stomp.server.event.MessageEvent;
 
 /**
  * 
@@ -35,7 +35,7 @@ public abstract class AbstractConnection implements cito.stomp.Connection {
 	 * 
 	 * @param msg
 	 */
-	public abstract void on(Message msg);
+	public abstract void on(MessageEvent msg);
 
 	/**
 	 * 

@@ -1,4 +1,4 @@
-package cito.stomp.server.ws;
+package cito.stomp.server;
 
 import static cito.stomp.server.annotation.Qualifiers.fromClient;
 import static cito.stomp.server.annotation.Qualifiers.onClose;
@@ -7,31 +7,23 @@ import static cito.stomp.server.annotation.Qualifiers.onOpen;
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
-import javax.servlet.http.HttpSession;
 import javax.websocket.CloseReason;
 import javax.websocket.EndpointConfig;
-import javax.websocket.HandshakeResponse;
 import javax.websocket.Session;
-import javax.websocket.server.HandshakeRequest;
-import javax.websocket.server.ServerEndpointConfig;
-import javax.websocket.server.ServerEndpointConfig.Configurator;
 
-import org.slf4j.Logger;
+import org.apache.logging.log4j.Logger;
 
 import cito.QuietClosable;
 import cito.stomp.Frame;
-import cito.stomp.server.Extension;
-import cito.stomp.server.SecurityContext;
-import cito.stomp.server.SessionRegistry;
 import cito.stomp.server.annotation.FromClient;
-import cito.stomp.server.event.Message;
+import cito.stomp.server.event.MessageEvent;
 
 /**
  * 
  * @author Daniel Siviter
  * @since v1.0 [15 Jul 2016]
  */
-public abstract class AbstractWebSocketServer {
+public abstract class AbstractServer {
 	@Inject
 	private Logger log;
 	@Inject
@@ -39,7 +31,7 @@ public abstract class AbstractWebSocketServer {
 	@Inject
 	private SessionRegistry registry;
 	@Inject @FromClient
-	private Event<Message> messageEvent;
+	private Event<MessageEvent> messageEvent;
 	@Inject
 	private Event<Session> sessionEvent;
 
@@ -72,7 +64,7 @@ public abstract class AbstractWebSocketServer {
 	protected void message(Session session, Frame frame) {
 		this.log.info("WebSocket message. [id={},principle={},command={}]", session.getId(), session.getUserPrincipal(), frame.getCommand());
 		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
-			this.messageEvent.select(fromClient()).fire(new Message(session.getId(), frame));
+			this.messageEvent.select(fromClient()).fire(new MessageEvent(session.getId(), frame));
 		}
 	}
 
@@ -98,23 +90,6 @@ public abstract class AbstractWebSocketServer {
 		this.log.warn("WebSocket error. [id={},principle={}]", session.getId(), session.getUserPrincipal(), t);
 		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
 			Extension.getWebSocketContext(this.beanManager).destroyAllActive();
-		}
-	}
-
-
-	// --- Inner Classes ---
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [18 Aug 2016]
-	 */
-	protected static class Config extends Configurator {
-		@Override
-		public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
-			final HttpSession httpSession = (HttpSession) request.getHttpSession();
-			final SecurityContext securityCtx = new WebSocketSecurityContext(request);
-			sec.getUserProperties().put(httpSession.getId(), securityCtx);
 		}
 	}
 }

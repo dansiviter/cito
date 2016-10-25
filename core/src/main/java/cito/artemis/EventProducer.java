@@ -20,7 +20,7 @@ import javax.inject.Inject;
 import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationListener;
 import org.apache.activemq.artemis.jms.server.embedded.EmbeddedJMS;
-import org.slf4j.Logger;
+import org.apache.logging.log4j.Logger;
 
 import cito.DestinationEvent.DestinationType;
 import cito.DestinationEvent.Type;

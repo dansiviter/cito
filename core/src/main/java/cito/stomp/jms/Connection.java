@@ -21,7 +21,7 @@ import cito.stomp.Frame;
 import cito.stomp.Frame.HeartBeat;
 import cito.stomp.Headers;
 import cito.stomp.HeartBeatMonitor;
-import cito.stomp.server.event.Message;
+import cito.stomp.server.event.MessageEvent;
 
 /**
  * 
@@ -60,7 +60,7 @@ public class Connection extends AbstractConnection {
 	public void send(Frame frame) {
 		this.heartBeatMonitor.resetSend();
 		this.log.info("Senging message to client. [sessionId={},command={}]", this.sessionId, frame.getCommand());
-		this.relay.send(new Message(this.sessionId, frame));
+		this.relay.send(new MessageEvent(this.sessionId, frame));
 	}
 
 	/**
@@ -103,7 +103,7 @@ public class Connection extends AbstractConnection {
 	 * @return
 	 * @throws JMSException
 	 */
-	public Connection connect(Message msg) throws JMSException {
+	public Connection connect(MessageEvent msg) throws JMSException {
 		this.log.info("Opening connection. [sessionId={}]", this.sessionId);
 
 		this.sessionId = msg.sessionId;
@@ -150,7 +150,7 @@ public class Connection extends AbstractConnection {
 	 * @param msg
 	 */
 	@Override
-	public void on(Message msg) {
+	public void on(MessageEvent msg) {
 		if (!getSessionId().equals(msg.sessionId)) {
 			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + this.sessionId + ",actual=" + msg.sessionId + "]");
 		}

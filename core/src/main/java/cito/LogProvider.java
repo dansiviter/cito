@@ -4,8 +4,8 @@ import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * 
@@ -20,6 +20,6 @@ public class LogProvider {
 	 */
 	@Produces @Dependent
 	public Logger logger(InjectionPoint ip) {
-		return LoggerFactory.getLogger(ip.getMember().getDeclaringClass());
+		return LogManager.getLogger(ip.getMember().getDeclaringClass());
 	}
 }

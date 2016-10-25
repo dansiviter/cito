@@ -1,151 +1,93 @@
 package cito.stomp.server.security;
 
-import java.lang.annotation.Annotation;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import javax.annotation.security.DenyAll;
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Any;
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
 
-import cito.stomp.Command;
+import cito.stomp.Frame;
 import cito.stomp.server.SecurityContext;
-import cito.stomp.server.annotation.RolesAllowedLiteral;
+import cito.stomp.server.security.Builder.Limitation;
 
 /**
+ * Registry should always allow {@code null} destinations.
  * 
  * @author Daniel Siviter
  * @since v1.0 [30 Aug 2016]
  */
+@ApplicationScoped
 public class SecurityRegistry {
-	private Map<Matcher, Limitation> limitations = new LinkedHashMap<>();
+	private final Set<Limitation> limitations = new LinkedHashSet<>();
+
+	@Inject @Any
+	private Instance<SecurityConfigurer> configurers;
 
 	/**
 	 * 
-	 * @param patterns
+	 * @param limitation
+	 */
+	public synchronized void register(Limitation limitation) {
+		this.limitations.add(limitation);
+	}
+
+	/**
+	 * 
+	 * @param frame
 	 * @return
 	 */
-	public Constraint matches(String... patterns) {
-		return matches(null, patterns);
+	public synchronized List<Limitation> getMatching(Frame frame) {
+		return this.limitations.stream().filter(e -> e.matches(frame)).collect(Collectors.toList());
 	}
 
 	/**
 	 * 
-	 * @param command
-	 * @param patterns
+	 * @param frame
+	 * @param ctx
 	 * @return
 	 */
-	public Constraint matches(Command command, String... patterns) {
-		return new Constraint(command, patterns);
-	}
-
-
-
-	/// --- Inner Classes ---
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [30 Aug 2016]
-	 */
-	private static class Matcher {
-
-		public Matcher(Command command, String pattern) {
-			// TODO Auto-generated constructor stub
-		}
-
-	}
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [30 Aug 2016]
-	 */
-	public class Constraint {
-		private final Command command;
-		private final String[] patterns;
-		
-		/**
-		 * 
-		 * @param command
-		 * @param patterns
-		 */
-		public Constraint(Command command, String[] patterns) {
-			this.command = command;
-			this.patterns = patterns;
-		}
-
-		/**
-		 * 
-		 * @param roles
-		 * @return
-		 */
-		public SecurityRegistry isInRole(String... roles) {
-			return limit(new AnnotationSecurityLimitation(new RolesAllowedLiteral(roles)));
-		}
-
-		/**
-		 * 
-		 * @param limitation
-		 * @return
-		 */
-		public SecurityRegistry limit(Limitation limitation) {
-			for (String pattern : this.patterns) {
-				limitations.put(new Matcher(this.command, pattern), limitation);
-			}
-			return SecurityRegistry.this;
-		}
-	}
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [30 Aug 2016]
-	 */
-	@FunctionalInterface
-	public interface Limitation {
-		boolean isPermitted(SecurityContext securityCtx);	
-	}
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [30 Aug 2016]
-	 */
-	public class AnnotationSecurityLimitation implements Limitation {
-		private final Annotation annotation;
-
-		public AnnotationSecurityLimitation(Annotation annotation) {
-			if (annotation.annotationType() != DenyAll.class ||
-					annotation.annotationType() != DenyAll.class ||
-					annotation.annotationType() != DenyAll.class)
-			{
-				throw new IllegalArgumentException("Not supported! [" + annotation + "]");
-			}
-			this.annotation = annotation;
-		}
-
-		@Override
-		public boolean isPermitted(SecurityContext securityCtx) {
-			if (this.annotation.annotationType() == DenyAll.class) {
+	public boolean isPermitted(Frame frame, SecurityContext ctx) {
+		for (Limitation limitation : getMatching(frame)) {
+			if (!limitation.isPermitted(ctx)) {
 				return false;
 			}
-
-			if (this.annotation.annotationType() == RolesAllowed.class) {
-				final String[] roles = ((RolesAllowed) this.annotation).value();
-
-				for (String role : roles) {
-					if (securityCtx.isUserInRole(role)) {
-						return true;
-					}
-				}
-			}
-
-			if (this.annotation.annotationType() == PermitAll.class) {
-				return true;
-			}
-
-			return false;
 		}
+		return true;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public Builder builder() {
+		return builder(this);
+	}
+
+	/**
+	 * 
+	 */
+	@PostConstruct
+	public void init() {
+		this.configurers.forEach(c -> { 
+			c.configure(this);
+			this.configurers.destroy(c);
+		});
+	}
+
+
+
+	// --- Static Methods ---
+
+	/**
+	 * 
+	 * @return
+	 */
+	public static Builder builder(SecurityRegistry registry) {
+		return new Builder(registry);
 	}
 }

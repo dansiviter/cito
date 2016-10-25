@@ -23,8 +23,8 @@ import javax.websocket.OnMessage;
 import javax.websocket.Session;
 import javax.ws.rs.core.MediaType;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import cito.stomp.Connection;
 import cito.stomp.Frame;
@@ -43,7 +43,7 @@ import cito.stomp.HeartBeatMonitor;
 		decoders = FrameEncoding.class
 )
 public class Client implements Connection {
-	private final static Logger LOG = LoggerFactory.getLogger(Client.class);
+	private final static Logger LOG = LogManager.getLogger(Client.class);
 
 	private final Map<Integer, CompletableFuture<Frame>> receipts = new ConcurrentHashMap<>();
 

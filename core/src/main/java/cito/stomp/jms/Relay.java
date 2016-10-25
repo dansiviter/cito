@@ -10,17 +10,20 @@ import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.jms.JMSException;
 import javax.websocket.Session;
 
 import org.apache.deltaspike.core.api.provider.BeanProvider;
 import org.apache.deltaspike.core.api.provider.DependentProvider;
-import org.slf4j.Logger;
+import org.apache.logging.log4j.Logger;
 
+import cito.stomp.server.SecurityContext;
 import cito.stomp.server.annotation.FromBroker;
 import cito.stomp.server.annotation.FromClient;
 import cito.stomp.server.annotation.OnClose;
-import cito.stomp.server.event.Message;
+import cito.stomp.server.event.MessageEvent;
+import cito.stomp.server.security.SecurityRegistry;
 
 /**
  * STOMP broker relay to JMS.
@@ -37,9 +40,13 @@ public class Relay {
 	@Inject
 	private BeanManager manager;
 	@Inject @FromBroker
-	private Event<Message> messageEvent;
+	private Event<MessageEvent> messageEvent;
 	@Inject
 	private ErrorHandler errorHandler;
+	@Inject
+	private SecurityRegistry securityRegistry;
+	@Inject
+	private Provider<SecurityContext> securityCtx;
 
 	@PostConstruct
 	public void init() {
@@ -52,8 +59,13 @@ public class Relay {
 	 * 
 	 * @param msg
 	 */
-	public void message(@Observes @FromClient Message msg) {
+	public void message(@Observes @FromClient MessageEvent msg) {
 		final String sessionId = msg.sessionId != null ? msg.sessionId : SystemConnection.SESSION_ID;
+
+//		if (!securityRegistry.isPermitted(msg.frame, this.securityCtx.get())) {
+//			throw new RuntimeException();
+//		}
+
 		try {
 			DependentProvider<? extends AbstractConnection> conn = this.sessions.get(sessionId);
 			if (msg.frame.getCommand() != null) {
@@ -108,7 +120,7 @@ public class Relay {
 	 * 
 	 * @param msg
 	 */
-	public void send(Message msg) {
+	public void send(MessageEvent msg) {
 		this.messageEvent.fire(msg);
 	}
 

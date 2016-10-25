@@ -5,7 +5,7 @@ import java.io.IOException;
 import javax.jms.JMSException;
 
 import cito.stomp.Frame;
-import cito.stomp.server.event.Message;
+import cito.stomp.server.event.MessageEvent;
 
 /**
  * 
@@ -39,7 +39,7 @@ public class SystemConnection extends AbstractConnection {
 	}
 
 	@Override
-	public void on(Message msg) {
+	public void on(MessageEvent msg) {
 		final String sessionId = msg.getFrame().session();
 		if (!getSessionId().equals(sessionId) && sessionId != null) {
 			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + getSessionId() + " OR null,actual=" + msg.sessionId + "]");

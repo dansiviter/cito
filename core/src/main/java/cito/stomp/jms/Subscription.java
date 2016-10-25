@@ -8,8 +8,8 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import cito.stomp.Frame;
 import cito.stomp.Headers;
@@ -21,7 +21,7 @@ import cito.stomp.Headers;
  * @since v1.0 [21 Jul 2016]
  */
 public class Subscription implements MessageListener {
-	private static final Logger LOG = LoggerFactory.getLogger(Subscription.class);
+	private static final Logger LOG = LogManager.getLogger(Subscription.class);
 	private static final String SELECTOR = "session IS NULL OR session = '%s'";
 	private static final String COMPLEX_SELECTOR = "(session IS NULL OR session = '%s') AND %s";
 

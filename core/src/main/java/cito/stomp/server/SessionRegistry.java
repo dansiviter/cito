@@ -12,10 +12,10 @@ import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.websocket.Session;
 
-import org.slf4j.Logger;
+import org.apache.logging.log4j.Logger;
 
 import cito.stomp.server.annotation.FromBroker;
-import cito.stomp.server.event.Message;
+import cito.stomp.server.event.MessageEvent;
 
 /**
  * 
@@ -76,7 +76,7 @@ public class SessionRegistry {
 	 * 
 	 * @param msg
 	 */
-	public void message(@Observes @FromBroker Message msg) {
+	public void message(@Observes @FromBroker MessageEvent msg) {
 		if (msg.frame.isHeartBeat()) {
 			this.log.debug("Sending heartbeart to client. [sessionId={}]", msg.sessionId);
 		} else {

@@ -7,6 +7,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -21,7 +22,7 @@ import cito.stomp.HeartBeatMonitor;
  * @author Daniel Siviter
  * @since v1.0 [25 Jul 2016]
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.class) @Ignore
 public class HeartBeatMonitorTest {
 	@Mock
 	private Connection conn;

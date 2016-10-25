@@ -1,5 +1,8 @@
 package cito.stomp;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -28,6 +31,7 @@ import java.util.regex.PatternSyntaxException;
  */
 public class Glob {
 	private static final char BACKSLASH = '\\';
+	private static final Map<String, Glob> GLOBS = new WeakHashMap<>();
 
 	private Pattern compiled;
 	private boolean hasWildcard;
@@ -176,5 +180,15 @@ public class Glob {
 	 */
 	public static boolean matches(String glob, CharSequence s) {
 		return new Glob(glob).matches(s);
+	}
+
+	/**
+	 * Returns a {@link Glob} from a weak cache of known instances.
+	 * 
+	 * @param pattern
+	 * @return
+	 */
+	public static Glob from(String pattern) {
+		return GLOBS.computeIfAbsent(pattern, k -> new Glob(pattern));
 	}
 }

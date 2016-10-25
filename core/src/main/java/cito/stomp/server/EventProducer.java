@@ -2,20 +2,19 @@ package cito.stomp.server;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
-import java.util.regex.Pattern;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 
-import cito.stomp.ext.Serialiser;
+import cito.stomp.Glob;
 import cito.stomp.server.annotation.OnConnected;
 import cito.stomp.server.annotation.OnDisconnect;
 import cito.stomp.server.annotation.OnMessage;
 import cito.stomp.server.annotation.OnSubscribe;
 import cito.stomp.server.annotation.OnUnsubscribe;
-import cito.stomp.server.event.Message;
+import cito.stomp.server.event.MessageEvent;
 
 /**
  * Fires off events related to destinations.
@@ -27,14 +26,12 @@ import cito.stomp.server.event.Message;
 public class EventProducer {
 	@Inject
 	private BeanManager manager;
-	@Inject
-	private DestinationMatcher matcher;
 
 	/**
 	 * 
 	 * @param msg
 	 */
-	public void message(@Observes Message msg) {
+	public void message(@Observes MessageEvent msg) {
 		if (msg.frame.isHeartBeat()) return;
 
 		switch (msg.frame.getCommand()) {
@@ -45,21 +42,21 @@ public class EventProducer {
 		case MESSAGE: {
 			final String destination = msg.frame.getDestination();
 			getExtension().getObservers(OnMessage.class).stream().filter(
-					e ->  this.matcher.matches(getAnnotation(OnMessage.class, e.getObservedQualifiers()).value(), destination)).forEach(
+					e ->  Glob.from(getAnnotation(OnMessage.class, e.getObservedQualifiers()).value()).matches(destination)).forEach(
 							e -> e.notify(msg));
 			break;
 		}
 		case SUBSCRIBE: {
 			final String destination = msg.frame.getDestination();
 			getExtension().getObservers(OnSubscribe.class).stream().filter(
-					e ->  this.matcher.matches(getAnnotation(OnSubscribe.class, e.getObservedQualifiers()).value(), destination)).forEach(
+					e ->  Glob.from(getAnnotation(OnSubscribe.class, e.getObservedQualifiers()).value()).matches(destination)).forEach(
 							e -> e.notify(msg));
 			break;
 		}
 		case UNSUBSCRIBE: {
 			final String destination = msg.frame.getDestination();
 			getExtension().getObservers(OnUnsubscribe.class).stream().filter(
-					e ->  this.matcher.matches(getAnnotation(OnUnsubscribe.class, e.getObservedQualifiers()).value(), destination)).forEach(
+					e ->  Glob.from(getAnnotation(OnUnsubscribe.class, e.getObservedQualifiers()).value()).matches(destination)).forEach(
 							e -> e.notify(msg));
 			break;
 		}

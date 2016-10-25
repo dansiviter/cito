@@ -1,4 +1,4 @@
-package cito.stomp.server.ws;
+package cito.server.ws;
 
 import javax.websocket.CloseReason;
 import javax.websocket.EndpointConfig;
@@ -12,6 +12,7 @@ import javax.websocket.server.ServerEndpoint;
 
 import cito.stomp.Frame;
 import cito.stomp.FrameEncoding;
+import cito.stomp.server.AbstractServer;
 
 /**
  * 
@@ -19,12 +20,13 @@ import cito.stomp.FrameEncoding;
  * @since v1.0 [15 Jul 2016]
  */
 @ServerEndpoint(
-		value = "/socket/{server}/{session}/websocket",
+		value = "/websocket",
 		subprotocols = { "v11.stomp", "v12.stomp" },
 		encoders = FrameEncoding.class,
-		decoders = FrameEncoding.class
+		decoders = FrameEncoding.class,
+		configurator = WebSocketConfigurator.class
 )
-public class WebSocketServer extends AbstractWebSocketServer {
+public class WebSocketServer extends AbstractServer {
 	@OnOpen
 	public void onOpen(
 			@PathParam("server") String server,
