@@ -26,6 +26,7 @@ import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -49,7 +50,7 @@ public class Frame {
 
 	static final char NULL = '\u0000';
 	static final char LINE_FEED = '\n';
-	public static final Frame HEART_BEAT = new Frame(null, null, null);
+	public static final Frame HEART_BEAT = new Frame(null, new MultivaluedHashMap<>(0), null);
 
 	private final Command command;
 	private final MultivaluedMap<String, String> headers;

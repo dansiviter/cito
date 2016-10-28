@@ -17,7 +17,7 @@ public enum Qualifiers { ;
 	 * @return
 	 */
 	public static FromClient fromClient() {
-		return new FromSessionLiteral();
+		return new FromClientLiteral();
 	}
 
 	/**
@@ -27,7 +27,16 @@ public enum Qualifiers { ;
 	public static FromBroker fromBroker() {
 		return new FromBrokerLiteral();
 	}
-	
+
+	/**
+	 * 
+	 * @param value
+	 * @return
+	 */
+	public static FromServer fromServer() {
+		return new FromServerLiteral();
+	}
+
 	/**
 	 * 
 	 * @return
@@ -104,8 +113,17 @@ public enum Qualifiers { ;
 	 * @author Daniel Siviter
 	 * @since v1.0 [19 Jul 2016]
 	 */
-	private static class FromSessionLiteral extends AnnotationLiteral<FromClient> implements FromClient {
+	private static class FromClientLiteral extends AnnotationLiteral<FromClient> implements FromClient {
 		private static final long serialVersionUID = -8517560200257874201L;
+	}
+
+	/**
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [19 Jul 2016]
+	 */
+	private static class FromServerLiteral extends AnnotationLiteral<FromServer> implements FromServer {
+		private static final long serialVersionUID = 1133434815775889010L;
 	}
 
 	/**

@@ -10,7 +10,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import javax.inject.Scope;
+import javax.enterprise.context.NormalScope;
 
 /**
  * TODO document when this scope will be active. This will behave slightly differently for SockJS.
@@ -22,6 +22,6 @@ import javax.inject.Scope;
 @Target({ TYPE, METHOD, FIELD })
 @Retention(RUNTIME)
 @Documented
-@Scope
+@NormalScope
 @Inherited
 public @interface WebSocketScope { }

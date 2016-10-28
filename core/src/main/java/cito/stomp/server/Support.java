@@ -1,6 +1,6 @@
 package cito.stomp.server;
 
-import static cito.stomp.server.annotation.Qualifiers.fromClient;
+import static cito.stomp.server.annotation.Qualifiers.fromServer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -20,7 +20,7 @@ import cito.stomp.ext.Serialiser;
 import cito.stomp.server.event.MessageEvent;
 
 /**
- * Either extend or inject this class where you wish to use it.
+ * Server messaging support. This can be used in two ways: {@link Inject}ed or {@code extend} it.
  * 
  * @author Daniel Siviter
  * @since v1.0 [27 Jul 2016]
@@ -76,7 +76,7 @@ public abstract class Support {
 	public void broadcast(String destination, MediaType type, Object payload, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
-		this.msgEvent.select(fromClient()).fire(new MessageEvent(frame));
+		this.msgEvent.select(fromServer()).fire(new MessageEvent(frame));
 	}
 
 	/**
@@ -150,7 +150,7 @@ public abstract class Support {
 	public void sendTo(String sessionId, String destination, MediaType type, Object payload, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();
-		this.msgEvent.select(fromClient()).fire(new MessageEvent(frame));
+		this.msgEvent.select(fromServer()).fire(new MessageEvent(frame));
 	}
 
 	/**

@@ -9,6 +9,8 @@ import javax.websocket.Session;
 import org.apache.deltaspike.core.impl.scope.AbstractBeanHolder;
 import org.apache.deltaspike.core.util.context.AbstractContext;
 import org.apache.deltaspike.core.util.context.ContextualStorage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import cito.QuietClosable;
 import cito.stomp.server.annotation.WebSocketScope;
@@ -19,6 +21,8 @@ import cito.stomp.server.annotation.WebSocketScope;
  * @since v1.0 [17 Aug 2016]
  */
 public class WebSocketContext extends AbstractContext {
+	private static final Logger LOG = LogManager.getLogger(WebSocketContext.class);
+
 	private final Holder holder = new Holder();
 
 	private final BeanManager beanManager;
@@ -27,12 +31,12 @@ public class WebSocketContext extends AbstractContext {
 	public WebSocketContext(BeanManager beanManager) {
 		super(beanManager);
 		this.beanManager = beanManager;
+		LOG.info("Context initialised.");
 	}
 
 	public void init(WebSocketSessionHolder sessionHolder) {
 		this.sessionHolder = sessionHolder;
 	}
-
 
 	@Override
 	public Class<? extends Annotation> getScope() {
@@ -50,18 +54,27 @@ public class WebSocketContext extends AbstractContext {
 	 * @return
 	 */
 	public QuietClosable activate(Session session) {
+		LOG.debug("Activiating scope. [sessionId={}]", session.getId());
 		this.sessionHolder.set(session);
 
 		final Thread thread = Thread.currentThread();
-		return new QuietClosable() {
-			@Override
-			public void close() {
-				if (Thread.currentThread() != thread) {
-					throw new IllegalStateException("Different thread! Potential resource leak!");
-				}
-				WebSocketContext.this.sessionHolder.remove();
+		return () -> {
+			if (Thread.currentThread() != thread) {
+				throw new IllegalStateException("Different thread! Potential resource leak!");
 			}
+			WebSocketContext.this.sessionHolder.remove();
 		};
+	}
+
+	/**
+	 * 
+	 * @param session
+	 */
+	public void dispose(Session session) {
+		LOG.debug("Disposing scope. [sessionId={}]", session.getId());
+		this.sessionHolder.set(session);
+		final ContextualStorage storage = getContextualStorage(null, false);
+		 AbstractContext.destroyAllActive(storage);
 	}
 
 	@Override

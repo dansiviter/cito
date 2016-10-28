@@ -12,6 +12,8 @@ import cito.stomp.server.SecurityContext;
  * @since v1.0 [17 Aug 2016]
  */
 public class WebSocketSecurityContext implements SecurityContext {
+	private static final long serialVersionUID = 2495929824931036726L;
+
 	private final HandshakeRequest req;
 
 	public WebSocketSecurityContext(HandshakeRequest req) {

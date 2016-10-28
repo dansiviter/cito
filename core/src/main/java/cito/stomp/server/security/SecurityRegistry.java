@@ -50,14 +50,12 @@ public class SecurityRegistry {
 	 * @param frame
 	 * @param ctx
 	 * @return
+	 * @throws SecurityViolationException
 	 */
-	public boolean isPermitted(Frame frame, SecurityContext ctx) {
+	public void isPermitted(Frame frame, SecurityContext ctx) throws SecurityViolationException{
 		for (Limitation limitation : getMatching(frame)) {
-			if (!limitation.isPermitted(ctx)) {
-				return false;
-			}
+			limitation.isPermitted(ctx);
 		}
-		return true;
 	}
 
 	/**

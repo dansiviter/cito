@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 import javax.inject.Qualifier;
 
 /**
- * Qualifies as from the broker.
+ * Qualifies as from the server.
  * 
  * @author Daniel Siviter
  * @since v1.0 [19 Jul 2016]
@@ -17,4 +17,4 @@ import javax.inject.Qualifier;
 @Qualifier
 @Target({ PARAMETER, FIELD })
 @Retention(RUNTIME)
-public @interface FromBroker { }
+public @interface FromServer { }

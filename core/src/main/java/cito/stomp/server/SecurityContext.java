@@ -1,10 +1,13 @@
 package cito.stomp.server;
 
+import java.io.Serializable;
 import java.security.Principal;
 
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.websocket.Session;
+
+import org.apache.logging.log4j.LogManager;
 
 import cito.stomp.server.annotation.WebSocketScope;
 
@@ -15,7 +18,7 @@ import cito.stomp.server.annotation.WebSocketScope;
  * @author Daniel Siviter
  * @since v1.0 [17 Aug 2016]
  */
-public interface SecurityContext {
+public interface SecurityContext extends Serializable {
 	/**
 	 * Returns a {@link Principal} object containing the name of the current authenticated user. If the user
 	 * has not been authenticated, the method returns null.
@@ -36,17 +39,4 @@ public interface SecurityContext {
 	 * @throws java.lang.IllegalStateException if called outside the scope of a websocket session.
 	 */
 	boolean isUserInRole(String role);
-
-
-	// --- Static Methods ---
-
-	/**
-	 * 
-	 * @param session
-	 * @return
-	 */
-	@Produces @WebSocketScope @Inject
-	public static SecurityContext session(Session session) {
-		return (SecurityContext) session.getUserProperties().get(SecurityContext.class.getSimpleName());
-	}
 }

@@ -1,29 +1,29 @@
 package cito.stomp.jms;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.jms.JMSException;
 import javax.websocket.Session;
 
-import org.apache.deltaspike.core.api.provider.BeanProvider;
-import org.apache.deltaspike.core.api.provider.DependentProvider;
 import org.apache.logging.log4j.Logger;
 
 import cito.stomp.server.SecurityContext;
+import cito.stomp.server.SessionRegistry;
 import cito.stomp.server.annotation.FromBroker;
 import cito.stomp.server.annotation.FromClient;
+import cito.stomp.server.annotation.FromServer;
 import cito.stomp.server.annotation.OnClose;
 import cito.stomp.server.event.MessageEvent;
 import cito.stomp.server.security.SecurityRegistry;
+import cito.stomp.server.security.SecurityViolationException;
 
 /**
  * STOMP broker relay to JMS.
@@ -33,41 +33,50 @@ import cito.stomp.server.security.SecurityRegistry;
  */
 @ApplicationScoped
 public class Relay {
-	private final Map<String, DependentProvider<? extends AbstractConnection>> sessions = new ConcurrentHashMap<>();
+	private final Map<String, Connection> connections = new ConcurrentHashMap<>();
 
 	@Inject
 	private Logger log;
-	@Inject
-	private BeanManager manager;
 	@Inject @FromBroker
 	private Event<MessageEvent> messageEvent;
+	@Inject
+	private SessionRegistry sessionRegistry;
 	@Inject
 	private ErrorHandler errorHandler;
 	@Inject
 	private SecurityRegistry securityRegistry;
 	@Inject
 	private Provider<SecurityContext> securityCtx;
+	@Inject
+	private Instance<Connection> connectionInstance;
+	@Inject
+	private SystemConnection systemConn;
 
-	@PostConstruct
-	public void init() {
-		final DependentProvider<SystemConnection> conn = BeanProvider.getDependent(this.manager, SystemConnection.class);
-		conn.get().connect();
-		this.sessions.put(conn.get().getSessionId(), conn);
+	/**
+	 * 
+	 * @param msg
+	 */
+	public void clientMessage(@Observes @FromClient MessageEvent msg) {
+		final String sessionId = msg.sessionId != null ? msg.sessionId : SystemConnection.SESSION_ID;
+
+		try {
+			this.securityRegistry.isPermitted(msg.frame, this.securityCtx.get());
+		} catch (SecurityViolationException e) {
+			this.errorHandler.onError(this, sessionId, msg.frame, e);
+			return;
+		}
+		message(msg);
 	}
 
 	/**
 	 * 
 	 * @param msg
 	 */
-	public void message(@Observes @FromClient MessageEvent msg) {
+	public void message(@Observes @FromServer MessageEvent msg) {
 		final String sessionId = msg.sessionId != null ? msg.sessionId : SystemConnection.SESSION_ID;
 
-//		if (!securityRegistry.isPermitted(msg.frame, this.securityCtx.get())) {
-//			throw new RuntimeException();
-//		}
-
 		try {
-			DependentProvider<? extends AbstractConnection> conn = this.sessions.get(sessionId);
+			AbstractConnection conn = msg.sessionId != null ? this.connections.get(sessionId) : systemConn;
 			if (msg.frame.getCommand() != null) {
 				switch (msg.frame.getCommand()) {
 				case CONNECT:
@@ -76,22 +85,21 @@ public class Relay {
 					if (conn != null) {
 						throw new IllegalStateException("Connection already exists! [sessionId=" + sessionId + "]");
 					}
-					conn = BeanProvider.getDependent(this.manager, Connection.class);
-					((Connection) conn.get()).connect(msg);
-					this.sessions.put(sessionId, conn);
+					final Connection newConn = this.connectionInstance.get();
+					newConn.connect(msg);
+					this.connections.put(sessionId, newConn);
 					return;
 				case DISCONNECT:
 					this.log.info("DISCONNECT recieved. Closing connection to broker. [sessionId={}]", sessionId);
-					conn.get().on(msg);
+					conn.on(msg);
 					close(sessionId);
 					return;
 				default:
 					break;
 				}
 			}
-			conn.get().on(msg);
+			conn.on(msg);
 		} catch (JMSException | RuntimeException e) {
-			this.log.error("Unable to process message! [sessionId={},command={}]", sessionId, msg.frame.getCommand(), e);
 			this.errorHandler.onError(this, sessionId, msg.frame, e);
 		}
 	}
@@ -101,10 +109,18 @@ public class Relay {
 	 * @param sessionId
 	 */
 	public void close(String sessionId) {
-		this.sessions.computeIfPresent(sessionId, (k, v) -> {
+		this.connections.computeIfPresent(sessionId, (k, c) -> {
 			log.info("Destroying JMS connection. [{}]", k);
-			v.destroy();
+			this.connectionInstance.destroy(c);
 			return null;
+		});
+		// FIXME we need to decouple this from the websocket sessions
+		this.sessionRegistry.getSession(sessionId).ifPresent(s -> {
+			try {
+				if (s.isOpen()) s.close();
+			} catch (IOException e) {
+				this.log.warn("Unable to close session. [sessionId={}]", sessionId, e);
+			}
 		});
 	}
 
@@ -122,10 +138,5 @@ public class Relay {
 	 */
 	public void send(MessageEvent msg) {
 		this.messageEvent.fire(msg);
-	}
-
-	@PreDestroy
-	public void destroy() {
-		this.sessions.remove(SystemConnection.SESSION_ID).destroy();
 	}
 }

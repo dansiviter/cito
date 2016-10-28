@@ -59,6 +59,9 @@ public class Glob {
 	 * @return true for successful matches
 	 */
 	public boolean matches(CharSequence s) {
+		if (s == null) {
+			return false;
+		}
 		return compiled.matcher(s).matches();
 	}
 

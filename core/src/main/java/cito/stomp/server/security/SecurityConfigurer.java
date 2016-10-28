@@ -24,7 +24,8 @@ public interface SecurityConfigurer {
 	public static class Blagh implements SecurityConfigurer {
 		@Override
 		public void configure(SecurityRegistry registry) {
-			registry.builder().matches("/*").principleExists().build();
+			registry.builder().nullDestination().permitAll();
+//			registry.builder().matches("/*").principleExists().build();
 		}
 	}
 

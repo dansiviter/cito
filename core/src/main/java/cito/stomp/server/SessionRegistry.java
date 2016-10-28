@@ -3,6 +3,7 @@ package cito.stomp.server;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -10,6 +11,7 @@ import java.util.concurrent.ConcurrentMap;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import javax.resource.spi.IllegalStateException;
 import javax.websocket.Session;
 
 import org.apache.logging.log4j.Logger;
@@ -59,8 +61,8 @@ public class SessionRegistry {
 		this.principalSessionMap.computeIfPresent(principal, (k, v) -> { v.remove(session); return v.isEmpty() ? null : v; });
 	}
 
-	public Session getSession(String id) {
-		return this.sessionMap.get(id);
+	public Optional<Session> getSession(String id) {
+		return Optional.ofNullable(this.sessionMap.get(id));
 	}
 
 	/**
@@ -84,11 +86,8 @@ public class SessionRegistry {
 		}
 
 		try {
-			final Session session = getSession(msg.sessionId);
-			if (session == null) {
-				this.log.warn("Session does not exist! [{}]", msg.sessionId);
-				return;
-			}
+			final Session session = getSession(msg.sessionId).orElseThrow(
+					() -> new IllegalStateException("Session does not exist! [" + msg.sessionId + "]"));
 			session.getBasicRemote().sendObject(msg.frame);
 		} catch (Exception e) {
 			e.printStackTrace();

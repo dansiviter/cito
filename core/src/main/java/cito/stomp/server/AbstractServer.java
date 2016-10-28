@@ -79,6 +79,7 @@ public abstract class AbstractServer {
 			this.registry.unregister(session);
 			this.sessionEvent.select(onClose()).fire(session);
 		}
+		Extension.disposeScope(this.beanManager, session);
 	}
 
 	/**
@@ -89,7 +90,7 @@ public abstract class AbstractServer {
 	protected void error(Session session, Throwable t) {
 		this.log.warn("WebSocket error. [id={},principle={}]", session.getId(), session.getUserPrincipal(), t);
 		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
-			Extension.getWebSocketContext(this.beanManager).destroyAllActive();
+//			Extension.getWebSocketContext(this.beanManager).destroyAllActive();
 		}
 	}
 }

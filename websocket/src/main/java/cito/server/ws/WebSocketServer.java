@@ -7,7 +7,6 @@ import javax.websocket.OnError;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
-import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
 import cito.stomp.Frame;
@@ -28,38 +27,22 @@ import cito.stomp.server.AbstractServer;
 )
 public class WebSocketServer extends AbstractServer {
 	@OnOpen
-	public void onOpen(
-			@PathParam("server") String server,
-			@PathParam("session") String sockJsSession,
-			Session session, EndpointConfig config)
-	{
+	public void onOpen(Session session, EndpointConfig config) {
 		open(session, config);
 	}
 
 	@OnMessage
-	public void onMessage(
-			@PathParam("server") String server,
-			@PathParam("session") String sockJsSession,
-			Session session, Frame frame)
-	{
+	public void onMessage(Session session, Frame frame) {
 		message(session, frame);
 	}
 
 	@OnClose
-	public void onClose(
-			@PathParam("server") String server,
-			@PathParam("session") String sockJsSession,
-			Session session, CloseReason reason)
-	{
+	public void onClose(Session session, CloseReason reason) {
 		close(session, reason);
 	}
 
 	@OnError
-	public void onError(
-			@PathParam("server") String server,
-			@PathParam("session") String sockJsSession,
-			Session session, Throwable t)
-	{
+	public void onError(Session session, Throwable t) {
 		error(session, t);
 	}
 }

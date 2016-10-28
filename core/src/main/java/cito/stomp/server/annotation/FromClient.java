@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
 import javax.inject.Qualifier;
 
 /**
+ * Qualifies as from the client.
  * 
  * @author Daniel Siviter
  * @since v1.0 [19 Jul 2016]

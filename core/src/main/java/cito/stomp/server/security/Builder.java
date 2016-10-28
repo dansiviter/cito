@@ -15,7 +15,10 @@ import javax.annotation.security.RolesAllowed;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Glob;
+import cito.stomp.Headers;
 import cito.stomp.server.SecurityContext;
+import cito.stomp.server.annotation.DenyAllLiteral;
+import cito.stomp.server.annotation.PermitAllLiteral;
 import cito.stomp.server.annotation.RolesAllowedLiteral;
 
 /**
@@ -63,6 +66,14 @@ public class Builder {
 
 	/**
 	 * 
+	 * @return
+	 */
+	public Builder nullDestination() {
+		return matches(new NullDestinationMatcher());
+	}
+
+	/**
+	 * 
 	 * @param constraint
 	 * @return
 	 */
@@ -78,6 +89,22 @@ public class Builder {
 	 */
 	public Builder roles(String... roles) {
 		return matches(new SecurityAnnotationMatcher(new RolesAllowedLiteral(roles)));
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public Builder permitAll() {
+		return matches(new SecurityAnnotationMatcher(new PermitAllLiteral()));
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public Builder denyAll() {
+		return matches(new SecurityAnnotationMatcher(new DenyAllLiteral()));
 	}
 
 	/**
@@ -126,7 +153,14 @@ public class Builder {
 	 * @author Daniel Siviter
 	 * @since v1.0 [18 Oct 2016]
 	 */
-	private interface DestinationMatcher extends FrameMatcher { }
+	private static abstract class DestinationMatcher implements FrameMatcher {
+		@Override
+		public final boolean matches(Frame frame) {
+			return matches(frame.containsHeader(Headers.DESTINATION) ? frame.getDestination() : null);
+		}
+
+		protected abstract boolean matches(String destination);
+	}
 
 	/**
 	 * A {@link DestinationMatcher} that uses the exact destination.
@@ -134,7 +168,7 @@ public class Builder {
 	 * @author Daniel Siviter
 	 * @since v1.0 [18 Oct 2016]
 	 */
-	private static class ExactDestinationMatcher implements DestinationMatcher {
+	private static class ExactDestinationMatcher extends DestinationMatcher {
 		private final String destination;
 
 		public ExactDestinationMatcher(String destination) {
@@ -142,8 +176,19 @@ public class Builder {
 		}
 
 		@Override
-		public boolean matches(Frame frame) {
-			return this.destination.equals(frame.getDestination());
+		public boolean matches(String destination) {
+			return destination != null && this.destination.equals(destination);
+		}
+	}
+
+	/**
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [27 Oct 2016]
+	 */
+	private static class NullDestinationMatcher extends ExactDestinationMatcher {
+		public NullDestinationMatcher() {
+			super(null);
 		}
 	}
 
@@ -153,7 +198,7 @@ public class Builder {
 	 * @author Daniel Siviter
 	 * @since v1.0 [18 Oct 2016]
 	 */
-	private static class GlobDestinationMatcher implements DestinationMatcher {
+	private static class GlobDestinationMatcher extends DestinationMatcher {
 		private final Glob glob;
 
 		public GlobDestinationMatcher(String destination) {
@@ -164,8 +209,8 @@ public class Builder {
 		}
 
 		@Override
-		public boolean matches(Frame frame) {
-			return this.glob.matches(frame.getDestination());
+		public boolean matches(String destination) {
+			return destination != null && this.glob.matches(destination);
 		}
 	}
 
@@ -212,8 +257,10 @@ public class Builder {
 	 */
 	public static class PrincipalMatcher implements SecurityMatcher {
 		@Override
-		public boolean isPermitted(SecurityContext securityCtx) {
-			return securityCtx.getUserPrincipal() != null;
+		public void isPermitted(SecurityContext securityCtx) throws SecurityViolationException{
+			if (securityCtx.getUserPrincipal() == null) {
+				throw new SecurityViolationException("No user principal!");
+			}
 		}
 	}
 
@@ -226,9 +273,9 @@ public class Builder {
 		private final Annotation annotation;
 
 		public SecurityAnnotationMatcher(Annotation annotation) {
-			if (annotation.annotationType() != DenyAll.class ||
-					annotation.annotationType() != DenyAll.class ||
-					annotation.annotationType() != DenyAll.class)
+			if (annotation.annotationType() != PermitAll.class &&
+					annotation.annotationType() != DenyAll.class &&
+					annotation.annotationType() != RolesAllowed.class)
 			{
 				throw new IllegalArgumentException("Not supported! [" + annotation + "]");
 			}
@@ -236,9 +283,13 @@ public class Builder {
 		}
 
 		@Override
-		public boolean isPermitted(SecurityContext securityCtx) {
+		public void isPermitted(SecurityContext securityCtx) throws SecurityViolationException {
 			if (this.annotation.annotationType() == DenyAll.class) {
-				return false;
+				throw new SecurityViolationException("All denied!");
+			}
+
+			if (this.annotation.annotationType() == PermitAll.class) { // XXX needed?
+				return;
 			}
 
 			if (this.annotation.annotationType() == RolesAllowed.class) {
@@ -246,16 +297,13 @@ public class Builder {
 
 				for (String role : roles) {
 					if (securityCtx.isUserInRole(role)) {
-						return true;
+						return;
 					}
 				}
+				throw new SecurityViolationException("Not in roles! " + Arrays.toString(roles));
 			}
 
-			if (this.annotation.annotationType() == PermitAll.class) {
-				return true;
-			}
 
-			return false;
 		}
 	}
 
@@ -284,13 +332,10 @@ public class Builder {
 		}
 
 		@Override
-		public boolean isPermitted(SecurityContext ctx) {
+		public void isPermitted(SecurityContext ctx) throws SecurityViolationException {
 			for (SecurityMatcher matcher : this.securityMatchers) {
-				if (!matcher.isPermitted(ctx)) {
-					return false;		
-				}
+				matcher.isPermitted(ctx);		
 			}
-			return true;
 		}
 	}
 }

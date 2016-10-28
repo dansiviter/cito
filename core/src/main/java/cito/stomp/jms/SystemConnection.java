@@ -2,6 +2,8 @@ package cito.stomp.jms;
 
 import java.io.IOException;
 
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
 import javax.jms.JMSException;
 
 import cito.stomp.Frame;
@@ -12,6 +14,7 @@ import cito.stomp.server.event.MessageEvent;
  * @author Daniel Siviter
  * @since v1.0 [2 Aug 2016]
  */
+@ApplicationScoped
 public class SystemConnection extends AbstractConnection {
 	static final String SESSION_ID = "$Y$TEM";
 	private Session session;
@@ -19,6 +22,18 @@ public class SystemConnection extends AbstractConnection {
 	@Override
 	public String getSessionId() {
 		return SESSION_ID;
+	}
+
+	/**
+	 * 
+	 */
+	@PostConstruct
+	public void init() {
+		try {
+			createDelegate(null, null);
+		} catch (JMSException e) {
+			throw new IllegalStateException("Unable to create system connection!", e);
+		}
 	}
 
 	@Override
@@ -49,17 +64,6 @@ public class SystemConnection extends AbstractConnection {
 			getSession().send(msg.frame);
 		} catch (JMSException e) {
 			this.log.error("Error handling message! [sessionId={},command={}]", getSessionId(), msg.frame.getCommand());
-		}
-	}
-
-	/**
-	 * 
-	 */
-	public void connect() {
-		try {
-			createDelegate(null, null);
-		} catch (JMSException e) {
-			throw new IllegalStateException("Unable to create system connection!", e);
 		}
 	}
 }

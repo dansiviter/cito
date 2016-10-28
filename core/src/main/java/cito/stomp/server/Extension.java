@@ -131,4 +131,13 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	public static QuietClosable activateScope(BeanManager manager, Session session) {
 		return getWebSocketContext(manager).activate(session);
 	}
+
+	/**
+	 * 
+	 * @param manager
+	 * @param session
+	 */
+	public static void disposeScope(BeanManager manager, Session session) {
+		getWebSocketContext(manager).dispose(session);
+	}
 }

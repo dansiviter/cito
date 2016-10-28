@@ -4,6 +4,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.websocket.Session;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import cito.stomp.server.annotation.WebSocketScope;
 
 /**
@@ -13,6 +16,8 @@ import cito.stomp.server.annotation.WebSocketScope;
  */
 @ApplicationScoped
 public class WebSocketSessionHolder {
+	private static final Logger LOG = LogManager.getLogger(WebSocketSessionHolder.class);
+
 	private final ThreadLocal<Session> session = new ThreadLocal<>();
 
 	/**
@@ -20,6 +25,7 @@ public class WebSocketSessionHolder {
 	 * @param session
 	 */
 	public void set(Session session) {
+		LOG.debug("Setting session. [sessionId={}]", session.getId());
 		if (this.session.get() != null) {
 			throw new IllegalStateException("Session already set!");
 		}
@@ -30,9 +36,11 @@ public class WebSocketSessionHolder {
 	 * 
 	 */
 	public void remove() {
-		if (this.session.get() == null) {
+		final Session session = this.session.get();
+		if (session == null) {
 			throw new IllegalArgumentException("Session not set!");
 		}
+		LOG.debug("Removing session. [sessionId={}]", session.getId());
 		this.session.remove();
 	}
 
@@ -42,6 +50,7 @@ public class WebSocketSessionHolder {
 	 */
 	@Produces @WebSocketScope
 	public Session get() {
+		LOG.info("Returning session. [sessionId={}]", this.session.get().getId());
 		return this.session.get();
 	}
 }
