@@ -34,6 +34,37 @@ public enum TestUtil { ;
 
 	/**
 	 * 
+	 * @param source
+	 * @param name
+	 * @param value
+	 */
+	public static void set(Object source, String name, Object value) {
+		set(source, name, value, null);
+	}
+
+	/**
+	 * 
+	 * @param source
+	 * @param name
+	 * @param value
+	 * @param type
+	 */
+	public static void set(Object source, String name, Object value, Class<?> type) {
+		try {
+			final Field field = findField(source.getClass(), name, type);
+			if (field == null) {
+				throw new IllegalArgumentException("Unable to find '" + name + "' on '" + source.getClass() + "'!");
+			}
+			setAccessible(field);
+			field.set(source, value);
+		} catch (IllegalAccessException ex) {
+			throw new IllegalStateException(
+					"Unexpected reflection exception - " + ex.getClass().getName() + ": " + ex.getMessage());
+		}
+	}
+
+	/**
+	 * 
 	 * @param clazz
 	 * @param name
 	 * @param type

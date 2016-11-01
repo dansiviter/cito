@@ -1,7 +1,6 @@
 package cito.stomp.jms;
 
 import static cito.stomp.Headers.ACCEPT_VERSION;
-import static cito.stomp.Headers.HEART_BEAT;
 import static org.apache.deltaspike.core.api.provider.BeanProvider.getContextualReference;
 
 import java.io.IOException;
@@ -13,6 +12,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
 import javax.jms.JMSException;
 import javax.websocket.CloseReason;
 import javax.ws.rs.core.MediaType;
@@ -36,6 +36,9 @@ public class Connection extends AbstractConnection {
 	private final Map<String, Subscription> subscriptions = new ConcurrentHashMap<>();
 	private final Map<String, Session> txSessions = new ConcurrentHashMap<>();
 	private final Map<String, javax.jms.Message> ackMessages = new ConcurrentHashMap<>();
+
+	@Inject
+	private Factory factory;
 
 	private HeartBeatMonitor heartBeatMonitor;
 	private String sessionId;
@@ -72,12 +75,12 @@ public class Connection extends AbstractConnection {
 	private Session getSession(boolean ack) throws JMSException {
 		if (ack) {
 			if (this.ackSession == null) {
-				this.ackSession = new Session(this, getDelegate().createSession(false, javax.jms.Session.CLIENT_ACKNOWLEDGE));
+				this.ackSession = this.factory.toSession(this, false, javax.jms.Session.CLIENT_ACKNOWLEDGE);
 			}
 			return this.ackSession;
 		}
 		if (this.session == null) {
-			this.session = new Session(this, getDelegate().createSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE));
+			this.session = this.factory.toSession(this, false, javax.jms.Session.AUTO_ACKNOWLEDGE);
 		}
 		return this.session;
 	}
@@ -182,7 +185,7 @@ public class Connection extends AbstractConnection {
 				if (this.txSessions.containsKey(msg.frame.getTransaction())) {
 					throw new IllegalStateException("Transaction already started! [" + msg.frame.getTransaction() + "]");
 				}
-				final Session txSession = new Session(this, getDelegate().createSession(true, javax.jms.Session.SESSION_TRANSACTED));
+				final Session txSession = this.factory.toSession(this, true, javax.jms.Session.SESSION_TRANSACTED);
 				this.txSessions.put(msg.frame.getTransaction(), txSession);
 				break;
 			}
@@ -199,7 +202,7 @@ public class Connection extends AbstractConnection {
 			case SUBSCRIBE: {
 				final String subscriptionId = msg.frame.getFirstHeader(Headers.ID);
 				final Subscription subscription = this.subscriptions.putIfAbsent(
-						subscriptionId, new Subscription(getSession(msg.frame), subscriptionId, msg.frame));
+						subscriptionId, new Subscription(getSession(msg.frame), subscriptionId, msg.frame, this.factory));
 				if (subscription != null)
 					throw new IllegalStateException("Subscription already exists! [" + subscriptionId + "]");
 				break;

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.jms.JMSException;
 
 import cito.stomp.Frame;
@@ -17,6 +18,10 @@ import cito.stomp.server.event.MessageEvent;
 @ApplicationScoped
 public class SystemConnection extends AbstractConnection {
 	static final String SESSION_ID = "$Y$TEM";
+
+	@Inject
+	private Factory factory;
+
 	private Session session;
 
 	@Override
@@ -48,7 +53,7 @@ public class SystemConnection extends AbstractConnection {
 	 */
 	private Session getSession() throws JMSException {
 		if (this.session == null) {
-			this.session = new Session(this, getDelegate().createSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE));
+			this.session = factory.toSession(this, false, javax.jms.Session.AUTO_ACKNOWLEDGE);
 		}
 		return this.session;
 	}

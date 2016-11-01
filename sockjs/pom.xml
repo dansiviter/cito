@@ -20,5 +20,16 @@
 			<groupId>javax.websocket</groupId>
 			<artifactId>javax.websocket-api</artifactId>
 		</dependency>
+
+
+		<!-- Test Dependencies -->
+
+		<dependency>
+			<groupId>org.python</groupId>
+			<artifactId>jython</artifactId>
+			<version>2.7.0</version>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 </project>

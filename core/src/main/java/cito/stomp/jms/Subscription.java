@@ -37,10 +37,10 @@ public class Subscription implements MessageListener {
 	 * @param frame
 	 * @throws JMSException
 	 */
-	public Subscription(Session session, String id, Frame frame) throws JMSException {
+	public Subscription(Session session, String id, Frame frame, Factory factory) throws JMSException {
 		this.session = session;
 		this.id = id;
-		this.destination = session.toDestination(frame.getFirstHeader(Headers.DESTINATION));
+		this.destination = factory.toDestination(session.getDelegate(), frame.getFirstHeader(Headers.DESTINATION));
 
 		// only consume messages that are for everyone OR only for me
 		String selector = frame.getFirstHeader(Headers.SELECTOR);

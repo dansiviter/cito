@@ -1,12 +1,20 @@
 package cito.stomp.jms;
 
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import javax.jms.JMSException;
+import javax.jms.Message;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import cito.stomp.jms.Subscription;
+import cito.stomp.Frame;
 
 /**
  * Unit test for {@link Subscription}.
@@ -16,23 +24,41 @@ import cito.stomp.jms.Subscription;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class SubscriptionTest {
-	@Test
-	public void getSubscriptionId() {
-		fail();
+	@Mock
+	private Session session;
+	@Mock
+	private Frame frame;
+	@Mock
+	private Factory factory;
+
+	private Subscription subscription;
+
+	@Before
+	public void before() throws JMSException {
+		this.subscription = new Subscription(this.session, "id", frame, this.factory);
 	}
 
 	@Test
 	public void getDestination() {
-		fail();
+		this.subscription.getDestination();
 	}
 
 	@Test
 	public void onMessage() {
-		fail();
+		final Message message = mock(Message.class);
+
+		this.subscription.onMessage(message);
+
+		verifyNoMoreInteractions(message);
 	}
 
 	@Test
-	public void close() {
-		fail();
+	public void close() throws JMSException {
+		this.subscription.close();
+	}
+
+	@After
+	public void after() {
+		verifyNoMoreInteractions(this.session, this.frame, this.factory);
 	}
 }

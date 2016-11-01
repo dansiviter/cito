@@ -37,7 +37,7 @@ public abstract class Support {
 	 * Broadcast to all users and all sessions subscribed to the {@code destination}.
 	 * 
 	 * @param destination
-	 * @param payload
+	 * @param payload the send payload.
 	 */
 	public void broadcast(String destination, Object payload) {
 		broadcast(destination, null, payload);
@@ -46,9 +46,9 @@ public abstract class Support {
 	/**
 	 * Broadcast to all users and all sessions subscribed to the {@code destination}.
 	 * 
-	 * @param destination
-	 * @param type
-	 * @param payload
+	 * @param destination the broadcast destination.
+	 * @param type if {@code null} defaults to {@code application/json}.
+	 * @param payload the send payload.
 	 */
 	public void broadcast(String destination, MediaType type, Object payload) {
 		broadcast(destination, payload, Collections.<String, String>emptyMap());
@@ -57,8 +57,8 @@ public abstract class Support {
 	/**
 	 * Broadcast to all users and all sessions subscribed to the {@code destination}.
 	 * 
-	 * @param destination
-	 * @param payload
+	 * @param destination the broadcast destination.
+	 * @param payload the send payload.
 	 * @param headers
 	 */
 	public void broadcast(String destination, Object payload, Map<String, String> headers) {
@@ -68,9 +68,9 @@ public abstract class Support {
 	/**
 	 * Broadcast to all users and all sessions subscribed to the {@code destination}.
 	 * 
-	 * @param destination
-	 * @param type
-	 * @param payload
+	 * @param destination the broadcast destination.
+	 * @param type if {@code null} defaults to {@code application/json}.
+	 * @param payload the send payload.
 	 * @param headers
 	 */
 	public void broadcast(String destination, MediaType type, Object payload, Map<String, String> headers) {
@@ -84,8 +84,8 @@ public abstract class Support {
 	 * 
 	 * @param principal
 	 * @param session
-	 * @param destination
-	 * @param payload
+	 * @param destination the broadcast destination.
+	 * @param payload the send payload.
 	 */
 	public void broadcastTo(Principal principal, String destination, Object payload) {
 		broadcastTo(principal, destination, payload, Collections.<String, String>emptyMap());
@@ -95,9 +95,9 @@ public abstract class Support {
 	 * Broadcast to all sessions for the user defined by the {@link Principal}.
 	 * 
 	 * @param principal
-	 * @param destination
-	 * @param type
-	 * @param payload
+	 * @param destination the broadcast destination.
+	 * @param type if {@code null} defaults to {@code application/json}.
+	 * @param payload the send payload.
 	 */
 	public void broadcastTo(Principal principal, String destination, MediaType type, Object payload) {
 		broadcastTo(principal, destination, type, payload, Collections.<String, String>emptyMap());
@@ -107,8 +107,8 @@ public abstract class Support {
 	 * Broadcast to all sessions for the user defined by the {@link Principal}.
 	 * 
 	 * @param principal
-	 * @param destination
-	 * @param payload
+	 * @param destination the broadcast destination.
+	 * @param payload the send payload.
 	 * @param headers
 	 */
 	public void broadcastTo(Principal principal, String destination, Object payload, Map<String, String> headers) {
@@ -119,9 +119,9 @@ public abstract class Support {
 	 * Broadcast to all sessions for the user defined by the {@link Principal}.
 	 * 
 	 * @param principal
-	 * @param destination
-	 * @param type
-	 * @param payload
+	 * @param destination the broadcast destination.
+	 * @param type if {@code null} defaults to {@code application/json}.
+	 * @param payload the send payload.
 	 * @param headers
 	 */
 	public void broadcastTo(Principal principal, String destination, MediaType type, Object payload, Map<String, String> headers) {
@@ -129,22 +129,47 @@ public abstract class Support {
 	}
 
 	/**
+	 * Send to a specific user session.
 	 * 
-	 * @param sessionId
+	 * @param sessionId the user session identifier to send to.
 	 * @param destination
-	 * @param type
-	 * @param payload
+	 * @param type if {@code null} defaults to {@code application/json}.
+	 * @param payload the send payload.
 	 */
 	public void sendTo(String sessionId, String destination, MediaType type, Object payload) {
 		sendTo(sessionId, destination, type, payload, Collections.<String, String>emptyMap());
 	}
 
 	/**
+	 * Send to a specific user session.
 	 * 
-	 * @param sessionId
+	 * @param sessionId the user session identifier to send to.
 	 * @param destination
-	 * @param type
-	 * @param payload
+	 * @param payload the send payload.
+	 */
+	public void sendTo(String sessionId, String destination, Object payload) {
+		sendTo(sessionId, destination, null, payload, Collections.<String, String>emptyMap());
+	}
+
+	/**
+	 * Send to a specific user session.
+	 * 
+	 * @param sessionId the user session identifier to send to.
+	 * @param destination
+	 * @param payload the send payload.
+	 * @param headers
+	 */
+	public void sendTo(String sessionId, String destination, Object payload, Map<String, String> headers) {
+		sendTo(sessionId, destination, null, payload, headers);
+	}
+
+	/**
+	 * Send to a specific user session.
+	 * 
+	 * @param sessionId the user session identifier to send to.
+	 * @param destination
+	 * @param type if {@code null} defaults to {@code application/json}.
+	 * @param payload the send payload.
 	 * @param headers
 	 */
 	public void sendTo(String sessionId, String destination, MediaType type, Object payload, Map<String, String> headers) {
@@ -166,15 +191,13 @@ public abstract class Support {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		
 	}
 
 
 	// --- Static Methods ---
 
 	/**
-	 * 
-	 * @return
+	 * @return an instance of Support for {@link Inject} use-case.
 	 */
 	@Produces @Dependent
 	public static Support support() {
