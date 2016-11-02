@@ -107,7 +107,7 @@ public class RelayTest {
 		verify(this.log).info("Destroying JMS connection. [{}]", "sessionId");
 		verify(this.connectionInstance).destroy(this.connection);
 		verify(this.sessionRegistry).getSession("sessionId");
-		verify(this.connection).on(any(MessageEvent.class));
+		verify(this.connection).disconnect(any(MessageEvent.class));
 		verify(session).isOpen();
 		verify(session).close();
 		verifyNoMoreInteractions(session);
