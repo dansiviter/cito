@@ -49,7 +49,7 @@ public class Session {
 	 * @throws JMSException
 	 */
 	public void send(Frame frame) throws JMSException {
-		String destinationName = frame.getDestination();
+		String destinationName = frame.destination();
 		final Message message = this.factory.toMessage(this.delegate, frame);
 		final Destination destination = this.factory.toDestination(this.delegate, destinationName);
 		getProducer().send(destination, message);

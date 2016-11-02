@@ -156,7 +156,7 @@ public class Builder {
 	private static abstract class DestinationMatcher implements FrameMatcher {
 		@Override
 		public final boolean matches(Frame frame) {
-			return matches(frame.containsHeader(Headers.DESTINATION) ? frame.getDestination() : null);
+			return matches(frame.containsHeader(Headers.DESTINATION) ? frame.destination() : null);
 		}
 
 		protected abstract boolean matches(String destination);

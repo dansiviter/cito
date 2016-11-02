@@ -17,6 +17,7 @@ import javax.jms.JMSException;
 import javax.websocket.CloseReason;
 import javax.ws.rs.core.MediaType;
 
+import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Frame.HeartBeat;
 import cito.stomp.Headers;
@@ -92,7 +93,7 @@ public class Connection extends AbstractConnection {
 	 * @throws JMSException
 	 */
 	private Session getSession(Frame in) throws JMSException {
-		final String tx = in.getTransaction();
+		final String tx = in.transaction();
 		if (tx != null)
 			return this.txSessions.get(tx);
 
@@ -128,7 +129,7 @@ public class Connection extends AbstractConnection {
 
 		final Frame.Builder connected = Frame.connnected(version, this.sessionId, "localhost");
 
-		final HeartBeat heartBeat = msg.frame().getHeartBeat();
+		final HeartBeat heartBeat = msg.frame().heartBeat();
 		if (!version.equals("1.0") && heartBeat != null) {
 			connected.heartbeat(HEARTBEAT_READ_DEFAULT, HEARTBEAT_WRITE_DEFAULT);
 		}
@@ -157,6 +158,9 @@ public class Connection extends AbstractConnection {
 		if (!getSessionId().equals(msg.sessionId())) {
 			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + this.sessionId + ",actual=" + msg.sessionId() + "]");
 		}
+		if (msg.frame().getCommand() == Command.CONNECT || msg.frame().getCommand() == Command.DISCONNECT) {
+			throw new IllegalArgumentException("Command not supported! [" + msg.sessionId() + "]");
+		}
 
 		this.heartBeatMonitor.resetRead();
 
@@ -182,20 +186,20 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			case BEGIN: {
-				if (this.txSessions.containsKey(msg.frame().getTransaction())) {
-					throw new IllegalStateException("Transaction already started! [" + msg.frame().getTransaction() + "]");
+				if (this.txSessions.containsKey(msg.frame().transaction())) {
+					throw new IllegalStateException("Transaction already started! [" + msg.frame().transaction() + "]");
 				}
 				final Session txSession = this.factory.toSession(this, true, javax.jms.Session.SESSION_TRANSACTED);
-				this.txSessions.put(msg.frame().getTransaction(), txSession);
+				this.txSessions.put(msg.frame().transaction(), txSession);
 				break;
 			}
 			case COMMIT: {
-				final Session txSession = this.txSessions.remove(msg.frame().getTransaction());
+				final Session txSession = this.txSessions.remove(msg.frame().transaction());
 				txSession.getDelegate().commit();
 				break;
 			}
 			case ABORT: {
-				final Session txSession = this.txSessions.remove(msg.frame().getTransaction());
+				final Session txSession = this.txSessions.remove(msg.frame().transaction());
 				txSession.getDelegate().rollback();
 				break;
 			}
@@ -215,9 +219,6 @@ public class Connection extends AbstractConnection {
 				subscription.close();
 				break;
 			}
-			case DISCONNECT:
-				// only here to short-cut potential receipt sending
-				break;
 			default:
 				throw new IllegalArgumentException("Unexpected frame! [" + msg.frame().getCommand());
 			}
@@ -225,6 +226,14 @@ public class Connection extends AbstractConnection {
 		} catch (JMSException e) {
 			this.log.error("Error handling message! [sessionId={},command={}]", this.sessionId, msg.frame().getCommand());
 		}
+	}
+
+	/**
+	 * 
+	 * @param msg
+	 */
+	public void disconnect(MessageEvent msg) {
+		sendReceipt(msg.frame());
 	}
 
 	/**

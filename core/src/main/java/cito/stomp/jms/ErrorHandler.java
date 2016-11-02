@@ -32,7 +32,7 @@ public class ErrorHandler {
 		this.log.warn("Error while processing frame! [sessionId={},frame.command={}]", sessionId, cause.getCommand(), e);
 		final Builder error = Frame.error();
 		if (cause != null && cause.containsHeader(Headers.RECIEPT)) {
-			error.recieptId(cause.getReceipt());
+			error.recieptId(cause.receipt());
 		}
 		error.body(MediaType.TEXT_PLAIN_TYPE, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
 		relay.send(new MessageEvent(sessionId, error.build()));

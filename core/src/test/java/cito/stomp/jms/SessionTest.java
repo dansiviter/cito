@@ -61,7 +61,7 @@ public class SessionTest {
 	public void send_frame() throws JMSException {
 		ReflectionUtil.set(this.session, "producer", this.producer);
 		final Frame frame = mock(Frame.class);
-		when(frame.getDestination()).thenReturn("/here");
+		when(frame.destination()).thenReturn("/here");
 		final Message message = mock(Message.class);
 		when(this.factory.toMessage(this.delegate, frame)).thenReturn(message);
 		final Destination destination = mock(Destination.class);
@@ -69,7 +69,7 @@ public class SessionTest {
 
 		this.session.send(frame);
 
-		verify(frame).getDestination();
+		verify(frame).destination();
 		verify(this.factory).toMessage(this.delegate, frame);
 		verify(this.factory).toDestination(this.delegate, "/here");
 		verify(this.producer).send(destination, message);
@@ -80,7 +80,7 @@ public class SessionTest {
 	public void send_message() throws JMSException, IOException {
 		ReflectionUtil.set(this.session, "producer", this.producer);
 		final Frame frame = mock(Frame.class);
-		when(frame.getDestination()).thenReturn("/here");
+		when(frame.destination()).thenReturn("/here");
 		final Message message = mock(Message.class);
 		when(this.factory.toFrame(message, "subscriptionId")).thenReturn(frame);
 		when(this.delegate.getAcknowledgeMode()).thenReturn(javax.jms.Session.AUTO_ACKNOWLEDGE);
@@ -100,7 +100,7 @@ public class SessionTest {
 	public void send_message_ack() throws JMSException, IOException {
 		ReflectionUtil.set(this.session, "producer", this.producer);
 		final Frame frame = mock(Frame.class);
-		when(frame.getDestination()).thenReturn("/here");
+		when(frame.destination()).thenReturn("/here");
 		final Message message = mock(Message.class);
 		when(this.factory.toFrame(message, "subscriptionId")).thenReturn(frame);
 		when(this.delegate.getAcknowledgeMode()).thenReturn(javax.jms.Session.CLIENT_ACKNOWLEDGE);

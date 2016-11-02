@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.Map;
 
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.ObserverMethod;
@@ -13,13 +14,13 @@ import javax.ws.rs.core.MediaType;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import cito.ReflectionUtil;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.server.annotation.OnConnected;
@@ -103,11 +104,12 @@ public class EventProducerTest {
 		verifyNoMoreInteractions(observerMethod);
 	}
 
-	@Test @Ignore // FIXME need to understand how to map back to destination from subscription id
+	@Test
 	public void message_UNSUBSCRIBE() {
 		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
 		when(this.extension.getObservers(OnUnsubscribe.class)).thenReturn(Collections.singleton(observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("/topic/*")));
+		ReflectionUtil.<Map<String,String>>get(this.eventProducer, "idDestinationMap").put("id", "/topic/foo");
 
 		final MessageEvent event = new MessageEvent(
 				Frame.builder(Command.UNSUBSCRIBE).subscription("id").build());

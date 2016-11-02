@@ -28,6 +28,9 @@ public enum ReflectionUtil { ;
 	public static <T> T get(Object source, String name, Class<T> type) {
 		try {
 			final Field field = findField(source.getClass(), name, type);
+			if (field == null) {
+				throw new IllegalArgumentException("Unable to find '" + name + "' on '" + source.getClass() + "'!");
+			}
 			setAccessible(field);
 			return (T) field.get(source);
 		} catch (IllegalAccessException ex) {

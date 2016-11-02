@@ -136,7 +136,7 @@ public class Frame {
 		return getHeaders().getFirst(key);
 	}
 
-	public String getDestination() {
+	public String destination() {
 		return getFirstHeader(DESTINATION);
 	}
 
@@ -144,7 +144,7 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public int getContentLength() {
+	public int contentLength() {
 		final String contentLength = getFirstHeader(Headers.CONTENT_LENGTH);
 		return contentLength != null ? Integer.parseInt(contentLength) : -1;
 	}
@@ -153,7 +153,7 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public MediaType getContentType() {
+	public MediaType contentType() {
 		final String contentType = getFirstHeader(Headers.CONTENT_TYPE);
 		return contentType != null ? MediaType.valueOf(contentType) : null;
 	}
@@ -162,7 +162,7 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public int getReceipt() {
+	public int receipt() {
 		return Integer.parseInt(getFirstHeader(Headers.RECIEPT));
 	}
 
@@ -170,7 +170,7 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public int getReceiptId() {
+	public int receiptId() {
 		return Integer.parseInt(getFirstHeader(Headers.RECIEPT_ID));
 	}
 
@@ -178,7 +178,18 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public HeartBeat getHeartBeat() {
+	public String subscription() {
+		if (this.command == Command.MESSAGE) { // why is MESSAGE so special?!
+			return getFirstHeader(Headers.SUBSCRIPTION);
+		}
+		return getFirstHeader(ID);
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public HeartBeat heartBeat() {
 		final String heartBeat = getFirstHeader(Headers.HEART_BEAT);
 		return heartBeat != null ? new HeartBeat(heartBeat) : null;
 	}
@@ -187,7 +198,7 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public String getTransaction() {
+	public String transaction() {
 		return getFirstHeader(TRANSACTION);
 	}
 

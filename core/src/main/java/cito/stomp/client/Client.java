@@ -86,8 +86,8 @@ public class Client implements Connection {
 		final Frame connectedFrame = this.connectFuture.get(timeout, unit);
 		this.connectFuture = null;
 
-		final long readDelay = Math.max(connectedFrame.getHeartBeat().x, connectFrame.getHeartBeat().y);
-		final long writeDelay = Math.max(connectFrame.getHeartBeat().x, connectedFrame.getHeartBeat().y);
+		final long readDelay = Math.max(connectedFrame.heartBeat().x, connectFrame.heartBeat().y);
+		final long writeDelay = Math.max(connectFrame.heartBeat().x, connectedFrame.heartBeat().y);
 		this.heartBeatMonitor.start(readDelay, writeDelay);
 	}
 
@@ -136,7 +136,7 @@ public class Client implements Connection {
 			System.out.println("MESSAGE recieved!");
 			break;
 		case RECIEPT:
-			this.receipts.get(frame.getReceiptId()).complete(frame);
+			this.receipts.get(frame.receiptId()).complete(frame);
 			break;
 		case ERROR:
 			System.out.println("ERROR recieved!");

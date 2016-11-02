@@ -4,6 +4,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -27,6 +29,8 @@ import cito.stomp.server.event.MessageEvent;
  */
 @ApplicationScoped
 public class EventProducer {
+	private final Map<String, String> idDestinationMap = new WeakHashMap<>();
+
 	@Inject
 	private BeanManager manager;
 
@@ -37,34 +41,39 @@ public class EventProducer {
 	public void message(@Observes MessageEvent msg) {
 		if (msg.frame().isHeartBeat()) return;
 
+		final Extension extension = this.manager.getExtension(Extension.class);
+
 		switch (msg.frame().getCommand()) {
 		case CONNECTED: {
-			getExtension().getObservers(OnConnected.class).forEach(e -> e.notify(msg));
+			extension.getObservers(OnConnected.class).forEach(e -> e.notify(msg));
 			break;
 		}
 		case MESSAGE: {
-			final String destination = msg.frame().getDestination();
-			getExtension().getObservers(OnMessage.class).stream().filter(
+			final String destination = msg.frame().destination();
+			extension.getObservers(OnMessage.class).stream().filter(
 					e -> matches(OnMessage.class, e.getObservedQualifiers(), destination)).forEach(
 							e -> e.notify(msg));
 			break;
 		}
 		case SUBSCRIBE: {
-			final String destination = msg.frame().getDestination();
-			getExtension().getObservers(OnSubscribe.class).stream().filter(
+			final String id = msg.frame().subscription();
+			final String destination = msg.frame().destination();
+			idDestinationMap.put(id, destination);
+			extension.getObservers(OnSubscribe.class).stream().filter(
 					e -> matches(OnSubscribe.class, e.getObservedQualifiers(), destination)).forEach(
 							e -> e.notify(msg));
 			break;
 		}
 		case UNSUBSCRIBE: {
-			final String destination = msg.frame().getDestination();
-			getExtension().getObservers(OnUnsubscribe.class).stream().filter(
+			final String id = msg.frame().subscription();
+			final String destination = this.idDestinationMap.remove(id);
+			extension.getObservers(OnUnsubscribe.class).stream().filter(
 					e -> matches(OnUnsubscribe.class, e.getObservedQualifiers(), destination)).forEach(
 							e -> e.notify(msg));
 			break;
 		}
 		case DISCONNECT: {
-			getExtension().getObservers(OnDisconnect.class).forEach(e -> e.notify(msg));
+			extension.getObservers(OnDisconnect.class).forEach(e -> e.notify(msg));
 			break;
 		}
 		default:
@@ -72,9 +81,6 @@ public class EventProducer {
 		}
 	}
 
-	private Extension getExtension() {
-		return this.manager.getExtension(Extension.class);
-	}
 
 
 	// --- Static Methods ---

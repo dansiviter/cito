@@ -91,7 +91,7 @@ public class Relay {
 					return;
 				case DISCONNECT:
 					this.log.info("DISCONNECT recieved. Closing connection to broker. [sessionId={}]", sessionId);
-					conn.on(msg);
+					((Connection) conn).disconnect(msg);
 					close(sessionId);
 					return;
 				default:

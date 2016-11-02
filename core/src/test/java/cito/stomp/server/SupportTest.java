@@ -68,8 +68,8 @@ public class SupportTest {
 		verify(this.msgEvent).fire(eventCaptor.capture());
 		final MessageEvent msgEvent = eventCaptor.getValue();
 		assertNull(msgEvent.frame().session());
-		assertEquals("destination", msgEvent.frame().getDestination());
-		assertEquals("application/json", msgEvent.frame().getContentType().toString());
+		assertEquals("destination", msgEvent.frame().destination());
+		assertEquals("application/json", msgEvent.frame().contentType().toString());
 
 		verify(this.serialiser).writeTo(any(), any(Class.class), eq(MediaType.APPLICATION_JSON_TYPE), any(OutputStream.class));
 	}
@@ -82,8 +82,8 @@ public class SupportTest {
 		verify(this.msgEvent).fire(eventCaptor.capture());
 		final MessageEvent msgEvent = eventCaptor.getValue();
 		assertNull(msgEvent.frame().session());
-		assertEquals("destination", msgEvent.frame().getDestination());
-		assertEquals("text/plain", msgEvent.frame().getContentType().toString());
+		assertEquals("destination", msgEvent.frame().destination());
+		assertEquals("text/plain", msgEvent.frame().contentType().toString());
 
 		verify(this.serialiser).writeTo(any(), any(Class.class), eq(MediaType.TEXT_PLAIN_TYPE), any(OutputStream.class));
 	}
@@ -103,12 +103,12 @@ public class SupportTest {
 
 		final MessageEvent msgEvent0 = eventCaptor.getAllValues().get(0);
 		assertEquals("session0", msgEvent0.frame().session());
-		assertEquals("destination", msgEvent0.frame().getDestination());
-		assertEquals("application/json", msgEvent0.frame().getContentType().toString());
+		assertEquals("destination", msgEvent0.frame().destination());
+		assertEquals("application/json", msgEvent0.frame().contentType().toString());
 		final MessageEvent msgEvent1 = eventCaptor.getAllValues().get(1);
 		assertEquals("session1", msgEvent1.frame().session());
-		assertEquals("destination", msgEvent1.frame().getDestination());
-		assertEquals("application/json", msgEvent1.frame().getContentType().toString());
+		assertEquals("destination", msgEvent1.frame().destination());
+		assertEquals("application/json", msgEvent1.frame().contentType().toString());
 
 		verify(this.registry).getSessions(principal);
 		verify(this.serialiser, times(2)).writeTo(any(), any(Class.class), eq(MediaType.APPLICATION_JSON_TYPE), any(OutputStream.class));
@@ -132,12 +132,12 @@ public class SupportTest {
 
 		final MessageEvent msgEvent0 = eventCaptor.getAllValues().get(0);
 		assertEquals("session0", msgEvent0.frame().session());
-		assertEquals("destination", msgEvent0.frame().getDestination());
-		assertEquals("text/plain", msgEvent0.frame().getContentType().toString());
+		assertEquals("destination", msgEvent0.frame().destination());
+		assertEquals("text/plain", msgEvent0.frame().contentType().toString());
 		final MessageEvent msgEvent1 = eventCaptor.getAllValues().get(1);
 		assertEquals("session1", msgEvent1.frame().session());
-		assertEquals("destination", msgEvent1.frame().getDestination());
-		assertEquals("text/plain", msgEvent1.frame().getContentType().toString());
+		assertEquals("destination", msgEvent1.frame().destination());
+		assertEquals("text/plain", msgEvent1.frame().contentType().toString());
 
 		verify(this.registry).getSessions(principal);
 		verify(this.serialiser, times(2)).writeTo(any(), any(Class.class), eq(MediaType.TEXT_PLAIN_TYPE), any(OutputStream.class));
@@ -154,8 +154,8 @@ public class SupportTest {
 		verify(this.msgEvent).fire(eventCaptor.capture());
 		final MessageEvent msgEvent = eventCaptor.getValue();
 		assertEquals("sessionId", msgEvent.frame().session());
-		assertEquals("destination", msgEvent.frame().getDestination());
-		assertEquals("application/json", msgEvent.frame().getContentType().toString());
+		assertEquals("destination", msgEvent.frame().destination());
+		assertEquals("application/json", msgEvent.frame().contentType().toString());
 
 		verify(this.serialiser).writeTo(any(), any(Class.class), eq(MediaType.APPLICATION_JSON_TYPE), any(OutputStream.class));
 	}
@@ -168,8 +168,8 @@ public class SupportTest {
 		verify(this.msgEvent).fire(eventCaptor.capture());
 		final MessageEvent msgEvent = eventCaptor.getValue();
 		assertEquals("sessionId", msgEvent.frame().session());
-		assertEquals("destination", msgEvent.frame().getDestination());
-		assertEquals("text/plain", msgEvent.frame().getContentType().toString());
+		assertEquals("destination", msgEvent.frame().destination());
+		assertEquals("text/plain", msgEvent.frame().contentType().toString());
 
 		verify(this.serialiser).writeTo(any(), any(Class.class), eq(MediaType.TEXT_PLAIN_TYPE), any(OutputStream.class));
 	}
