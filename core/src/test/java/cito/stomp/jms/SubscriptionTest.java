@@ -1,11 +1,18 @@
 package cito.stomp.jms;
 
-import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageConsumer;
 
 import org.junit.After;
 import org.junit.Before;
@@ -27,38 +34,55 @@ public class SubscriptionTest {
 	@Mock
 	private Session session;
 	@Mock
-	private Frame frame;
-	@Mock
 	private Factory factory;
+	@Mock
+	private Destination destination;
+	@Mock
+	private AbstractConnection connection;
+	@Mock
+	private javax.jms.Session jmsSession;
+	@Mock
+	private MessageConsumer messageConsumer;
 
+	private Frame frame;
 	private Subscription subscription;
 
 	@Before
 	public void before() throws JMSException {
+		this.frame = Frame.subscribe("id", "/foo").build();
+		when(this.factory.toDestination(any(javax.jms.Session.class), eq("/foo"))).thenReturn(this.destination);
+		when(this.session.getConnection()).thenReturn(connection);
+		when(this.session.getDelegate()).thenReturn(this.jmsSession);
+		when(this.jmsSession.createConsumer(eq(this.destination), anyString())).thenReturn(this.messageConsumer);
 		this.subscription = new Subscription(this.session, "id", frame, this.factory);
 	}
 
 	@Test
-	public void getDestination() {
-		this.subscription.getDestination();
-	}
-
-	@Test
-	public void onMessage() {
+	public void onMessage() throws JMSException, IOException {
 		final Message message = mock(Message.class);
 
 		this.subscription.onMessage(message);
 
+		verify(this.session).send(message, this.subscription);
+		verify(this.jmsSession).getAcknowledgeMode();
 		verifyNoMoreInteractions(message);
 	}
 
 	@Test
 	public void close() throws JMSException {
 		this.subscription.close();
+
+		verify(this.messageConsumer).close();
 	}
 
 	@After
-	public void after() {
-		verifyNoMoreInteractions(this.session, this.frame, this.factory);
+	public void after() throws JMSException {
+		verify(this.session, atLeastOnce()).getDelegate();
+		verify(this.factory).toDestination(any(javax.jms.Session.class), eq("/foo"));
+		verify(this.session).getConnection();
+		verify(this.connection).getSessionId();
+		verify(this.jmsSession).createConsumer(eq(this.destination), anyString());
+		verify(this.messageConsumer).setMessageListener(this.subscription);
+		verifyNoMoreInteractions(this.session, this.factory, this.destination, this.connection, this.jmsSession, messageConsumer);
 	}
 }

@@ -391,6 +391,16 @@ public class Frame {
 
 	/**
 	 * 
+	 * @param id
+	 * @param destination
+	 * @return
+	 */
+	public static Builder subscribe(String id, String destination) {
+		return builder(Command.SUBSCRIBE).subscription(id).destination(destination);
+	}
+
+	/**
+	 * 
 	 * @param receiptId
 	 * @return
 	 */
