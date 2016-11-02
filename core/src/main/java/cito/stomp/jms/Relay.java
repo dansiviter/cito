@@ -57,12 +57,12 @@ public class Relay {
 	 * @param msg
 	 */
 	public void clientMessage(@Observes @FromClient MessageEvent msg) {
-		final String sessionId = msg.sessionId != null ? msg.sessionId : SystemConnection.SESSION_ID;
+		final String sessionId = msg.sessionId() != null ? msg.sessionId() : SystemConnection.SESSION_ID;
 
 		try {
-			this.securityRegistry.isPermitted(msg.frame, this.securityCtx.get());
+			this.securityRegistry.isPermitted(msg.frame(), this.securityCtx.get());
 		} catch (SecurityViolationException e) {
-			this.errorHandler.onError(this, sessionId, msg.frame, e);
+			this.errorHandler.onError(this, sessionId, msg.frame(), e);
 			return;
 		}
 		message(msg);
@@ -73,12 +73,12 @@ public class Relay {
 	 * @param msg
 	 */
 	public void message(@Observes @FromServer MessageEvent msg) {
-		final String sessionId = msg.sessionId != null ? msg.sessionId : SystemConnection.SESSION_ID;
+		final String sessionId = msg.sessionId() != null ? msg.sessionId() : SystemConnection.SESSION_ID;
 
 		try {
-			AbstractConnection conn = msg.sessionId != null ? this.connections.get(sessionId) : systemConn;
-			if (msg.frame.getCommand() != null) {
-				switch (msg.frame.getCommand()) {
+			AbstractConnection conn = msg.sessionId() != null ? this.connections.get(sessionId) : systemConn;
+			if (msg.frame().getCommand() != null) {
+				switch (msg.frame().getCommand()) {
 				case CONNECT:
 				case STOMP:
 					this.log.info("CONNECT/STOMP recieved. Opening connection to broker. [sessionId={}]", sessionId);
@@ -100,7 +100,7 @@ public class Relay {
 			}
 			conn.on(msg);
 		} catch (JMSException | RuntimeException e) {
-			this.errorHandler.onError(this, sessionId, msg.frame, e);
+			this.errorHandler.onError(this, sessionId, msg.frame(), e);
 		}
 	}
 

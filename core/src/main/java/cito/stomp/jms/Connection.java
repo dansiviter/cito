@@ -109,9 +109,9 @@ public class Connection extends AbstractConnection {
 	public Connection connect(MessageEvent msg) throws JMSException {
 		this.log.info("Opening connection. [sessionId={}]", this.sessionId);
 
-		this.sessionId = msg.sessionId;
+		this.sessionId = msg.sessionId();
 		String version = null;
-		final Collection<String> clientSupportedVersion = Arrays.asList(msg.frame.getFirstHeader(ACCEPT_VERSION).split(","));
+		final Collection<String> clientSupportedVersion = Arrays.asList(msg.frame().getFirstHeader(ACCEPT_VERSION).split(","));
 		for (int i = SUPPORTED_VERSIONS.length - 1; i >= 0; i--) {
 			if (clientSupportedVersion.contains(SUPPORTED_VERSIONS[i])) {
 				version = SUPPORTED_VERSIONS[i];
@@ -123,18 +123,18 @@ public class Connection extends AbstractConnection {
 			final Frame.Builder error = Frame.error().version(SUPPORTED_VERSIONS);
 			error.body(MediaType.TEXT_PLAIN_TYPE, "Only STOMP v1.2 supported!");
 			send(error.build());
-			throw new IllegalStateException("Only STOMP v1.2 supported!" + msg.frame.getHeaders(Headers.ACCEPT_VERSION));
+			throw new IllegalStateException("Only STOMP v1.2 supported!" + msg.frame().getHeaders(Headers.ACCEPT_VERSION));
 		}
 
 		final Frame.Builder connected = Frame.connnected(version, this.sessionId, "localhost");
 
-		final HeartBeat heartBeat = msg.frame.getHeartBeat();
+		final HeartBeat heartBeat = msg.frame().getHeartBeat();
 		if (!version.equals("1.0") && heartBeat != null) {
 			connected.heartbeat(HEARTBEAT_READ_DEFAULT, HEARTBEAT_WRITE_DEFAULT);
 		}
 
-		final String login = msg.frame.getFirstHeader(Headers.LOGIN);
-		final String passcode = msg.frame.getFirstHeader(Headers.PASSCODE);
+		final String login = msg.frame().getFirstHeader(Headers.LOGIN);
+		final String passcode = msg.frame().getFirstHeader(Headers.PASSCODE);
 
 		createDelegate(login, passcode);
 
@@ -154,26 +154,26 @@ public class Connection extends AbstractConnection {
 	 */
 	@Override
 	public void on(MessageEvent msg) {
-		if (!getSessionId().equals(msg.sessionId)) {
-			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + this.sessionId + ",actual=" + msg.sessionId + "]");
+		if (!getSessionId().equals(msg.sessionId())) {
+			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + this.sessionId + ",actual=" + msg.sessionId() + "]");
 		}
 
 		this.heartBeatMonitor.resetRead();
 
-		if (msg.frame.isHeartBeat()) {
+		if (msg.frame().isHeartBeat()) {
 			this.log.debug("Heartbeat recieved. [sessionId={}]", this.sessionId);
 			return;
 		}
 
-		this.log.info("Message received. [sessionId={},command={}]", this.sessionId, msg.frame.getCommand());
+		this.log.info("Message received. [sessionId={},command={}]", this.sessionId, msg.frame().getCommand());
 
 		try {
-			switch (msg.frame.getCommand()) {
+			switch (msg.frame().getCommand()) {
 			case SEND:
-				getSession(msg.frame).send(msg.frame);
+				getSession(msg.frame()).send(msg.frame());
 				break;
 			case ACK: {
-				final String id = msg.frame.getFirstHeader(Headers.ID);
+				final String id = msg.frame().getFirstHeader(Headers.ID);
 				javax.jms.Message message = this.ackMessages.remove(id);
 				if (message == null) {
 					throw new IllegalStateException("No such message! [" + id + "]");
@@ -182,33 +182,33 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			case BEGIN: {
-				if (this.txSessions.containsKey(msg.frame.getTransaction())) {
-					throw new IllegalStateException("Transaction already started! [" + msg.frame.getTransaction() + "]");
+				if (this.txSessions.containsKey(msg.frame().getTransaction())) {
+					throw new IllegalStateException("Transaction already started! [" + msg.frame().getTransaction() + "]");
 				}
 				final Session txSession = this.factory.toSession(this, true, javax.jms.Session.SESSION_TRANSACTED);
-				this.txSessions.put(msg.frame.getTransaction(), txSession);
+				this.txSessions.put(msg.frame().getTransaction(), txSession);
 				break;
 			}
 			case COMMIT: {
-				final Session txSession = this.txSessions.remove(msg.frame.getTransaction());
+				final Session txSession = this.txSessions.remove(msg.frame().getTransaction());
 				txSession.getDelegate().commit();
 				break;
 			}
 			case ABORT: {
-				final Session txSession = this.txSessions.remove(msg.frame.getTransaction());
+				final Session txSession = this.txSessions.remove(msg.frame().getTransaction());
 				txSession.getDelegate().rollback();
 				break;
 			}
 			case SUBSCRIBE: {
-				final String subscriptionId = msg.frame.getFirstHeader(Headers.ID);
+				final String subscriptionId = msg.frame().getFirstHeader(Headers.ID);
 				final Subscription subscription = this.subscriptions.putIfAbsent(
-						subscriptionId, new Subscription(getSession(msg.frame), subscriptionId, msg.frame, this.factory));
+						subscriptionId, new Subscription(getSession(msg.frame()), subscriptionId, msg.frame(), this.factory));
 				if (subscription != null)
 					throw new IllegalStateException("Subscription already exists! [" + subscriptionId + "]");
 				break;
 			}
 			case UNSUBSCRIBE: {
-				final String subscriptionId = msg.frame.getFirstHeader(Headers.ID);
+				final String subscriptionId = msg.frame().getFirstHeader(Headers.ID);
 				final Subscription subscription = this.subscriptions.remove(subscriptionId);
 				if (subscription == null)
 					throw new IllegalStateException("Subscription does not exist! [" + subscriptionId + "]");
@@ -219,11 +219,11 @@ public class Connection extends AbstractConnection {
 				// only here to short-cut potential receipt sending
 				break;
 			default:
-				throw new IllegalArgumentException("Unexpected frame! [" + msg.frame.getCommand());
+				throw new IllegalArgumentException("Unexpected frame! [" + msg.frame().getCommand());
 			}
-			sendReceipt(msg.frame);
+			sendReceipt(msg.frame());
 		} catch (JMSException e) {
-			this.log.error("Error handling message! [sessionId={},command={}]", this.sessionId, msg.frame.getCommand());
+			this.log.error("Error handling message! [sessionId={},command={}]", this.sessionId, msg.frame().getCommand());
 		}
 	}
 

@@ -25,7 +25,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import cito.TestUtil;
+import cito.ReflectionUtil;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Headers;
@@ -96,7 +96,7 @@ public class RelayTest {
 	public void message_DISCONNECT() throws IOException {
 		final Session session = mock(Session.class);
 		
-		TestUtil.<Map<String, Connection>>get(this.relay, "connections").put("sessionId", this.connection);
+		ReflectionUtil.<Map<String, Connection>>get(this.relay, "connections").put("sessionId", this.connection);
 		when(this.sessionRegistry.getSession("sessionId")).thenReturn(Optional.of(session));
 		when(session.isOpen()).thenReturn(true);
 

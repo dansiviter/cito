@@ -17,7 +17,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import cito.TestUtil;
+import cito.ReflectionUtil;
 import cito.stomp.Frame;
 import cito.stomp.jms.Connection;
 import cito.stomp.jms.Session;
@@ -59,7 +59,7 @@ public class SessionTest {
 
 	@Test
 	public void send_frame() throws JMSException {
-		TestUtil.set(this.session, "producer", this.producer);
+		ReflectionUtil.set(this.session, "producer", this.producer);
 		final Frame frame = mock(Frame.class);
 		when(frame.getDestination()).thenReturn("/here");
 		final Message message = mock(Message.class);
@@ -78,7 +78,7 @@ public class SessionTest {
 
 	@Test
 	public void send_message() throws JMSException, IOException {
-		TestUtil.set(this.session, "producer", this.producer);
+		ReflectionUtil.set(this.session, "producer", this.producer);
 		final Frame frame = mock(Frame.class);
 		when(frame.getDestination()).thenReturn("/here");
 		final Message message = mock(Message.class);
@@ -98,7 +98,7 @@ public class SessionTest {
 
 	@Test
 	public void send_message_ack() throws JMSException, IOException {
-		TestUtil.set(this.session, "producer", this.producer);
+		ReflectionUtil.set(this.session, "producer", this.producer);
 		final Frame frame = mock(Frame.class);
 		when(frame.getDestination()).thenReturn("/here");
 		final Message message = mock(Message.class);

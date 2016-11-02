@@ -79,16 +79,16 @@ public class SessionRegistry {
 	 * @param msg
 	 */
 	public void message(@Observes @FromBroker MessageEvent msg) {
-		if (msg.frame.isHeartBeat()) {
-			this.log.debug("Sending heartbeart to client. [sessionId={}]", msg.sessionId);
+		if (msg.frame().isHeartBeat()) {
+			this.log.debug("Sending heartbeart to client. [sessionId={}]", msg.sessionId());
 		} else {
-			this.log.info("Sending message to client. [sessionId={},command={}]", msg.sessionId, msg.frame.getCommand());
+			this.log.info("Sending message to client. [sessionId={},command={}]", msg.sessionId(), msg.frame().getCommand());
 		}
 
 		try {
-			final Session session = getSession(msg.sessionId).orElseThrow(
-					() -> new IllegalStateException("Session does not exist! [" + msg.sessionId + "]"));
-			session.getBasicRemote().sendObject(msg.frame);
+			final Session session = getSession(msg.sessionId()).orElseThrow(
+					() -> new IllegalStateException("Session does not exist! [" + msg.sessionId() + "]"));
+			session.getBasicRemote().sendObject(msg.frame());
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
