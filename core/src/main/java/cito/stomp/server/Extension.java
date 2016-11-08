@@ -37,20 +37,20 @@ import cito.stomp.server.scope.WebSocketSessionHolder;
 public class Extension implements javax.enterprise.inject.spi.Extension {
 	private final Map<Class<? extends Annotation>, Set<ObserverMethod<MessageEvent>>> frameObservers = new ConcurrentHashMap<>();
 
-	private WebSocketContext webSocketScopeContext;
+	private WebSocketContext webSocketContext;
 
 	/**
 	 * 
 	 * @param cls
-	 * @param e
+	 * @param method
 	 */
-	<A extends Annotation> void registerFrameObserver(Class<A> cls, ProcessObserverMethod<MessageEvent, ?> e) {
+	private <A extends Annotation> void registerFrameObserver(Class<A> cls, ObserverMethod<MessageEvent> method) {
 		Set<ObserverMethod<MessageEvent>> annotations = this.frameObservers.get(cls);
 		if (annotations == null) {
 			annotations = new HashSet<>();
 			this.frameObservers.put(cls, annotations);
 		}
-		annotations.add(e.getObserverMethod());
+		annotations.add(method);
 	}
 
 	/**
@@ -59,17 +59,18 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param beanManager
 	 */
 	public void register(@Observes ProcessObserverMethod<MessageEvent, ?> e, BeanManager beanManager) {
-		for (Annotation a : e.getObserverMethod().getObservedQualifiers()) {
+		final ObserverMethod<MessageEvent> method = e.getObserverMethod();
+		for (Annotation a : method.getObservedQualifiers()) {
 			if (a instanceof OnConnected)
-				registerFrameObserver(OnConnected.class, e);
+				registerFrameObserver(OnConnected.class, method);
 			if (a instanceof OnMessage)
-				registerFrameObserver(OnMessage.class, e);
+				registerFrameObserver(OnMessage.class, method);
 			if (a instanceof OnSubscribe)
-				registerFrameObserver(OnSubscribe.class, e);
+				registerFrameObserver(OnSubscribe.class, method);
 			if (a instanceof OnUnsubscribe)
-				registerFrameObserver(OnUnsubscribe.class, e);
+				registerFrameObserver(OnUnsubscribe.class, method);
 			if (a instanceof OnDisconnect)
-				registerFrameObserver(OnDisconnect.class, e);
+				registerFrameObserver(OnDisconnect.class, method);
 		}
 	}
 
@@ -97,7 +98,7 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param beanManager
 	 */
 	public void registerContexts(@Observes AfterBeanDiscovery event, BeanManager beanManager) {
-		event.addContext(this.webSocketScopeContext = new WebSocketContext(beanManager));
+		event.addContext(this.webSocketContext = new WebSocketContext(beanManager));
 	}
 
 	/**
@@ -108,31 +109,32 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	public void initialiseContexts(@Observes AfterDeploymentValidation adv, BeanManager beanManager)
 	{
 		final WebSocketSessionHolder sessionHolder = BeanProvider.getContextualReference(beanManager, WebSocketSessionHolder.class, false);
-		this.webSocketScopeContext.init(sessionHolder);
+		this.webSocketContext.init(sessionHolder);
 	}
 
 
 	// --- Static Methods ---
 
 	/**
-	 * 
-	 * @return
+	 * @return the instance of {@code WebSocketContext}.
 	 */
-	public static WebSocketContext getWebSocketContext(BeanManager manager) {
-		return manager.getExtension(Extension.class).webSocketScopeContext;
+	private static WebSocketContext getWebSocketContext(BeanManager manager) {
+		return manager.getExtension(Extension.class).webSocketContext;
 	}
 
 	/**
+	 * Activates the {@link WebSocketScope} for the {@link Session}.
 	 * 
 	 * @param manager
 	 * @param session
-	 * @return
+	 * @return a {@link QuietClosable} that can be used to pacify the scope.
 	 */
 	public static QuietClosable activateScope(BeanManager manager, Session session) {
 		return getWebSocketContext(manager).activate(session);
 	}
 
 	/**
+	 * Disposes the {@link WebSocketScope} for the {@link Session}.
 	 * 
 	 * @param manager
 	 * @param session
