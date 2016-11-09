@@ -1,7 +1,6 @@
 package cito.stomp.jms;
 
 import static cito.stomp.Headers.ACCEPT_VERSION;
-import static org.apache.deltaspike.core.api.provider.BeanProvider.getContextualReference;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -16,6 +15,8 @@ import javax.inject.Inject;
 import javax.jms.JMSException;
 import javax.websocket.CloseReason;
 import javax.ws.rs.core.MediaType;
+
+import org.apache.logging.log4j.util.Strings;
 
 import cito.stomp.Command;
 import cito.stomp.Frame;
@@ -40,6 +41,8 @@ public class Connection extends AbstractConnection {
 
 	@Inject
 	private Factory factory;
+	@Inject
+	private ScheduledExecutorService scheduler;
 
 	private HeartBeatMonitor heartBeatMonitor;
 	private String sessionId;
@@ -50,9 +53,7 @@ public class Connection extends AbstractConnection {
 	 */
 	@PostConstruct
 	public void init() {
-		final ScheduledExecutorService scheduler = getContextualReference(
-				this.beanManager, ScheduledExecutorService.class, false);
-		this.heartBeatMonitor = new HeartBeatMonitor(this, scheduler);
+		this.heartBeatMonitor = new HeartBeatMonitor(this, this.scheduler);
 	}
 
 	@Override
@@ -108,7 +109,15 @@ public class Connection extends AbstractConnection {
 	 * @throws JMSException
 	 */
 	public Connection connect(MessageEvent msg) throws JMSException {
-		this.log.info("Opening connection. [sessionId={}]", this.sessionId);
+		if (this.sessionId != null) {
+			throw new IllegalStateException("Already connected!");
+		}
+
+		this.log.info("Connecting... [sessionId={}]", msg.sessionId());
+
+		if (Strings.isEmpty(msg.sessionId())) {
+			throw new IllegalArgumentException("Session ID cannot be null!");
+		}
 
 		this.sessionId = msg.sessionId();
 		String version = null;
@@ -159,7 +168,7 @@ public class Connection extends AbstractConnection {
 			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + this.sessionId + ",actual=" + msg.sessionId() + "]");
 		}
 		if (msg.frame().getCommand() == Command.CONNECT || msg.frame().getCommand() == Command.DISCONNECT) {
-			throw new IllegalArgumentException("Command not supported! [" + msg.sessionId() + "]");
+			throw new IllegalArgumentException(msg.frame().getCommand() + " not supported! [" + msg.sessionId() + "]");
 		}
 
 		this.heartBeatMonitor.resetRead();

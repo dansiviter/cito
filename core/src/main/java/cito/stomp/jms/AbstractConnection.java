@@ -54,7 +54,7 @@ public abstract class AbstractConnection implements cito.stomp.Connection {
 		}
 
 		final String sessionId = getSessionId();
-		this.log.info("Starting connection... [sessionId={}]", sessionId);
+		this.log.info("Starting JMS connection... [sessionId={}]", sessionId);
 		this.delegate.setClientID(sessionId);
 		this.delegate.start();
 	}
