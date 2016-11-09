@@ -23,6 +23,7 @@ import cito.stomp.Frame;
 import cito.stomp.Frame.HeartBeat;
 import cito.stomp.Headers;
 import cito.stomp.HeartBeatMonitor;
+import cito.stomp.server.event.BasicMessageEvent;
 import cito.stomp.server.event.MessageEvent;
 
 /**
@@ -65,7 +66,7 @@ public class Connection extends AbstractConnection {
 	public void send(Frame frame) {
 		this.heartBeatMonitor.resetSend();
 		this.log.info("Senging message to client. [sessionId={},command={}]", this.sessionId, frame.getCommand());
-		this.relay.send(new MessageEvent(this.sessionId, frame));
+		this.relay.send(new BasicMessageEvent(this.sessionId, frame));
 	}
 
 	/**

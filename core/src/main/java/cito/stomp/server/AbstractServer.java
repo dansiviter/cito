@@ -5,6 +5,7 @@ import static cito.stomp.server.annotation.Qualifiers.onClose;
 import static cito.stomp.server.annotation.Qualifiers.onOpen;
 
 import javax.enterprise.event.Event;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 import javax.websocket.CloseReason;
@@ -17,6 +18,7 @@ import cito.QuietClosable;
 import cito.stomp.Frame;
 import cito.stomp.server.annotation.FromClient;
 import cito.stomp.server.event.MessageEvent;
+import cito.stomp.server.event.SerialisingMessageEvent;
 
 /**
  * 
@@ -34,6 +36,8 @@ public abstract class AbstractServer {
 	private Event<MessageEvent> messageEvent;
 	@Inject
 	private Event<Session> sessionEvent;
+	@Inject
+	private Instance<SerialisingMessageEvent> messageEventInstance;
 
 	/**
 	 * 
@@ -64,7 +68,10 @@ public abstract class AbstractServer {
 	protected void message(Session session, Frame frame) {
 		this.log.info("WebSocket message. [id={},principle={},command={}]", session.getId(), session.getUserPrincipal(), frame.getCommand());
 		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
-			this.messageEvent.select(fromClient()).fire(new MessageEvent(session.getId(), frame));
+			final SerialisingMessageEvent event = this.messageEventInstance.get();
+			event.init(session.getId(), frame);
+			this.messageEvent.select(fromClient()).fire(event);
+			this.messageEventInstance.destroy(event);
 		}
 	}
 

@@ -29,6 +29,7 @@ import cito.stomp.server.annotation.OnMessage;
 import cito.stomp.server.annotation.OnSubscribe;
 import cito.stomp.server.annotation.OnUnsubscribe;
 import cito.stomp.server.annotation.Qualifiers;
+import cito.stomp.server.event.BasicMessageEvent;
 import cito.stomp.server.event.MessageEvent;
 
 /**
@@ -57,7 +58,7 @@ public class EventProducerTest {
 		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
 		when(this.extension.getObservers(OnConnected.class)).thenReturn(Collections.singleton(observerMethod));
 
-		final MessageEvent event = new MessageEvent(
+		final MessageEvent event = new BasicMessageEvent(
 				Frame.connnected("1.2", "sessionId", "server").build());
 
 		this.eventProducer.message(event);
@@ -74,7 +75,7 @@ public class EventProducerTest {
 		when(this.extension.getObservers(OnMessage.class)).thenReturn(Collections.singleton(observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onMessage("/topic/*")));
 
-		final MessageEvent event = new MessageEvent(
+		final MessageEvent event = new BasicMessageEvent(
 				Frame.message("/topic/foo", "messageId", MediaType.APPLICATION_JSON_TYPE, "{}").build());
 
 		this.eventProducer.message(event);
@@ -92,7 +93,7 @@ public class EventProducerTest {
 		when(this.extension.getObservers(OnSubscribe.class)).thenReturn(Collections.singleton(observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("/topic/*")));
 
-		final MessageEvent event = new MessageEvent(
+		final MessageEvent event = new BasicMessageEvent(
 				Frame.builder(Command.SUBSCRIBE).destination("/topic/foo").subscription("id").build());
 
 		this.eventProducer.message(event);
@@ -111,7 +112,7 @@ public class EventProducerTest {
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("/topic/*")));
 		ReflectionUtil.<Map<String,String>>get(this.eventProducer, "idDestinationMap").put("id", "/topic/foo");
 
-		final MessageEvent event = new MessageEvent(
+		final MessageEvent event = new BasicMessageEvent(
 				Frame.builder(Command.UNSUBSCRIBE).subscription("id").build());
 
 		this.eventProducer.message(event);
@@ -129,7 +130,7 @@ public class EventProducerTest {
 		when(this.extension.getObservers(OnDisconnect.class)).thenReturn(Collections.singleton(observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("/topic/*")));
 
-		final MessageEvent event = new MessageEvent(
+		final MessageEvent event = new BasicMessageEvent(
 				Frame.builder(Command.DISCONNECT).build());
 
 		this.eventProducer.message(event);

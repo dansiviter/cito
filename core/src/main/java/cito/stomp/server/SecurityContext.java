@@ -3,12 +3,6 @@ package cito.stomp.server;
 import java.io.Serializable;
 import java.security.Principal;
 
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.websocket.Session;
-
-import org.apache.logging.log4j.LogManager;
-
 import cito.stomp.server.annotation.WebSocketScope;
 
 /**

@@ -8,7 +8,6 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 
 import cito.stomp.Frame;
-import cito.stomp.Headers;
 
 /**
  * 

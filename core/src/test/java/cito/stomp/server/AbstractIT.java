@@ -20,7 +20,6 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.wildfly.swarm.Swarm;
 import org.wildfly.swarm.arquillian.CreateSwarm;
-import org.wildfly.swarm.arquillian.adapter.InVM;
 
 import cito.stomp.client.Client;
 
@@ -31,7 +30,6 @@ import cito.stomp.client.Client;
  */
 @RunWith(Arquillian.class)
 @RunAsClient 
-@InVM
 public abstract class AbstractIT {
 	@Inject
 	protected Logger log;

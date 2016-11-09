@@ -1,7 +1,9 @@
 package cito.stomp.jms;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
@@ -19,8 +21,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import cito.ReflectionUtil;
 import cito.stomp.Frame;
-import cito.stomp.jms.Connection;
-import cito.stomp.jms.Session;
 
 /**
  * Unit tests for {@link Session}.

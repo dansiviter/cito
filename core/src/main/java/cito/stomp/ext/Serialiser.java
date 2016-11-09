@@ -6,17 +6,9 @@ import java.io.OutputStream;
 import java.lang.reflect.Type;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.EventMetadata;
-import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
-
-import org.fusesource.hawtbuf.ByteArrayInputStream;
-
-import cito.stomp.server.event.MessageEvent;
 
 /**
  * 
@@ -38,7 +30,7 @@ public class Serialiser {
 	 * @return
 	 * @throws IOException
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("unchecked")
 	public <T> T readFrom(Type type, MediaType mediaType, InputStream is) throws IOException {
 		for (BodyReader<?> reader : this.readers) {
 			if (reader.isReadable(type, mediaType)) {

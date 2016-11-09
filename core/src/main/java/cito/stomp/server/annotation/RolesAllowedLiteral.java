@@ -1,6 +1,5 @@
 package cito.stomp.server.annotation;
 
-import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.enterprise.util.AnnotationLiteral;
 

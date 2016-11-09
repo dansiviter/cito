@@ -23,6 +23,7 @@ import javax.websocket.CloseReason.CloseCodes;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -33,6 +34,7 @@ import cito.ReflectionUtil;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.HeartBeatMonitor;
+import cito.stomp.server.event.BasicMessageEvent;
 import cito.stomp.server.event.MessageEvent;
 
 /**
@@ -90,7 +92,7 @@ public class ConnectionTest {
 		ReflectionUtil.set(this.connection, "sessionId", null); // every other test needs it set!
 		final HeartBeatMonitor heartBeatMonitor = mock(HeartBeatMonitor.class);
 		ReflectionUtil.set(this.connection, "heartBeatMonitor", heartBeatMonitor);
-		final MessageEvent messageEvent = new MessageEvent("ABC123", Frame.connect("myhost.com", "1.0").build());
+		final MessageEvent messageEvent = new BasicMessageEvent("ABC123", Frame.connect("myhost.com", "1.0").build());
 		final javax.jms.Connection jmsConnection = mock(javax.jms.Connection.class);
 		when(this.connectionFactory.createConnection()).thenReturn(jmsConnection);
 
@@ -109,15 +111,14 @@ public class ConnectionTest {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void on_wrongSession() {
-		final MessageEvent messageEvent = new MessageEvent("Another", Frame.HEART_BEAT);
+		final MessageEvent messageEvent = new BasicMessageEvent("Another", Frame.HEART_BEAT);
 
 		this.connection.on(messageEvent);
-
 	}
 
 	@Test
-	public void on_connect() {
-		final MessageEvent messageEvent = new MessageEvent("ABC123", Frame.connect("myhost.com", "1.0").build());
+	public void on_CONNECT() {
+		final MessageEvent messageEvent = new BasicMessageEvent("ABC123", Frame.connect("myhost.com", "1.0").build());
 
 		IllegalArgumentException expected = null;
 		try {
@@ -131,8 +132,8 @@ public class ConnectionTest {
 	}
 
 	@Test
-	public void on_disconnect() {
-		final MessageEvent messageEvent = new MessageEvent("ABC123", Frame.disconnect().build());
+	public void on_DISCONNECT() {
+		final MessageEvent messageEvent = new BasicMessageEvent("ABC123", Frame.disconnect().build());
 
 		IllegalArgumentException expected = null;
 		try {
@@ -145,6 +146,26 @@ public class ConnectionTest {
 		assertEquals("DISCONNECT not supported! [ABC123]", expected.getMessage());
 	}
 
+	@Test @Ignore
+	public void on_SEND() { }
+
+	@Test @Ignore
+	public void on_ACK() {}
+
+	@Test @Ignore
+	public void on_BEGIN() {}
+
+	@Test @Ignore
+	public void on_COMMIT() {}
+
+	@Test @Ignore
+	public void on_ABORT() {}
+
+	@Test @Ignore
+	public void on_SUBSCRIBE() {}
+
+	@Test @Ignore
+	public void on_UNSUBSCRIBE() { }
 
 	@Test
 	public void addAckMessage() throws JMSException {

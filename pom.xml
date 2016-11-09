@@ -15,8 +15,8 @@
 		<failOnMissingWebXml>false</failOnMissingWebXml>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-		<deltaSpike.version>1.7.1</deltaSpike.version>
-		<wildflySwarm.version>2016.10.0</wildflySwarm.version>
+		<deltaSpike.version>1.7.2</deltaSpike.version>
+		<wildflySwarm.version>2016.11.0</wildflySwarm.version>
 	</properties>
 
 	<modules>

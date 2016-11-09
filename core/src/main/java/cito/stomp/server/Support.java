@@ -11,16 +11,24 @@ import java.util.Map;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Event;
+import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 
 import cito.stomp.Frame;
 import cito.stomp.ext.Serialiser;
+import cito.stomp.server.event.BasicMessageEvent;
 import cito.stomp.server.event.MessageEvent;
 
 /**
  * Server messaging support. This can be used in two ways: {@link Inject}ed or {@code extend} it.
+ * <p/>
+ * To inject, use:
+ * <pre>
+ * 	&#064;Inject
+ * 	private MessagingSupport support;
+ * </pre>
  * 
  * @author Daniel Siviter
  * @since v1.0 [27 Jul 2016]
@@ -76,7 +84,7 @@ public abstract class Support {
 	public void broadcast(String destination, MediaType type, Object payload, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
-		this.msgEvent.select(fromServer()).fire(new MessageEvent(frame));
+		this.msgEvent.select(fromServer()).fire(new BasicMessageEvent(frame));
 	}
 
 	/**
@@ -175,7 +183,7 @@ public abstract class Support {
 	public void sendTo(String sessionId, String destination, MediaType type, Object payload, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();
-		this.msgEvent.select(fromServer()).fire(new MessageEvent(frame));
+		this.msgEvent.select(fromServer()).fire(new BasicMessageEvent(frame));
 	}
 
 	/**
@@ -200,7 +208,20 @@ public abstract class Support {
 	 * @return an instance of Support for {@link Inject} use-case.
 	 */
 	@Produces @Dependent
-	public static Support support() {
-		return new Support() { };
+	public static MessagingSupport support() {
+		return new MessagingSupport();
+	}
+
+
+	// --- Inner Classes ---
+
+	/**
+	 * Concrete version for injection.
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [9 Nov 2016]
+	 */
+	public static class MessagingSupport extends Support { 
+		MessagingSupport() { }
 	}
 }
