@@ -12,6 +12,9 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 
+import org.apache.logging.log4j.util.Strings;
+
+import cito.QuietClosable;
 import cito.ReflectionUtil;
 import cito.stomp.Glob;
 import cito.stomp.server.annotation.OnConnected;
@@ -33,6 +36,8 @@ public class EventProducer {
 
 	@Inject
 	private BeanManager manager;
+	@Inject
+	private SessionRegistry sessionRegistry;
 
 	/**
 	 * 
@@ -81,10 +86,21 @@ public class EventProducer {
 		}
 	}
 
+	/**
+	 * 
+	 * @param sessionId
+	 * @return
+	 */
+	private QuietClosable activateScope(String sessionId) {
+		if (Strings.isEmpty(sessionId)) {
+			return QuietClosable.NOOP;
+		}
+		return Extension.activateScope(this.manager, this.sessionRegistry.getSession(sessionId).get());
+	}
+
 
 
 	// --- Static Methods ---
-
 
 	/**
 	 * 
@@ -92,6 +108,7 @@ public class EventProducer {
 	 * @param annocations
 	 * @return
 	 */
+	@SuppressWarnings("unchecked")
 	private static <A extends Annotation> A[] getAnnotations(Class<A> annotation, Collection<? extends Annotation> annotations) {
 		final Collection<A> found = new ArrayList<>();
 		for (Annotation a : annotations) {

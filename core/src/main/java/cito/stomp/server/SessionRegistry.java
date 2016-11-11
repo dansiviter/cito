@@ -79,11 +79,8 @@ public class SessionRegistry {
 	 * @param msg
 	 */
 	public void message(@Observes @FromBroker MessageEvent msg) {
-		if (msg.frame().isHeartBeat()) {
-			this.log.debug("Sending heartbeart to client. [sessionId={}]", msg.sessionId());
-		} else {
-			this.log.info("Sending message to client. [sessionId={},command={}]", msg.sessionId(), msg.frame().getCommand());
-		}
+		this.log.debug("Sending message to client. [sessionId={},command={}]",
+				msg.sessionId(), msg.frame().getCommand() != null ? msg.frame().getCommand() : "HEARTBEAT");
 
 		try {
 			final Session session = getSession(msg.sessionId()).orElseThrow(

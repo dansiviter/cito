@@ -45,19 +45,16 @@ public class SerialisingMessageEvent implements MessageEvent {
 		return this.frame;
 	}
 
-	/**
-	 * 
-	 * @param type
-	 * @return
-	 * @throws IOException
-	 */
+	@Override
 	@SuppressWarnings("unchecked")
-	public <T> T getBean(Type type) throws IOException {
-		if (bean == null) {
+	public <T> T getBean(Type type) {
+		if (this.bean == null) {
 			try (InputStream is = new ByteBufferInputStream(frame().getBody())) {
-				this.serialiser.readFrom(type, frame().contentType(), is);
+				this.bean = this.serialiser.readFrom(type, frame().contentType(), is);
+			} catch (IOException e) {
+				throw new IllegalStateException("Unable to serialise!", e);
 			}
-		}
-		return (T) bean;
+		} 
+		return (T) this.bean;
 	}
 }

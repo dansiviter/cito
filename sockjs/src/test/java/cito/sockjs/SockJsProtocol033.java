@@ -10,6 +10,8 @@ import javax.script.ScriptException;
 
 import org.junit.Test;
 import org.python.jline.internal.InputStreamReader;
+import org.python.jsr223.PyScriptEngineFactory;
+import org.python.util.PythonInterpreter;
 
 /**
  * Performs SockJS protocol verification using the Python script from
@@ -21,6 +23,7 @@ import org.python.jline.internal.InputStreamReader;
 public class SockJsProtocol033 {
 	@Test
 	public void pythonTest() throws ScriptException, IOException {
+		//		new ScriptEngineManager().getEngineFactories().forEach(e -> System.out.println(e.getEngineName()));
 		final ScriptEngine engine = new ScriptEngineManager().getEngineByName("python");
 
 		try (final InputStream is = getClass().getResourceAsStream("sockjs-protocol-0.3.3.py")) {

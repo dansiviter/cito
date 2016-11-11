@@ -104,7 +104,7 @@ public class HeartBeatMonitor {
 		@Override
 		public void run() {
 			try {
-				LOG.info("Sending heartbeat... [sessionId={}]", conn.getSessionId());
+				LOG.debug("Sending heartbeat... [sessionId={}]", conn.getSessionId());
 				conn.send(Frame.HEART_BEAT);
 			} catch (IOException | RuntimeException e) {
 				LOG.warn("Unable to send heartbeat!", e);

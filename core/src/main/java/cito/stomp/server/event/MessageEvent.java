@@ -1,5 +1,7 @@
 package cito.stomp.server.event;
 
+import java.lang.reflect.Type;
+
 import cito.stomp.Frame;
 
 /**
@@ -13,9 +15,29 @@ public interface MessageEvent {
 	 * then this will be {@code null}.
 	 */
 	String sessionId();
-	
+
 	/**
 	 * @return the STOMP frame.
 	 */
 	Frame frame();
+
+	/**
+	 * 
+	 * 
+	 * @param type
+	 * @return
+	 */
+	default <T> T getBean(Class<T> type) {
+		return getBean((Type) type);
+	}
+
+	/**
+	 * 
+	 * 
+	 * @param type
+	 * @return
+	 */
+	default <T> T getBean(Type type) {
+		throw new UnsupportedOperationException();
+	}
 }
