@@ -134,6 +134,14 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	}
 
 	/**
+	 * @param manager
+	 * @return the current session within the context.
+	 */
+	public static Session currentSession(BeanManager manager) {
+		return getWebSocketContext(manager).currentSession();
+	}
+
+	/**
 	 * Disposes the {@link WebSocketScope} for the {@link Session}.
 	 * 
 	 * @param manager

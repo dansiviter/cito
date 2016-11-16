@@ -54,6 +54,10 @@ public class WebSocketContext extends AbstractContext {
 	 * @return
 	 */
 	public QuietClosable activate(Session session) {
+		if (this.sessionHolder.get() != null && session.getId().equals(this.sessionHolder.get().getId())) {
+			return QuietClosable.NOOP;
+		}
+
 		LOG.debug("Activiating scope. [sessionId={}]", session.getId());
 		this.sessionHolder.set(session);
 
@@ -64,6 +68,13 @@ public class WebSocketContext extends AbstractContext {
 			}
 			WebSocketContext.this.sessionHolder.remove();
 		};
+	}
+
+	/**
+	 * @return the current session held within the context.
+	 */
+	public Session currentSession() {
+		return this.sessionHolder.get();
 	}
 
 	/**

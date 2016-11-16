@@ -1,5 +1,7 @@
 package cito.stomp.server;
 
+import static cito.stomp.server.Extension.currentSession;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -54,11 +56,15 @@ public class EventProducer {
 			break;
 		}
 		case MESSAGE: {
-			final String destination = msg.frame().destination();
-			extension.getObservers(OnMessage.class).stream().filter(
-					e -> matches(OnMessage.class, e.getObservedQualifiers(), destination)).forEach(
-							e -> e.notify(msg));
-			break;
+			// all other messages will be processed in the client thread,
+			// however this will likely be from the JMS consumer
+			try (QuietClosable c = activateScope(msg.sessionId())) {
+				final String destination = msg.frame().destination();
+				extension.getObservers(OnMessage.class).stream().filter(
+						e -> matches(OnMessage.class, e.getObservedQualifiers(), destination)).forEach(
+								e -> e.notify(msg));
+				break;
+			}
 		}
 		case SUBSCRIBE: {
 			final String id = msg.frame().subscription();
@@ -92,7 +98,7 @@ public class EventProducer {
 	 * @return
 	 */
 	private QuietClosable activateScope(String sessionId) {
-		if (Strings.isEmpty(sessionId)) {
+		if (Strings.isEmpty(sessionId) || currentSession(this.manager) != null) {
 			return QuietClosable.NOOP;
 		}
 		return Extension.activateScope(this.manager, this.sessionRegistry.getSession(sessionId).get());

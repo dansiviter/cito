@@ -98,6 +98,9 @@ public abstract class AbstractServer {
 		this.log.warn("WebSocket error. [id={},principle={}]", session.getId(), session.getUserPrincipal(), t);
 		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
 //			Extension.getWebSocketContext(this.beanManager).destroyAllActive();
+		} catch (RuntimeException e) {
+			log.error("Exception while trying to handle error! Error will be re-thrown, but original is logged here.", t);
+			throw e;
 		}
 	}
 }

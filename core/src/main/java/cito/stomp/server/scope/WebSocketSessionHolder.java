@@ -27,7 +27,7 @@ public class WebSocketSessionHolder {
 	public void set(Session session) {
 		LOG.debug("Setting session. [sessionId={}]", session.getId());
 		if (this.session.get() != null) {
-			throw new IllegalStateException("Session already set!");
+			throw new IllegalStateException("Session already set! [expected=" + this.session.get().getId() + ",current=" + session.getId() + "]");
 		}
 		this.session.set(session);
 	}
@@ -50,7 +50,6 @@ public class WebSocketSessionHolder {
 	 */
 	@Produces @WebSocketScope
 	public Session get() {
-		LOG.info("Returning session. [sessionId={}]", this.session.get().getId());
 		return this.session.get();
 	}
 }
