@@ -1,7 +1,5 @@
 package cito.stomp.server;
 
-import static cito.stomp.server.Extension.currentSession;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -14,14 +12,12 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 
-import org.apache.logging.log4j.util.Strings;
-
 import cito.QuietClosable;
 import cito.ReflectionUtil;
 import cito.stomp.Glob;
 import cito.stomp.server.annotation.OnConnected;
 import cito.stomp.server.annotation.OnDisconnect;
-import cito.stomp.server.annotation.OnMessage;
+import cito.stomp.server.annotation.OnSend;
 import cito.stomp.server.annotation.OnSubscribe;
 import cito.stomp.server.annotation.OnUnsubscribe;
 import cito.stomp.server.event.MessageEvent;
@@ -51,20 +47,16 @@ public class EventProducer {
 		final Extension extension = this.manager.getExtension(Extension.class);
 
 		switch (msg.frame().getCommand()) {
-		case CONNECTED: {
+		case CONNECTED: { // on client thread as it's response to CONNECT
 			extension.getObservers(OnConnected.class).forEach(e -> e.notify(msg));
 			break;
 		}
-		case MESSAGE: {
-			// all other messages will be processed in the client thread,
-			// however this will likely be from the JMS consumer
-			try (QuietClosable c = activateScope(msg.sessionId())) {
-				final String destination = msg.frame().destination();
-				extension.getObservers(OnMessage.class).stream().filter(
-						e -> matches(OnMessage.class, e.getObservedQualifiers(), destination)).forEach(
-								e -> e.notify(msg));
-				break;
-			}
+		case SEND: {
+			final String destination = msg.frame().destination();
+			extension.getObservers(OnSend.class).stream().filter(
+					e -> matches(OnSend.class, e.getObservedQualifiers(), destination)).forEach(
+							e -> e.notify(msg));
+			break;
 		}
 		case SUBSCRIBE: {
 			final String id = msg.frame().subscription();
@@ -91,19 +83,6 @@ public class EventProducer {
 			break;
 		}
 	}
-
-	/**
-	 * 
-	 * @param sessionId
-	 * @return
-	 */
-	private QuietClosable activateScope(String sessionId) {
-		if (Strings.isEmpty(sessionId) || currentSession(this.manager) != null) {
-			return QuietClosable.NOOP;
-		}
-		return Extension.activateScope(this.manager, this.sessionRegistry.getSession(sessionId).get());
-	}
-
 
 
 	// --- Static Methods ---

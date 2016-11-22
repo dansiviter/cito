@@ -54,10 +54,6 @@ public class WebSocketContext extends AbstractContext {
 	 * @return
 	 */
 	public QuietClosable activate(Session session) {
-		if (this.sessionHolder.get() != null && session.getId().equals(this.sessionHolder.get().getId())) {
-			return QuietClosable.NOOP;
-		}
-
 		LOG.debug("Activiating scope. [sessionId={}]", session.getId());
 		this.sessionHolder.set(session);
 
@@ -78,14 +74,16 @@ public class WebSocketContext extends AbstractContext {
 	}
 
 	/**
+	 * Disposes all beans associated with the {@link Session}.
 	 * 
 	 * @param session
 	 */
 	public void dispose(Session session) {
 		LOG.debug("Disposing scope. [sessionId={}]", session.getId());
-		this.sessionHolder.set(session);
-		final ContextualStorage storage = getContextualStorage(null, false);
-		 AbstractContext.destroyAllActive(storage);
+		try (QuietClosable c = activate(session)) {
+			final ContextualStorage storage = getContextualStorage(null, false);
+			AbstractContext.destroyAllActive(storage);
+		}
 	}
 
 	@Override

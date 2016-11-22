@@ -67,6 +67,7 @@ public class SupportTest {
 		final ArgumentCaptor<MessageEvent> eventCaptor = ArgumentCaptor.forClass(MessageEvent.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
 		final MessageEvent msgEvent = eventCaptor.getValue();
+		assertNull(msgEvent.sessionId());
 		assertNull(msgEvent.frame().session());
 		assertEquals("destination", msgEvent.frame().destination());
 		assertEquals("application/json", msgEvent.frame().contentType().toString());
@@ -81,6 +82,7 @@ public class SupportTest {
 		final ArgumentCaptor<MessageEvent> eventCaptor = ArgumentCaptor.forClass(MessageEvent.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
 		final MessageEvent msgEvent = eventCaptor.getValue();
+		assertNull(msgEvent.sessionId());
 		assertNull(msgEvent.frame().session());
 		assertEquals("destination", msgEvent.frame().destination());
 		assertEquals("text/plain", msgEvent.frame().contentType().toString());
@@ -153,6 +155,7 @@ public class SupportTest {
 		final ArgumentCaptor<MessageEvent> eventCaptor = ArgumentCaptor.forClass(MessageEvent.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
 		final MessageEvent msgEvent = eventCaptor.getValue();
+		assertNull(msgEvent.sessionId());
 		assertEquals("sessionId", msgEvent.frame().session());
 		assertEquals("destination", msgEvent.frame().destination());
 		assertEquals("application/json", msgEvent.frame().contentType().toString());
@@ -167,6 +170,7 @@ public class SupportTest {
 		final ArgumentCaptor<MessageEvent> eventCaptor = ArgumentCaptor.forClass(MessageEvent.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
 		final MessageEvent msgEvent = eventCaptor.getValue();
+		assertNull(msgEvent.sessionId());
 		assertEquals("sessionId", msgEvent.frame().session());
 		assertEquals("destination", msgEvent.frame().destination());
 		assertEquals("text/plain", msgEvent.frame().contentType().toString());

@@ -25,7 +25,7 @@ import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.server.annotation.OnConnected;
 import cito.stomp.server.annotation.OnDisconnect;
-import cito.stomp.server.annotation.OnMessage;
+import cito.stomp.server.annotation.OnSend;
 import cito.stomp.server.annotation.OnSubscribe;
 import cito.stomp.server.annotation.OnUnsubscribe;
 import cito.stomp.server.annotation.Qualifiers;
@@ -70,18 +70,18 @@ public class EventProducerTest {
 	}
 
 	@Test
-	public void message_MESSAGE() {
+	public void message_SEND() {
 		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
-		when(this.extension.getObservers(OnMessage.class)).thenReturn(Collections.singleton(observerMethod));
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onMessage("/topic/*")));
+		when(this.extension.getObservers(OnSend.class)).thenReturn(Collections.singleton(observerMethod));
+		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSend("/topic/*")));
 
 		final MessageEvent event = new BasicMessageEvent(
-				Frame.message("/topic/foo", "messageId", MediaType.APPLICATION_JSON_TYPE, "{}").build());
+				Frame.send("/topic/foo", MediaType.APPLICATION_JSON_TYPE, "{}").build());
 
 		this.eventProducer.message(event);
 
 		verify(this.beanManager).getExtension(Extension.class);
-		verify(this.extension).getObservers(OnMessage.class);
+		verify(this.extension).getObservers(OnSend.class);
 		verify(observerMethod).getObservedQualifiers();
 		verify(observerMethod).notify(event);
 		verifyNoMoreInteractions(observerMethod);

@@ -80,8 +80,8 @@ public class FrameTest {
 
 	@Test
 	public void toString_() {
-		final Frame frame0 = Frame.message("/here", "123", MediaType.TEXT_PLAIN_TYPE, "body").build();
-		assertEquals("MESSAGE\ndestination:/here\nmessage-id:123\ncontent-type:text/plain\n\nbody" + NULL, frame0.toString());
+		final Frame frame0 = Frame.message("/here", "sub-0", "123", MediaType.TEXT_PLAIN_TYPE, "body").build();
+		assertEquals("MESSAGE\ndestination:/here\nmessage-id:123\ncontent-type:text/plain\nsubscription:sub-0\n\nbody" + NULL, frame0.toString());
 
 		final Frame frame1 = Frame.send("/there", MediaType.TEXT_PLAIN_TYPE, "body").build();
 		assertEquals("SEND\ndestination:/there\ncontent-type:text/plain\n\nbody" + NULL, frame1.toString());

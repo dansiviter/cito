@@ -7,14 +7,24 @@ import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import javax.enterprise.util.Nonbinding;
+import javax.inject.Qualifier;
+
 /**
- * {@link Repeatable} for {@link OnMessages}.
  * 
  * @author Daniel Siviter
- * @since v1.0 [2 Nov 2016]
+ * @since v1.0 [12 Jul 2016]
  */
+@Qualifier
 @Target(PARAMETER)
 @Retention(RUNTIME)
-public @interface OnMessages {
-	OnMessage[] value();
+@Repeatable(OnSends.class)
+public @interface OnSend {
+	/**
+	 * A regular expression of the topic pattern required.
+	 * 
+	 * @return
+	 */
+	@Nonbinding
+	String value() default ".*";
 }

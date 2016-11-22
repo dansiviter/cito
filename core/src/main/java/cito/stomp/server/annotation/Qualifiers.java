@@ -92,8 +92,8 @@ public enum Qualifiers { ;
 	 * @param value
 	 * @return
 	 */
-	public static OnMessage onMessage(String value) {
-		return new OnMessageLiteral(value == null ? "" : value);
+	public static OnSend onSend(String value) {
+		return new OnSendLiteral(value == null ? "" : value);
 	}
 
 	/**
@@ -216,12 +216,12 @@ public enum Qualifiers { ;
 	 * @author Daniel Siviter
 	 * @since v1.0 [12 Jul 2016]
 	 */
-	private static class OnMessageLiteral extends AnnotationLiteral<OnMessage> implements OnMessage {
+	private static class OnSendLiteral extends AnnotationLiteral<OnSend> implements OnSend {
 		private static final long serialVersionUID = 6498352376982414158L;
 
 		private final String value;
 
-		public OnMessageLiteral(String value) {
+		public OnSendLiteral(String value) {
 			this.value = value;
 		}
 

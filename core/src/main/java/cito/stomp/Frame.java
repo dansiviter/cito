@@ -14,6 +14,8 @@ import static cito.stomp.Headers.MESSAGE_ID;
 import static cito.stomp.Headers.RECIEPT_ID;
 import static cito.stomp.Headers.SERVER;
 import static cito.stomp.Headers.SESSION;
+
+import static cito.stomp.Headers.SUBSCRIPTION;
 import static cito.stomp.Headers.TRANSACTION;
 import static cito.stomp.Headers.VERSION;
 
@@ -340,13 +342,24 @@ public class Frame {
 	/**
 	 * 
 	 * @param destination
+	 * @param subscriptionId
 	 * @param messageId
 	 * @param contentType
 	 * @param body
 	 * @return
 	 */
-	public static Builder message(String destination, String messageId, MediaType contentType, String body) {
-		return builder(Command.MESSAGE).destination(destination).messageId(messageId).body(contentType, body);
+	public static Builder message(
+			String destination,
+			String subscriptionId,
+			String messageId,
+			MediaType contentType,
+			String body)
+	{
+		return builder(Command.MESSAGE)
+				.destination(destination)
+				.subscription(subscriptionId)
+				.messageId(messageId)
+				.body(contentType, body);
 	}
 
 	/**
@@ -674,6 +687,7 @@ public class Frame {
 			case MESSAGE:
 				assertExists(DESTINATION);
 				assertExists(MESSAGE_ID);
+				assertExists(SUBSCRIPTION);
 				break;
 			case RECIEPT:
 				assertExists(RECIEPT_ID);

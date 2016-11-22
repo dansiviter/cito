@@ -121,7 +121,7 @@ public class HeartBeatMonitor {
 		@Override
 		public void run() {
 			try {
-				LOG.error("No read heartbeat! Closing... [sessionId={}]", conn.getSessionId());
+				LOG.warn("No read heartbeat! Closing... [sessionId={}]", conn.getSessionId());
 				conn.close(new CloseReason(CloseCodes.VIOLATED_POLICY, "Heartbeat not recieved in time."));
 			} catch (IOException | RuntimeException e) {
 				LOG.warn("Unable to close!", e);

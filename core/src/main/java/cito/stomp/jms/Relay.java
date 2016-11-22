@@ -76,7 +76,8 @@ public class Relay {
 		final String sessionId = msg.sessionId() != null ? msg.sessionId() : SystemConnection.SESSION_ID;
 
 		try {
-			AbstractConnection conn = msg.sessionId() != null ? this.connections.get(sessionId) : systemConn;
+			AbstractConnection conn = msg.sessionId() != null ? this.connections.get(sessionId) : this.systemConn;
+
 			if (msg.frame().getCommand() != null) {
 				switch (msg.frame().getCommand()) {
 				case CONNECT:
@@ -97,6 +98,10 @@ public class Relay {
 				default:
 					break;
 				}
+			}
+
+			if (conn == null) {
+				throw new IllegalStateException("Session not found! [" + sessionId + "]");
 			}
 			conn.on(msg);
 		} catch (JMSException | RuntimeException e) {

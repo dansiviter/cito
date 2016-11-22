@@ -33,7 +33,7 @@ import cito.QuietClosable;
 import cito.ReflectionUtil;
 import cito.stomp.server.annotation.OnConnected;
 import cito.stomp.server.annotation.OnDisconnect;
-import cito.stomp.server.annotation.OnMessage;
+import cito.stomp.server.annotation.OnSend;
 import cito.stomp.server.annotation.OnSubscribe;
 import cito.stomp.server.annotation.OnUnsubscribe;
 import cito.stomp.server.annotation.Qualifiers;
@@ -89,15 +89,15 @@ public class ExtensionTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void register_onMessage() {
+	public void register_onSend() {
 		final ProcessObserverMethod<MessageEvent, ?> processObserverMethod = mock(ProcessObserverMethod.class);
 		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onMessage("")));
+		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSend("")));
 
 		this.extension.register(processObserverMethod, beanManager);
 
-		assertEquals(observerMethod, getFrameObservers(this.extension).get(OnMessage.class).iterator().next());
+		assertEquals(observerMethod, getFrameObservers(this.extension).get(OnSend.class).iterator().next());
 
 		verify(processObserverMethod).getObserverMethod();
 		verify(observerMethod).getObservedQualifiers();

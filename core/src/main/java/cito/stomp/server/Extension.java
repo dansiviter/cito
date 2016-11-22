@@ -21,7 +21,7 @@ import org.apache.deltaspike.core.api.provider.BeanProvider;
 import cito.QuietClosable;
 import cito.stomp.server.annotation.OnConnected;
 import cito.stomp.server.annotation.OnDisconnect;
-import cito.stomp.server.annotation.OnMessage;
+import cito.stomp.server.annotation.OnSend;
 import cito.stomp.server.annotation.OnSubscribe;
 import cito.stomp.server.annotation.OnUnsubscribe;
 import cito.stomp.server.annotation.WebSocketScope;
@@ -63,8 +63,8 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 		for (Annotation a : method.getObservedQualifiers()) {
 			if (a instanceof OnConnected)
 				registerFrameObserver(OnConnected.class, method);
-			if (a instanceof OnMessage)
-				registerFrameObserver(OnMessage.class, method);
+			if (a instanceof OnSend)
+				registerFrameObserver(OnSend.class, method);
 			if (a instanceof OnSubscribe)
 				registerFrameObserver(OnSubscribe.class, method);
 			if (a instanceof OnUnsubscribe)

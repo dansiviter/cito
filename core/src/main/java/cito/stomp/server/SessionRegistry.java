@@ -1,5 +1,6 @@
 package cito.stomp.server;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
@@ -11,12 +12,13 @@ import java.util.concurrent.ConcurrentMap;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import javax.resource.spi.IllegalStateException;
+import javax.websocket.EncodeException;
 import javax.websocket.Session;
 
 import org.apache.logging.log4j.Logger;
 
 import cito.stomp.server.annotation.FromBroker;
+import cito.stomp.server.annotation.FromServer;
 import cito.stomp.server.event.MessageEvent;
 
 /**
@@ -78,17 +80,16 @@ public class SessionRegistry {
 	 * 
 	 * @param msg
 	 */
-	public void message(@Observes @FromBroker MessageEvent msg) {
+	public void fromBroker(@Observes @FromBroker MessageEvent msg) {
 		this.log.debug("Sending message to client. [sessionId={},command={}]",
 				msg.sessionId(), msg.frame().getCommand() != null ? msg.frame().getCommand() : "HEARTBEAT");
 
-		try {
 			final Session session = getSession(msg.sessionId()).orElseThrow(
 					() -> new IllegalStateException("Session does not exist! [" + msg.sessionId() + "]"));
+		try {
 			session.getBasicRemote().sendObject(msg.frame());
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
+		} catch (IOException | EncodeException e) {
+			this.log.warn("Unable to send message! [sessionid={},command={}]", msg.sessionId(), msg.frame().getCommand(), e);
 		}
 	}
 
