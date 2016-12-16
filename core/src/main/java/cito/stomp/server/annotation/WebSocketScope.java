@@ -11,10 +11,21 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import javax.enterprise.context.NormalScope;
+import javax.websocket.OnClose;
+import javax.websocket.OnError;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
 
 /**
- * TODO document when this scope will be active. This will behave slightly differently for SockJS.
+ * {@code WebSocketScoped} scope is active:
+ * </p>
  * 
+ * <ul>
+ * <li>during the WebSocket lifecycle methods {@link OnOpen}. {@link OnClose}, {@link OnError}, and {@link OnMessage}.
+ * </ul>
+ * 
+ * <p>
+ * The context is destroyed when {@link OnClose} completes.
  * 
  * @author Daniel Siviter
  * @since v1.0 [17 Aug 2016]

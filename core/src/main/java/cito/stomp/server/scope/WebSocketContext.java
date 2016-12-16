@@ -1,11 +1,22 @@
 package cito.stomp.server.scope;
 
-import java.lang.annotation.Annotation;
+import static cito.cdi.Util.*;
 
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Optional;
+
+import javax.enterprise.context.ContextNotActiveException;
 import javax.enterprise.context.spi.Contextual;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.inject.Inject;
 import javax.websocket.Session;
 
+import org.apache.deltaspike.core.api.provider.BeanManagerProvider;
+import org.apache.deltaspike.core.api.provider.BeanProvider;
 import org.apache.deltaspike.core.impl.scope.AbstractBeanHolder;
 import org.apache.deltaspike.core.util.context.AbstractContext;
 import org.apache.deltaspike.core.util.context.ContextualStorage;
@@ -13,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import cito.QuietClosable;
+import cito.stomp.server.SessionRegistry;
 import cito.stomp.server.annotation.WebSocketScope;
 
 /**
@@ -23,14 +35,19 @@ import cito.stomp.server.annotation.WebSocketScope;
 public class WebSocketContext extends AbstractContext {
 	private static final Logger LOG = LogManager.getLogger(WebSocketContext.class);
 
-	private final Holder holder = new Holder();
+	private final Holder holder;
 
 	private final BeanManager beanManager;
 	private WebSocketSessionHolder sessionHolder;
 
+	@Inject
+	private Instance<SessionRegistry> sessionRegistry;
+
 	public WebSocketContext(BeanManager beanManager) {
 		super(beanManager);
+		this.holder = new Holder(this.isPassivatingScope());
 		this.beanManager = beanManager;
+		injectFields(beanManager, this);
 		LOG.info("Context initialised.");
 	}
 
@@ -45,7 +62,7 @@ public class WebSocketContext extends AbstractContext {
 
 	@Override
 	public boolean isActive() {
-		return true;
+		return true; // active regardless
 	}
 
 	/**
@@ -74,6 +91,28 @@ public class WebSocketContext extends AbstractContext {
 	}
 
 	/**
+	 * 
+	 * @param contextual
+	 * @return
+	 */
+	private Session getSession(Contextual<?> contextual) {
+		final List<Session> sessions = new ArrayList<>();
+		for (Entry<String, ContextualStorage> e : this.holder.getStorageMap().entrySet()) {
+			final Object key = e.getValue().getBeanKey(contextual);
+			if (e.getValue().getBean(key) != null) {
+				final Optional<Session> session = this.sessionRegistry.get().getSession(e.getKey());
+				if (session.isPresent()) {
+					sessions.add(session.get());
+				}
+			}
+		}
+		if (sessions.size() > 1) {
+			throw new IllegalStateException("Too many sessions! [" + contextual + "]");
+		}
+		return sessions.isEmpty() ? null : sessions.get(0);
+	}
+
+	/**
 	 * Disposes all beans associated with the {@link Session}.
 	 * 
 	 * @param session
@@ -88,11 +127,21 @@ public class WebSocketContext extends AbstractContext {
 
 	@Override
 	protected ContextualStorage getContextualStorage(Contextual<?> contextual, boolean createIfNotExist) {
-		final Session session = this.sessionHolder.get();
-		if (session == null) {
-			throw new IllegalStateException("No session available!");
+		Session session = this.sessionHolder.get();
+		// return the storage for the Contextual. This can only be achieved if the Session was seen before as the storage
+		// will not contain the 
+		if (session == null && !createIfNotExist) {
+			session = getSession(contextual);
 		}
-		return holder.getContextualStorage(this.beanManager, session.getId(), createIfNotExist);
+		if (session == null) {
+			throw new ContextNotActiveException("WebSocketContext: no WebSocket session set for the current Thread yet!");
+		}
+		return this.holder.getContextualStorage(this.beanManager, session.getId(), createIfNotExist);
+	}
+
+	@Override
+	protected List<ContextualStorage> getActiveContextualStorages() {
+		return new ArrayList<ContextualStorage>(this.holder.getStorageMap().values());
 	}
 
 
@@ -105,5 +154,9 @@ public class WebSocketContext extends AbstractContext {
 	 */
 	private static class Holder extends AbstractBeanHolder<String> {
 		private static final long serialVersionUID = 8050340714947625398L;
+
+		public Holder(boolean passivatingScope) {
+			super(true, passivatingScope);
+		}
 	}
 }

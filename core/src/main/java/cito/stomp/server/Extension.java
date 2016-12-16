@@ -118,7 +118,7 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	/**
 	 * @return the instance of {@code WebSocketContext}.
 	 */
-	private static WebSocketContext getWebSocketContext(BeanManager manager) {
+	public static WebSocketContext getWebSocketContext(BeanManager manager) {
 		return manager.getExtension(Extension.class).webSocketContext;
 	}
 

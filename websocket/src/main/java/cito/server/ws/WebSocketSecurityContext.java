@@ -22,7 +22,7 @@ public class WebSocketSecurityContext implements SecurityContext {
 
 	@Override
 	public Principal getUserPrincipal() {
-		return req.getUserPrincipal();
+		return this.req.getUserPrincipal();
 	}
 
 	@Override

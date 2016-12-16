@@ -77,17 +77,31 @@ public enum ReflectionUtil { ;
 	 * @param args
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	public static <T> T invoke(Object source, String name, Object... args) {
-		try {
-			Class<?>[] argTypes = new Class<?>[args.length];
-			for (int i = 0; i< args.length; i++) {
-				argTypes[i] = args[i] == null ? Object.class : args[i].getClass();
-			}
+		Class<?>[] argTypes = new Class<?>[args.length];
+		for (int i = 0; i< args.length; i++) {
+			argTypes[i] = args[i] == null ? Object.class : args[i].getClass();
+		}
 
-			final Method method = findMethod(source.getClass(), name, argTypes);
+		final Method method = findMethod(source.getClass(), name, argTypes);
+		if (method == null) {
+			throw new IllegalArgumentException("Unable to find '" + name + "' with '" + Arrays.toString(argTypes) + "' on '" + source.getClass() + "'!");
+		}
+		return invoke(source, method, args);
+	}
+
+	/**
+	 * 
+	 * @param source
+	 * @param name
+	 * @param args
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T invoke(Object source, Method method, Object... args) {
+		try {
 			if (method == null) {
-				throw new IllegalArgumentException("Unable to find '" + name + "' with '" + Arrays.toString(argTypes) + "' on '" + source.getClass() + "'!");
+				throw new NullPointerException("Method was null!");
 			}
 			setAccessible(method);
 			return (T) method.invoke(source, args);

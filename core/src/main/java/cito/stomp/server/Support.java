@@ -11,10 +11,11 @@ import java.util.Map;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Event;
-import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
+
+import org.apache.logging.log4j.Logger;
 
 import cito.stomp.Frame;
 import cito.stomp.ext.Serialiser;
@@ -34,6 +35,8 @@ import cito.stomp.server.event.MessageEvent;
  * @since v1.0 [27 Jul 2016]
  */
 public abstract class Support {
+	@Inject
+	private Logger log;
 	@Inject
 	private Event<MessageEvent> msgEvent;
 	@Inject
@@ -83,6 +86,7 @@ public abstract class Support {
 	 */
 	public void broadcast(String destination, MediaType type, Object payload, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
+		this.log.debug("Broadcasting... [destination={}]", destination);
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
 		this.msgEvent.select(fromServer()).fire(new BasicMessageEvent(frame));
 	}
@@ -182,6 +186,7 @@ public abstract class Support {
 	 */
 	public void sendTo(String sessionId, String destination, MediaType type, Object payload, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
+		this.log.debug("Sending... [sessionId={},destination={}]", sessionId, destination);
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();
 		this.msgEvent.select(fromServer()).fire(new BasicMessageEvent(frame));
 	}
@@ -190,9 +195,12 @@ public abstract class Support {
 	 * 
 	 * @param obj
 	 * @param type
-	 * @return
+	 * @return the object as a {@link ByteBuffer} or {@code null} if {@code obj} was {@code null}.
 	 */
 	private ByteBuffer toByteBuffer(Object obj, MediaType type) {
+		if (obj == null) {
+			return null;
+		}
 		try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
 			this.serialiser.writeTo(obj, obj.getClass(), type, os);
 			return ByteBuffer.wrap(os.toByteArray());
