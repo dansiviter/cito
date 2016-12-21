@@ -20,7 +20,6 @@ import javax.jms.Message;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 
-import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -29,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
 import cito.stomp.Command;

@@ -15,10 +15,9 @@ import javax.inject.Inject;
 import javax.websocket.EncodeException;
 import javax.websocket.Session;
 
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import cito.stomp.server.annotation.FromBroker;
-import cito.stomp.server.annotation.FromServer;
 import cito.stomp.server.event.MessageEvent;
 
 /**

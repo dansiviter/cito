@@ -10,7 +10,7 @@ import javax.jms.JMSException;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import cito.stomp.server.event.MessageEvent;
 

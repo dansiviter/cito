@@ -12,7 +12,6 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 
-import cito.QuietClosable;
 import cito.ReflectionUtil;
 import cito.stomp.Glob;
 import cito.stomp.server.annotation.OnConnected;

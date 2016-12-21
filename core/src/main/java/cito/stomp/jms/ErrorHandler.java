@@ -5,7 +5,7 @@ import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import cito.stomp.Frame;
 import cito.stomp.Frame.Builder;

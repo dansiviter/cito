@@ -13,7 +13,7 @@ import javax.inject.Provider;
 import javax.jms.JMSException;
 import javax.websocket.Session;
 
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import cito.stomp.server.SecurityContext;
 import cito.stomp.server.SessionRegistry;

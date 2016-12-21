@@ -1,6 +1,6 @@
 package cito.stomp.server.scope;
 
-import static cito.cdi.Util.*;
+import static cito.cdi.Util.injectFields;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -15,13 +15,11 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 import javax.websocket.Session;
 
-import org.apache.deltaspike.core.api.provider.BeanManagerProvider;
-import org.apache.deltaspike.core.api.provider.BeanProvider;
 import org.apache.deltaspike.core.impl.scope.AbstractBeanHolder;
 import org.apache.deltaspike.core.util.context.AbstractContext;
 import org.apache.deltaspike.core.util.context.ContextualStorage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cito.QuietClosable;
 import cito.stomp.server.SessionRegistry;
@@ -33,7 +31,7 @@ import cito.stomp.server.annotation.WebSocketScope;
  * @since v1.0 [17 Aug 2016]
  */
 public class WebSocketContext extends AbstractContext {
-	private static final Logger LOG = LogManager.getLogger(WebSocketContext.class);
+	private static final Logger LOG = LoggerFactory.getLogger(WebSocketContext.class);
 
 	private final Holder holder;
 

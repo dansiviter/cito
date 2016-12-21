@@ -4,8 +4,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.websocket.Session;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cito.stomp.server.annotation.WebSocketScope;
 
@@ -16,7 +16,7 @@ import cito.stomp.server.annotation.WebSocketScope;
  */
 @ApplicationScoped
 public class WebSocketSessionHolder {
-	private static final Logger LOG = LogManager.getLogger(WebSocketSessionHolder.class);
+	private static final Logger LOG = LoggerFactory.getLogger(WebSocketSessionHolder.class);
 
 	private final ThreadLocal<Session> session = new ThreadLocal<>();
 

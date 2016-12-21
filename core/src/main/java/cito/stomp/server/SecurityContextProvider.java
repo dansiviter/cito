@@ -3,7 +3,7 @@ package cito.stomp.server;
 import javax.enterprise.inject.Produces;
 import javax.websocket.Session;
 
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.LoggerFactory;
 
 import cito.stomp.server.annotation.WebSocketScope;
 
@@ -20,7 +20,7 @@ public class SecurityContextProvider {
 	 */
 	@Produces @WebSocketScope
 	public SecurityContext session(Session session) {
-		LogManager.getLogger(SecurityContext.class).info("Returning SecurityContext... [sessionId={}]", session.getId());
+		LoggerFactory.getLogger(SecurityContext.class).info("Returning SecurityContext... [sessionId={}]", session.getId());
 		return (SecurityContext) session.getUserProperties().get(SecurityContext.class.getSimpleName());
 	}
 }

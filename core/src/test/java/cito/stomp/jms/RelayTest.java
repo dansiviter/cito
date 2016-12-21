@@ -16,7 +16,6 @@ import javax.inject.Provider;
 import javax.jms.JMSException;
 import javax.websocket.Session;
 
-import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +23,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
 import cito.stomp.Command;

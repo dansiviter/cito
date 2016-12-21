@@ -16,7 +16,7 @@ import javax.jms.JMSException;
 import javax.websocket.CloseReason;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.logging.log4j.util.Strings;
+import com.google.common.base.Strings;
 
 import cito.stomp.Command;
 import cito.stomp.Frame;
@@ -116,7 +116,7 @@ public class Connection extends AbstractConnection {
 
 		this.log.info("Connecting... [sessionId={}]", msg.sessionId());
 
-		if (Strings.isEmpty(msg.sessionId())) {
+		if (Strings.isNullOrEmpty(msg.sessionId())) {
 			throw new IllegalArgumentException("Session ID cannot be null!");
 		}
 

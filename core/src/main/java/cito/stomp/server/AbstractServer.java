@@ -12,7 +12,7 @@ import javax.websocket.CloseReason;
 import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
 
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import cito.QuietClosable;
 import cito.stomp.Frame;
