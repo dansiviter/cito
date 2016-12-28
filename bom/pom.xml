@@ -9,7 +9,7 @@
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>cito-bom</artifactId>
-	<name>Citō Bill of Materials</name>
+	<name>Cit&otilde; Bill of Materials</name>
 	<packaging>pom</packaging>
 
 	<dependencyManagement>

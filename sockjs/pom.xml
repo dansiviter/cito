@@ -7,7 +7,8 @@
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>cito-sockjs</artifactId>
-	<description>SockJS implementation of Citō to promote interoperability with browsers</description>
+	<name>Cit&otilde; Core</name>
+	<description>SockJS implementation of Cit&otilde; to promote interoperability with browsers</description>
 
 	<dependencies>
 		<dependency>
