@@ -10,6 +10,10 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 import javax.websocket.CloseReason;
 import javax.websocket.EndpointConfig;
+import javax.websocket.OnClose;
+import javax.websocket.OnError;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
 import javax.websocket.Session;
 
 import org.slf4j.Logger;
@@ -44,7 +48,8 @@ public abstract class AbstractServer {
 	 * @param session
 	 * @param config
 	 */
-	protected void open(Session session, EndpointConfig config) {
+	@OnOpen
+	public void open(Session session, EndpointConfig config) {
 		final String httpSessionId = session.getRequestParameterMap().get("httpSessionId").get(0);
 		this.log.info("WebSocket connection opened. [id={},httpSessionId={},principle={}]",
 				session.getId(),
@@ -65,8 +70,9 @@ public abstract class AbstractServer {
 	 * @param session
 	 * @param frame
 	 */
-	protected void message(Session session, Frame frame) {
-		this.log.info("WebSocket message. [id={},principle={},command={}]", session.getId(), session.getUserPrincipal(), frame.getCommand());
+	@OnMessage
+	public void message(Session session, Frame frame) {
+		this.log.debug("Received message from client. [id={},principle={},command={}]", session.getId(), session.getUserPrincipal(), frame.getCommand());
 		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
 			final SerialisingMessageEvent event = this.messageEventInstance.get();
 			event.init(session.getId(), frame);
@@ -80,8 +86,9 @@ public abstract class AbstractServer {
 	 * @param session
 	 * @param reason
 	 */
-	protected void close(Session session, CloseReason reason) {
-		this.log.info("WebSocket closed. [id={},principle={},code={},reason={}]", session.getId(), session.getUserPrincipal(), reason.getCloseCode(), reason.getReasonPhrase());
+	@OnClose
+	public void close(Session session, CloseReason reason) {
+		this.log.info("WebSocket connection closed. [id={},principle={},code={},reason={}]", session.getId(), session.getUserPrincipal(), reason.getCloseCode(), reason.getReasonPhrase());
 		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
 			this.registry.unregister(session);
 			this.sessionEvent.select(onClose()).fire(session);
@@ -94,13 +101,8 @@ public abstract class AbstractServer {
 	 * @param session
 	 * @param t
 	 */
-	protected void error(Session session, Throwable t) {
+	@OnError
+	public void error(Session session, Throwable t) {
 		this.log.warn("WebSocket error. [id={},principle={}]", session.getId(), session.getUserPrincipal(), t);
-		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
-//			Extension.getWebSocketContext(this.beanManager).destroyAllActive();
-		} catch (RuntimeException e) {
-			log.error("Exception while trying to handle error! Error will be re-thrown, but original is logged here.", t);
-			throw e;
-		}
 	}
 }

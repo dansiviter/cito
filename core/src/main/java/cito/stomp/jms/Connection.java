@@ -65,7 +65,7 @@ public class Connection extends AbstractConnection {
 	@Override
 	public void send(Frame frame) {
 		this.heartBeatMonitor.resetSend();
-		this.log.info("Senging message to client. [sessionId={},command={}]", this.sessionId, frame.getCommand());
+		this.log.info("Sending message to client. [sessionId={},command={}]", this.sessionId, frame.getCommand());
 		this.relay.send(new BasicMessageEvent(this.sessionId, frame));
 	}
 
