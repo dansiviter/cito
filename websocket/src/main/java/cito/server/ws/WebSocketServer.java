@@ -1,5 +1,7 @@
 package cito.server.ws;
 
+import javax.websocket.server.ServerEndpoint;
+
 import cito.stomp.Frame;
 import cito.stomp.FrameEncoding;
 import cito.stomp.server.AbstractServer;
@@ -12,7 +14,7 @@ import cito.stomp.server.AbstractServer;
  */
 @ServerEndpoint(
 		value = "/websocket",
-		subprotocols = { "v11.stomp", "v12.stomp" },
+		subprotocols = { "v10.stomp", "v11.stomp", "v12.stomp" },
 		encoders = FrameEncoding.class,
 		decoders = FrameEncoding.class,
 		configurator = WebSocketConfigurator.class
