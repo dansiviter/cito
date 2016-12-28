@@ -7,6 +7,7 @@ import javax.websocket.server.HandshakeRequest;
 import cito.stomp.server.SecurityContext;
 
 /**
+ * Defines {@link javax.ws.rs.core.SecurityContext} for WebSocket connections.
  * 
  * @author Daniel Siviter
  * @since v1.0 [17 Aug 2016]

@@ -9,6 +9,7 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 import cito.stomp.server.SecurityContext;
 
 /**
+ * Links the WebSocket endpoint to the security mechanism.
  * 
  * @author Daniel Siviter
  * @since v1.0 [29 Sep 2016]

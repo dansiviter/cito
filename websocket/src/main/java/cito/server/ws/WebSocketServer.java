@@ -5,6 +5,7 @@ import cito.stomp.FrameEncoding;
 import cito.stomp.server.AbstractServer;
 
 /**
+ * Defines a basic WebSocket endpoint.
  * 
  * @author Daniel Siviter
  * @since v1.0 [15 Jul 2016]
