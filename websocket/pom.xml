@@ -7,7 +7,7 @@
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>cito-websocket</artifactId>
-	<name>Cit&otilde; WebSocket</name>
+	<name>Cit&#x00D5; WebSocket</name>
 	<description>Simplest server implementation that uses purely WebSocket connections</description>
 
 	<dependencies>

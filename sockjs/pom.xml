@@ -7,8 +7,8 @@
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>cito-sockjs</artifactId>
-	<name>Cit&otilde; SockJS</name>
-	<description>SockJS implementation of Cit&otilde; to promote interoperability with browsers</description>
+	<name>Cit&#x00D5; SockJS</name>
+	<description>SockJS implementation of Cit&#x00D5; to promote interoperability with browsers</description>
 
 	<dependencies>
 		<dependency>
@@ -26,11 +26,28 @@
 		<!-- Test Dependencies -->
 
 		<dependency>
-			<groupId>org.python</groupId>
-			<artifactId>jython-standalone</artifactId>
-			<version>2.7.0</version>
+			<groupId>org.wildfly.swarm</groupId>
+			<artifactId>arquillian</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.wildfly.swarm</groupId>
+			<artifactId>undertow</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.arquillian.junit</groupId>
+			<artifactId>arquillian-junit-container</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-client</artifactId>
+			<version>3.0.18.Final</version>
+			<scope>test</scope>
+		</dependency>
+
 
 	</dependencies>
 </project>
