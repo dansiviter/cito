@@ -1,4 +1,4 @@
-package cito.server.sockjs.ws;
+package cito.sockjs.ws;
 
 import java.util.Map;
 
