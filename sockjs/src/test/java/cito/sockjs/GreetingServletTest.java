@@ -3,6 +3,7 @@ package cito.sockjs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -30,6 +31,7 @@ public class GreetingServletTest extends AbstractTest {
 		assertEquals(MediaType.valueOf("text/plain; charset=UTF-8"), response.getMediaType());
 		assertEquals("Welcome to SockJS!\n", response.readEntity(String.class));
 		assertTrue(response.getCookies().isEmpty());
+		response.close();
 	}
 
 	/**
@@ -37,21 +39,25 @@ public class GreetingServletTest extends AbstractTest {
 	 */
 	@Test
 	@RunAsClient
-	public void test_notFound() {
-		final Response response0 = target().path("a").request().get();
-		assertEquals(404, response0.getStatus());
-		final Response response1 = target().path("a.html").request().get();
-		assertEquals(404, response1.getStatus());
-		final Response response2 = target().path("/").request().get();
-		assertEquals(404, response2.getStatus());
-		final Response response3 = target().path("//").request().get();
-		assertEquals(404, response3.getStatus());
-		final Response response4 = target().path("a/a").request().get();
-		assertEquals(404, response4.getStatus());
-		final Response response5 = target().path("a/a/").request().get();
-		assertEquals(404, response5.getStatus());
-		final Response response6 = target().path("a/").request().get();
-		assertEquals(404, response6.getStatus());
+	public void notFound() {
+		notFound("a");
+		notFound("a.html");
+//		notFound("/", "/");			// JAXRS will ignore this!
+//		notFound("/", "/", "/");	// JAXRS will ignore this!
+		notFound("a", "a");
+		notFound("a", "a", "/");
+		notFound("a", "/");
+	}
+
+	private void notFound(String... paths) {
+		WebTarget target = target();
+		for (String path : paths) {
+			target = target.path(path);
+		}
+		System.out.println(target.getUri());
+		final Response res = target.request().get();
+		assertEquals(404, res.getStatus());
+		res.close();
 	}
 
 	@Deployment

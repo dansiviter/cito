@@ -20,6 +20,11 @@ public class GreetingServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+		System.out.println(req.getPathInfo());
+		if (req.getPathInfo().length() > 1) {
+			resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
 		resp.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
 		resp.setStatus(HttpServletResponse.SC_OK);
 		resp.getWriter().print("Welcome to SockJS!\n");
