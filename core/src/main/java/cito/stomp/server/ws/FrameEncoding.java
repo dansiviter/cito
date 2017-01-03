@@ -1,4 +1,4 @@
-package cito.stomp;
+package cito.stomp.server.ws;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -9,6 +9,8 @@ import javax.websocket.Decoder;
 import javax.websocket.EncodeException;
 import javax.websocket.Encoder;
 import javax.websocket.EndpointConfig;
+
+import cito.stomp.Frame;
 
 /**
  * 

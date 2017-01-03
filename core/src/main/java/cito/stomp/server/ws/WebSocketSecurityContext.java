@@ -1,4 +1,4 @@
-package cito.server.ws;
+package cito.stomp.server.ws;
 
 import java.security.Principal;
 

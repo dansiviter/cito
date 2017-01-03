@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import cito.stomp.Connection;
 import cito.stomp.Frame;
-import cito.stomp.FrameEncoding;
 import cito.stomp.HeartBeatMonitor;
+import cito.stomp.server.ws.FrameEncoding;
 
 /**
  * A basic STOMP WebSocket client.

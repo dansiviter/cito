@@ -1,4 +1,4 @@
-package cito.server.ws;
+package cito.stomp.server.ws;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.HandshakeResponse;

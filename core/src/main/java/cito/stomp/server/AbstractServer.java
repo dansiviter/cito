@@ -4,6 +4,8 @@ import static cito.stomp.server.annotation.Qualifiers.fromClient;
 import static cito.stomp.server.annotation.Qualifiers.onClose;
 import static cito.stomp.server.annotation.Qualifiers.onOpen;
 
+import java.util.Arrays;
+
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
@@ -15,14 +17,18 @@ import javax.websocket.OnError;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
+import javax.websocket.server.ServerEndpointConfig;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cito.QuietClosable;
 import cito.stomp.Frame;
 import cito.stomp.server.annotation.FromClient;
 import cito.stomp.server.event.MessageEvent;
 import cito.stomp.server.event.SerialisingMessageEvent;
+import cito.stomp.server.ws.FrameEncoding;
+import cito.stomp.server.ws.WebSocketConfigurator;
 
 /**
  * 
@@ -30,8 +36,8 @@ import cito.stomp.server.event.SerialisingMessageEvent;
  * @since v1.0 [15 Jul 2016]
  */
 public abstract class AbstractServer {
-	@Inject
-	private Logger log;
+	protected final Logger log;
+
 	@Inject
 	private BeanManager beanManager;
 	@Inject
@@ -42,6 +48,13 @@ public abstract class AbstractServer {
 	private Event<Session> sessionEvent;
 	@Inject
 	private Instance<SerialisingMessageEvent> messageEventInstance;
+
+	/**
+	 * 
+	 */
+	public AbstractServer() {
+		this.log = LoggerFactory.getLogger(getClass());
+	}
 
 	/**
 	 * 
@@ -104,5 +117,22 @@ public abstract class AbstractServer {
 	@OnError
 	public void error(Session session, Throwable t) {
 		this.log.warn("WebSocket error. [id={},principle={}]", session.getId(), session.getUserPrincipal(), t);
+	}
+
+
+	// --- Static Methods ---
+
+	/**
+	 * 
+	 * @param cls
+	 * @param path
+	 * @return
+	 */
+	public static ServerEndpointConfig.Builder createConfig(Class<? extends AbstractServer> cls, String path) {
+		return ServerEndpointConfig.Builder
+				.create(cls, path)
+				.decoders(Arrays.asList(FrameEncoding.class))
+				.encoders(Arrays.asList(FrameEncoding.class))
+				.configurator(new WebSocketConfigurator());
 	}
 }

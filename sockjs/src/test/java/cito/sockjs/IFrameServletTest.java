@@ -11,6 +11,7 @@ import org.wildfly.swarm.undertow.WARArchive;
  * 
  * @author Daniel Siviter
  * @since v1.0 [29 Dec 2016]
+ * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-15">SockJS 0.3.3 iFrame</a>
  */
 public class IFrameServletTest extends AbstractTest{
 	/**

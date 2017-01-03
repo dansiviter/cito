@@ -1,0 +1,379 @@
+package cito.sockjs.ws;
+
+import java.util.Arrays;
+import java.util.Set;
+
+import javax.servlet.ServletContainerInitializer;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.websocket.DeploymentException;
+import javax.websocket.server.ServerContainer;
+import javax.websocket.server.ServerEndpointConfig;
+
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.container.test.api.RunAsClient;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.junit.Test;
+import org.wildfly.swarm.undertow.WARArchive;
+
+import cito.sockjs.AbstractTest;
+import cito.sockjs.Headers;
+import cito.sockjs.WebSocketServer;
+import cito.stomp.Frame;
+import cito.stomp.server.AbstractServer;
+import cito.stomp.server.ws.FrameEncoding;
+import cito.stomp.server.ws.WebSocketConfigurator;
+
+/**
+ * Unit test for {@link WebSocketServer}.
+ * 
+ * @author Daniel Siviter
+ * @since v1.0 [29 Dec 2016]
+ * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-50">SockJS 0.3.3 WebSocket</a>
+ */
+public class WebSocketServerTest extends AbstractTest {
+	/**
+	 * Normal requests to websocket should not succeed.
+	 */
+	@Test
+	@RunAsClient
+	public void test_httpMethod() {
+//    def test_httpMethod(self):
+//        r = GET(base_url + '/0/0/websocket')
+//        self.assertEqual(r.status, 400)
+//        self.assertTrue('Can "Upgrade" only to "WebSocket".' in r.body)
+	}
+
+	/**
+	 * Some proxies and load balancers can rewrite 'Connection' header, in such case we must refuse connection.
+	 */
+	@Test
+	@RunAsClient
+	public void test_invalidConnectionHeader() {
+//    def test_invalidConnectionHeader(self):
+//        r = GET(base_url + '/0/0/websocket', headers={'Upgrade': 'WebSocket',
+//                                                      'Connection': 'close'})
+//        self.assertEqual(r.status, 400)
+//        self.assertTrue('"Connection" must be "Upgrade".', r.body)
+	}
+
+	/**
+	 * WebSocket should only accept GET
+	 */
+	@Test
+	@RunAsClient
+	public void test_invalidMethod() {
+//    def test_invalidMethod(self):
+//        for h in [{'Upgrade': 'WebSocket', 'Connection': 'Upgrade'},
+//                  {}]:
+//            r = POST(base_url + '/0/0/websocket', headers=h)
+//            self.verify405(r)
+	}
+
+	/**
+	 * Support WebSocket Hixie-76 protocol
+	 */
+	@Test
+	@RunAsClient
+	public void WebsocketHixie76() {
+//class WebsocketHixie76(Test):
+
+//    def test_transport(self):
+//        ws_url = 'ws:' + base_url.split(':',1)[1] + \
+//                 '/000/' + str(uuid.uuid4()) + '/websocket'
+//        ws = websocket.create_connection(ws_url)
+//        self.assertEqual(ws.recv(), u'o')
+//        ws.send(u'["a"]')
+//        self.assertEqual(ws.recv(), u'a["a"]')
+//        ws.close()
+
+//    def test_close(self):
+//        ws_url = 'ws:' + close_base_url.split(':',1)[1] + \
+//                 '/000/' + str(uuid.uuid4()) + '/websocket'
+//        ws = websocket.create_connection(ws_url)
+//        self.assertEqual(ws.recv(), u'o')
+//        self.assertEqual(ws.recv(), u'c[3000,"Go away!"]')
+
+	// The connection should be closed after the close frame.
+//        with self.assertRaises(websocket.ConnectionClosedException):
+//            if ws.recv() is None:
+//                raise websocket.ConnectionClosedException
+//        ws.close()
+	}
+
+	/**
+	 *  Empty frames must be ignored by the server side.
+	 */
+	@Test
+	@RunAsClient
+	public void test_empty_frame() {
+//    def test_empty_frame(self):
+//        ws_url = 'ws:' + base_url.split(':',1)[1] + \
+//                 '/000/' + str(uuid.uuid4()) + '/websocket'
+//        ws = websocket.create_connection(ws_url)
+//        self.assertEqual(ws.recv(), u'o')
+
+	// Server must ignore empty messages.
+
+//        ws.send(u'')
+//        ws.send(u'["a"]')
+//        self.assertEqual(ws.recv(), u'a["a"]')
+//        ws.close()
+	}
+
+	/**
+	 * For WebSockets, as opposed to other transports, it is valid to reuse session_id. The lifetime of SockJS WebSocket session is defined by a lifetime of underlying WebSocket connection. It is correct to have two separate sessions sharing the same session_id at the same time.
+	 */
+	@Test
+	@RunAsClient
+	public void test_reuseSessionId() {
+//    def test_reuseSessionId(self):
+//        on_close = lambda(ws): self.assertFalse(True)
+
+//        ws_url = 'ws:' + base_url.split(':',1)[1] + \
+//                 '/000/' + str(uuid.uuid4()) + '/websocket'
+//        ws1 = websocket.create_connection(ws_url, on_close=on_close)
+//        self.assertEqual(ws1.recv(), u'o')
+
+//        ws2 = websocket.create_connection(ws_url, on_close=on_close)
+//        self.assertEqual(ws2.recv(), u'o')
+
+//        ws1.send(u'"a"')
+//        self.assertEqual(ws1.recv(), u'a["a"]')
+
+//        ws2.send(u'"b"')
+//        self.assertEqual(ws2.recv(), u'a["b"]')
+
+//        ws1.close()
+//        ws2.close()
+
+	// It is correct to reuse the same session_id after closing a previous connection.
+
+//        ws1 = websocket.create_connection(ws_url)
+//        self.assertEqual(ws1.recv(), u'o')
+//        ws1.send(u'"a"')
+//        self.assertEqual(ws1.recv(), u'a["a"]')
+//        ws1.close()
+	}
+
+	/**
+	 * Verify WebSocket headers sanity. Due to HAProxy design the websocket server must support writing response headers before receiving -76 nonce. In other words, the websocket code must work like that:
+	 */
+	@Test
+	@RunAsClient
+	public void test_haproxy() {
+//Receive request headers.
+//Write response headers.
+//Receive request nonce.
+//Write response nonce.
+//    def test_haproxy(self):
+//        url = base_url.split(':',1)[1] + \
+//                 '/000/' + str(uuid.uuid4()) + '/websocket'
+//        ws_url = 'ws:' + url
+//        http_url = 'http:' + url
+//        origin = '/'.join(http_url.split('/')[:3])
+
+//        c = RawHttpConnection(http_url)
+//        r = c.request('GET', http_url, http='1.1', headers={
+//                'Connection':'Upgrade',
+//                'Upgrade':'WebSocket',
+//                'Origin': origin,
+//                'Sec-WebSocket-Key1': '4 @1  46546xW%0l 1 5',
+//                'Sec-WebSocket-Key2': '12998 5 Y3 1  .P00'
+//                })
+
+	// First check response headers
+
+//        self.assertEqual(r.status, 101)
+//        self.assertEqual(r.headers['connection'].lower(), 'upgrade')
+//        self.assertEqual(r.headers['upgrade'].lower(), 'websocket')
+//        self.assertEqual(r.headers['sec-websocket-location'], ws_url)
+//        self.assertEqual(r.headers['sec-websocket-origin'], origin)
+//        self.assertFalse('Content-Length' in r.headers)
+
+	// Later send token
+
+//        c.send('aaaaaaaa')
+//        self.assertEqual(c.read()[:16],
+//                         '\xca4\x00\xd8\xa5\x08G\x97,\xd5qZ\xba\xbfC{')
+	}
+
+	/**
+	 * When user sends broken data - broken JSON for example, the server must abruptly terminate the ws connection.
+	 */
+	@Test
+	@RunAsClient
+	public void test_broken_json_WebsocketHixie76() {
+//    def test_broken_json(self):
+//        ws_url = 'ws:' + base_url.split(':',1)[1] + \
+//                 '/000/' + str(uuid.uuid4()) + '/websocket'
+//        ws = websocket.create_connection(ws_url)
+//        self.assertEqual(ws.recv(), u'o')
+//        ws.send(u'["a')
+//        with self.assertRaises(websocket.ConnectionClosedException):
+//            if ws.recv() is None:
+//                raise websocket.ConnectionClosedException
+//        ws.close()
+	}
+
+/**
+ * The server must support Hybi-10 protocol
+ */
+	@Test
+	@RunAsClient
+	public void WebsocketHybi10() {
+//class WebsocketHybi10(Test):
+
+//    def test_transport(self):
+//        trans_url = base_url + '/000/' + str(uuid.uuid4()) + '/websocket'
+//        ws = WebSocket8Client(trans_url)
+
+//        self.assertEqual(ws.recv(), 'o')
+
+	// Server must ignore empty messages.
+
+//        ws.send(u'')
+//        ws.send(u'["a"]')
+//        self.assertEqual(ws.recv(), 'a["a"]')
+//        ws.close()
+	}
+
+	/**
+	 * 
+	 */
+	@Test
+	@RunAsClient
+	public void test_close() {
+//    def test_close(self):
+//        trans_url = close_base_url + '/000/' + str(uuid.uuid4()) + '/websocket'
+//        ws = WebSocket8Client(trans_url)
+//        self.assertEqual(ws.recv(), u'o')
+//        self.assertEqual(ws.recv(), u'c[3000,"Go away!"]')
+//        with self.assertRaises(ws.ConnectionClosedException):
+//            ws.recv()
+//        ws.close()
+	}
+
+	/**
+	 * Verify WebSocket headers sanity. Server must support both Hybi-07 and Hybi-10.
+	 */
+	@Test
+	@RunAsClient
+	public void test_headersSanity() {
+//    def test_headersSanity(self):
+//        for version in ['7', '8', '13']:
+//            url = base_url.split(':',1)[1] + \
+//                '/000/' + str(uuid.uuid4()) + '/websocket'
+//            ws_url = 'ws:' + url
+//            http_url = 'http:' + url
+//            origin = '/'.join(http_url.split('/')[:3])
+//            h = {'Upgrade': 'websocket',
+//                 'Connection': 'Upgrade',
+//                 'Sec-WebSocket-Version': version,
+//                 'Sec-WebSocket-Origin': 'http://asd',
+//                 'Sec-WebSocket-Key': 'x3JJHMbDL1EzLkh9GBhXDw==',
+//                 }
+
+//            r = GET_async(http_url, headers=h)
+//            self.assertEqual(r.status, 101)
+//            self.assertEqual(r['sec-websocket-accept'], 'HSmrc0sMlYUkAGmm5OPpG2HaGWk=')
+//            self.assertEqual(r['connection'].lower(), 'upgrade')
+//            self.assertEqual(r['upgrade'].lower(), 'websocket')
+//            self.assertFalse(r['content-length'])
+//            r.close()
+	}
+
+	/**
+	 * When user sends broken data - broken JSON for example, the server must abruptly terminate the ws connection.
+	 */
+	@Test
+	@RunAsClient
+	public void test_broken_json_WebsocketHybi10() {
+//    def test_broken_json(self):
+//        ws_url = 'ws:' + base_url.split(':',1)[1] + \
+//                 '/000/' + str(uuid.uuid4()) + '/websocket'
+//        ws = WebSocket8Client(ws_url)
+//        self.assertEqual(ws.recv(), u'o')
+//        ws.send(u'["a')
+//        with self.assertRaises(ws.ConnectionClosedException):
+//            ws.recv()
+//        ws.close()
+	}
+
+	/**
+	 * As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But, it doesn't send a normal 'Connection: Upgrade' header. Instead it sends: 'Connection: keep-alive, Upgrade'. Brilliant.
+	 */
+	@Test
+	@RunAsClient
+	public void test_firefox_602_connection_header() {
+//    def test_firefox_602_connection_header(self):
+//        url = base_url.split(':',1)[1] + \
+//            '/000/' + str(uuid.uuid4()) + '/websocket'
+//        ws_url = 'ws:' + url
+//        http_url = 'http:' + url
+//        origin = '/'.join(http_url.split('/')[:3])
+//        h = {'Upgrade': 'websocket',
+//             'Connection': 'keep-alive, Upgrade',
+//             'Sec-WebSocket-Version': '7',
+//             'Sec-WebSocket-Origin': 'http://asd',
+//             'Sec-WebSocket-Key': 'x3JJHMbDL1EzLkh9GBhXDw==',
+//             }
+//        r = GET_async(http_url, headers=h)
+//        self.assertEqual(r.status, 101)
+	}
+
+	@Test
+	@RunAsClient
+	public void hasPathParams() {
+		
+	}
+
+	// --- Static Methods ---
+
+	@Deployment
+	public static WARArchive createDeployment() {
+		return ShrinkWrap.create(WARArchive.class).addClasses(
+				WebSocketServer.class,
+				AbstractServer.class,
+				WebSocketConfigurator.class,
+				FrameEncoding.class,
+				Frame.class,
+				cito.stomp.Headers.class,
+				WebSocketInitialiser.class,
+				Headers.class);
+	}
+
+
+	// --- Inner Classes ---
+
+	/**
+	 * Initialises the websocket connection. Unfortunately, I've found no other way as yet to perform this within
+	 * Arquillian.
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [3 Jan 2017]
+	 */
+	public static class WebSocketInitialiser implements ServletContainerInitializer {
+		@Override
+		public void onStartup(Set<Class<?>> c, ServletContext ctx) throws ServletException {
+			System.out.println("#onStartup called!");
+
+			//@ServerEndpoint(
+//			value = "/{server}/{session}/websocket",
+//			subprotocols = { "v10.stomp", "v11.stomp", "v12.stomp" },
+//			encoders = FrameEncoding.class,
+//			decoders = FrameEncoding.class,
+//			configurator = WebSocketConfigurator.class
+	//)
+			final ServerEndpointConfig webSocket = 
+					AbstractServer.createConfig(WebSocketServer.class, "/{server}/{session}/websocket").build();
+
+			final ServerContainer serverContainer = (ServerContainer) ctx.getAttribute(ServerContainer.class.getName());
+			try {
+				serverContainer.addEndpoint(webSocket);
+			} catch (DeploymentException e) {
+				throw new ServletException(e);
+			}
+		}
+	}
+}

@@ -1,5 +1,9 @@
 package cito.sockjs;
 
+import static org.junit.Assert.assertEquals;
+
+import javax.ws.rs.core.Response;
+
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -14,12 +18,16 @@ import org.wildfly.swarm.undertow.WARArchive;
  */
 public class InfoServletTest extends AbstractTest {
 	/**
-	 * This url is called before the client starts the session. It's used to check server capabilities (websocket support, cookies requiremet) and to get the value of "origin" setting (currently not used).
-	 * But more importantly, the call to this url is used to measure the roundtrip time between the client and the server. So, please, do respond to this url in a timely fashin.
+	 * This url is called before the client starts the session. It's used to check server capabilities (websocket
+	 * support, cookies requirement) and to get the value of "origin" setting (currently not used).
+	 * But more importantly, the call to this url is used to measure the roundtrip time between the client and the
+	 * server. So, please, do respond to this url in a timely fashion.
 	 */
 	@Test
 	@RunAsClient
 	public void test_basic() {
+		final Response response = target().request().get();
+		assertEquals(200, response.getStatus());
 //    def test_basic(self):
 //        r = GET(base_url + '/info')
 //        self.assertEqual(r.status, 200)

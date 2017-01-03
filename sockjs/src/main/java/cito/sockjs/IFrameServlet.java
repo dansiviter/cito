@@ -48,7 +48,9 @@ public class IFrameServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		if (md5Hash.equals(req.getHeader(IF_NONE_MATCH))) {
+		// TODO disable iFrame on CORS
+
+		if (this.md5Hash.equals(req.getHeader(IF_NONE_MATCH))) {
 			resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
 			return;
 		}

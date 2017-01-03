@@ -12,7 +12,7 @@ import javax.websocket.server.ServerEndpointConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cito.sockjs.ws.WebSocketServer;
+import cito.stomp.server.AbstractServer;
 
 /**
  * Initialises the SockJS runtime within the container. The base path will be {@code <context-root>/sockjs}. If this is
@@ -42,16 +42,16 @@ public class ContainerInitialiser implements ServletContainerInitializer {
 		ctx.addServlet("sockjs-greeting",		GreetingServlet.class).addMapping(path);
 		ctx.addServlet("sockjs-info",			InfoServlet.class).addMapping(String.format("%s/info", path));
 		ctx.addServlet("sockjs-iframe",			IFrameServlet.class).addMapping(String.format("%s/iframe", path));
-		ctx.addServlet("sockjs-eventsource",	EventSourceServlet.class).addMapping(String.format(BASE_PATH, path, "eventsource"));
-//		ctx.addServlet("sockjs-xhr", EventSourceServlet.class).addMapping(String.format(BASE_PATH, path, "xhr"));
+		ctx.addServlet("sockjs-xhr",			XhrServlet.class).addMapping(
+				String.format(BASE_PATH, path, "xhr"),
+				String.format(BASE_PATH, path, "xhr_send"));
+//		ctx.addServlet("sockjs-eventsource",	EventSourceServlet.class).addMapping(String.format(BASE_PATH, path, "eventsource"));
 //		etc...
 
-		final ServerEndpointConfig rawWebSocket = ServerEndpointConfig.Builder
-				.create(WebSocketServer.class, String.format("%s/websocket", path))
-				.build();
-		final ServerEndpointConfig webSocket = ServerEndpointConfig.Builder
-				.create(WebSocketServer.class, String.format(BASE_PATH, path, "websocket"))
-				.build();
+		final ServerEndpointConfig rawWebSocket = AbstractServer.createConfig(
+				WebSocketServer.class, String.format("%s/websocket", path)).build();
+		final ServerEndpointConfig webSocket = AbstractServer.createConfig(
+				WebSocketServer.class, String.format(BASE_PATH, path, "websocket")).build();
 
 		final ServerContainer serverContainer = (ServerContainer) ctx.getAttribute(ServerContainer.class.getName());
 		try {

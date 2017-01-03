@@ -20,7 +20,7 @@ public class HttpSessionRegistry {
 	 * @param session
 	 */
 	public void register(HttpSession session) {
-		this.sessions.computeIfAbsent(session.getId(), (v) -> { return session; });
+		this.sessions.computeIfAbsent(session.getId(), (v) -> session);
 	}
 
 	/**
@@ -37,6 +37,6 @@ public class HttpSessionRegistry {
 	 * @param session
 	 */
 	public void unregister(HttpSession session) {
-		this.sessions.computeIfPresent(session.getId(), (k, v) -> { return null; });
+		this.sessions.computeIfPresent(session.getId(), (k, v) -> null);
 	}
 }

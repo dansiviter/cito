@@ -49,7 +49,7 @@ import cito.LinkedCaseInsensitiveMap;
 public class Frame {
 	private static final AtomicLong MESSAGE_ID_COUNTER = new AtomicLong();
 
-	static final char NULL = '\u0000';
+	public static final char NULL = '\u0000';
 	static final char LINE_FEED = '\n';
 	public static final Frame HEART_BEAT = new Frame(null, new MultivaluedHashMap<>(0), null);
 

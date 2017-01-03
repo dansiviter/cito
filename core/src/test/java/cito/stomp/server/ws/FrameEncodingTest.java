@@ -1,7 +1,7 @@
-package cito.stomp;
+package cito.stomp.server.ws;
 
 import static cito.stomp.Frame.NULL;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -14,7 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import cito.stomp.Frame;
-import cito.stomp.FrameEncoding;
 
 /**
  * Unit test for {@link FrameEncoding}.
