@@ -1,4 +1,4 @@
-package cito.stomp.server;
+package cito.sockjs;
 
 import java.io.IOException;
 import java.net.URI;

@@ -1,4 +1,4 @@
-package cito.servlet;
+package cito.sockjs;
 
 import java.io.IOException;
 

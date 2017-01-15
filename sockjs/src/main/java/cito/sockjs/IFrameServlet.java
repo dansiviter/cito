@@ -27,12 +27,16 @@ import javax.servlet.http.HttpServletResponse;
  * @since v1.0 [29 Dec 2016]
  */
 @WebServlet(name = "SockJs iFrame Servlet", asyncSupported = true)
-public class IFrameServlet extends HttpServlet {
+public class IFrameServlet extends AbstractServlet {
 	private static final long serialVersionUID = -5544345272086874216L;
 	private static final int CACHE_DURATION_SECONDS = 31536000; // 1 year
 
 	private String template;
 	private String md5Hash;
+
+	public IFrameServlet(Context ctx) {
+		super(ctx);
+	}
 
 	@Override
 	public void init() throws ServletException {

@@ -18,10 +18,13 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.junit.runner.RunWith;
 import org.mockito.internal.matchers.GreaterThan;
+import org.wildfly.swarm.undertow.WARArchive;
 
 /**
  * 
@@ -162,5 +165,44 @@ public abstract class AbstractTest {
 	 */
 	protected static String uuid() {
 		return UUID.randomUUID().toString();
+	}
+
+
+	// --- Static Methods ---
+
+	@Deployment
+	public static WARArchive createDeployment() {
+		return ShrinkWrap.create(WARArchive.class)
+				.addPackage(SockJsInitialiser.class.getPackage());
+//				.addClasses(
+//				WebSocketServer.class,
+//				AbstractServer.class,
+//				WebSocketConfigurator.class,
+//				FrameEncoding.class,
+//				Frame.class,
+//				cito.stomp.Headers.class,
+//				WebSocketInitialiser.class,
+//				Headers.class);
+	}
+
+
+	// --- Inner Classes ---
+
+	/**
+	 * Loaded by {@link SockJsInitialiser}.
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [4 Jan 2017]
+	 */
+	public static class TestInitialiser implements Initialiser {
+		@Override
+		public String path() {
+			return "echo";
+		}
+
+		@Override
+		public Class<?> endpointClass() {
+			return EchoEndpoint.class;
+		}
 	}
 }

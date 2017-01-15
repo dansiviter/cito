@@ -4,8 +4,6 @@ import static cito.sockjs.Headers.CONTENT_TYPE;
 
 import java.io.IOException;
 
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -14,9 +12,12 @@ import javax.servlet.http.HttpServletResponse;
  * @author Daniel Siviter
  * @since v1.0 [29 Dec 2016]
  */
-@WebServlet(name = "SockJs Greeting Servlet", asyncSupported = true)
-public class GreetingServlet extends HttpServlet {
+public class GreetingServlet extends AbstractServlet {
 	private static final long serialVersionUID = -3437734574704352295L;
+
+	public GreetingServlet(Context ctx) {
+		super(ctx);
+	}
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {

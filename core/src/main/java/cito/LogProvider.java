@@ -19,7 +19,7 @@ public class LogProvider {
 	 * @return
 	 */
 	@Produces @Dependent
-	public Logger logger(InjectionPoint ip) {
+	public static Logger logger(InjectionPoint ip) {
 		return LoggerFactory.getLogger(ip.getMember().getDeclaringClass());
 	}
 }

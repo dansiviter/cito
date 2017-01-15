@@ -1,4 +1,4 @@
-package cito.stomp.server.es;
+package cito.sockjs.es;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -9,14 +9,22 @@ import javax.servlet.AsyncEvent;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.websocket.Session;
 import javax.ws.rs.core.MediaType;
 
-import cito.servlet.AsyncHandler;
-import cito.stomp.server.SessionRegistry;
-import cito.stomp.server.xhr.AbstractXhrServlet;
+import cito.sockjs.AbstractServlet;
+import cito.sockjs.AsyncHandler;
+import cito.sockjs.Context;
+import cito.sockjs.Util;
 
-//@WebServlet(urlPatterns={"/*/*/eventsource"}, asyncSupported=true)
-public class EventSourceServlet extends AbstractXhrServlet {
+/**
+ * 
+ * @author Daniel Siviter
+ * @since v1.0 [29 Dec 2016]
+ */
+public class EventSourceServlet extends AbstractServlet {
+	private static final long serialVersionUID = -6749385462053436601L;
+
 	/**
 	 * A {@code String} constant representing "{@value #TEXT_EVENTSTREAM}" media type.
 	 */
@@ -26,24 +34,21 @@ public class EventSourceServlet extends AbstractXhrServlet {
 	 */
 	public final static MediaType TEXT_EVENTSTREAM_TYPE = new MediaType("text", "event-stream");
 
-//	@Inject
-	private SessionRegistry registry;
+	public EventSourceServlet(Context ctx) {
+		super(ctx);
+	}
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException { 
 		res.setContentType(TEXT_EVENTSTREAM);
 		res.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
-		// TODO, use /<session>/<server> as a key for #getId?
+		final Session session = getSession(Util.session(req));
+		
+	}
 
-		final AsyncContext asyncCtx = req.startAsync();
-		final EventSourceSession session = new EventSourceSession(req, Collections.emptyMap(), asyncCtx);
-		asyncCtx.addListener(new AsyncHandler() {
-			@Override
-			public void onComplete(AsyncEvent event) throws IOException {
-				registry.unregister(session);
-			}
-		});
-		this.registry.register(session);
+	@Override
+	protected Session createSession(String sessionId, AsyncContext asyncCtx) {
+		return new EventSourceSession(asyncCtx);
 	}
 }

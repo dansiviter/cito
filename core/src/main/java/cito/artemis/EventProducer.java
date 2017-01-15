@@ -40,7 +40,10 @@ public class EventProducer implements NotificationListener {
 	@Inject
 	private Event<cito.DestinationEvent> destinationEvent;
 
-	public void startip(@Observes @Initialized(ApplicationScoped.class) Object init) { }
+	/**
+	 * @param init used initialise on startup of application.
+	 */
+	public void startup(@Observes @Initialized(ApplicationScoped.class) Object init) { }
 
 	@PostConstruct
 	public void init() {

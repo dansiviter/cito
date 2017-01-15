@@ -37,6 +37,9 @@ public class Broker {
 
 	private EmbeddedJMS broker;
 
+	/**
+	 * @param init used initialise on startup of application.
+	 */
 	public void startup(@Observes @Initialized(ApplicationScoped.class) Object init) { }
 
 	@PostConstruct

@@ -1,14 +1,6 @@
 package cito.sockjs.ws;
 
-import java.util.Arrays;
-import java.util.Set;
-
-import javax.servlet.ServletContainerInitializer;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.websocket.DeploymentException;
-import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
+import java.awt.Frame;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -19,10 +11,6 @@ import org.wildfly.swarm.undertow.WARArchive;
 import cito.sockjs.AbstractTest;
 import cito.sockjs.Headers;
 import cito.sockjs.WebSocketServer;
-import cito.stomp.Frame;
-import cito.stomp.server.AbstractServer;
-import cito.stomp.server.ws.FrameEncoding;
-import cito.stomp.server.ws.WebSocketConfigurator;
 
 /**
  * Unit test for {@link WebSocketServer}.
@@ -334,46 +322,12 @@ public class WebSocketServerTest extends AbstractTest {
 	public static WARArchive createDeployment() {
 		return ShrinkWrap.create(WARArchive.class).addClasses(
 				WebSocketServer.class,
-				AbstractServer.class,
-				WebSocketConfigurator.class,
-				FrameEncoding.class,
+//				AbstractServer.class,
+//				WebSocketConfigurator.class,
+//				FrameEncoding.class,
 				Frame.class,
-				cito.stomp.Headers.class,
+//				cito.stomp.Headers.class,
 				WebSocketInitialiser.class,
 				Headers.class);
-	}
-
-
-	// --- Inner Classes ---
-
-	/**
-	 * Initialises the websocket connection. Unfortunately, I've found no other way as yet to perform this within
-	 * Arquillian.
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [3 Jan 2017]
-	 */
-	public static class WebSocketInitialiser implements ServletContainerInitializer {
-		@Override
-		public void onStartup(Set<Class<?>> c, ServletContext ctx) throws ServletException {
-			System.out.println("#onStartup called!");
-
-			//@ServerEndpoint(
-//			value = "/{server}/{session}/websocket",
-//			subprotocols = { "v10.stomp", "v11.stomp", "v12.stomp" },
-//			encoders = FrameEncoding.class,
-//			decoders = FrameEncoding.class,
-//			configurator = WebSocketConfigurator.class
-	//)
-			final ServerEndpointConfig webSocket = 
-					AbstractServer.createConfig(WebSocketServer.class, "/{server}/{session}/websocket").build();
-
-			final ServerContainer serverContainer = (ServerContainer) ctx.getAttribute(ServerContainer.class.getName());
-			try {
-				serverContainer.addEndpoint(webSocket);
-			} catch (DeploymentException e) {
-				throw new ServletException(e);
-			}
-		}
 	}
 }

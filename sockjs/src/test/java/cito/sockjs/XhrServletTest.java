@@ -58,7 +58,7 @@ public class XhrServletTest extends AbstractTest {
 		// iOS 6 caches POSTs. Make sure we send no-cache header.
 		verifyNotCached(r);
 
-		// Xhr transports receive json-encoded array of messages.
+		// Xhr transShrinkports receive json-encoded array of messages.
 		r = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]"));
 		//        r = POST(url + '/xhr_send', body='["x"]')
 		assertEquals(Status.OK, r.getStatusInfo());
