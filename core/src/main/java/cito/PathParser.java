@@ -15,7 +15,7 @@ public class PathParser {
 	private final String pattern;
 	private final String[] segments;
 
-	private final Map<String, Integer> segmentMap;
+	private final Map<Integer, String> segmentMap;
 
 	/**
 	 * Create a parser that uses forward slashes ('/') and period/full-stop ('.') as separators.
@@ -38,11 +38,11 @@ public class PathParser {
 		this.separator = separator;
 		this.pattern = pattern;
 		this.segments = pattern.split(separator);
-		final Map<String, Integer> segmentMap = new HashMap<>();
+		final Map<Integer, String> segmentMap = new HashMap<>();
 		for (int i = 0; i < this.segments.length; i++) {
 			final String segment = this.segments[i];
 			if (isParam(segment)) {
-				segmentMap.put(segment.substring(1, segment.length() - 1), i);
+				segmentMap.put(i, segment.substring(1, segment.length() - 1));
 			}
 		}
 		this.segmentMap = Collections.unmodifiableMap(segmentMap);
@@ -59,7 +59,17 @@ public class PathParser {
 			throw new IllegalArgumentException("Different number of segments! [pattern=" + this.pattern + ",path=" + path + "]");
 		}
 		final Map<String, String> params = new HashMap<>();
-		this.segmentMap.forEach((k, v) -> params.put(k, segments[v]));
+		for (int i = 0; i < this.segments.length; i++) {
+			final String paramName = this.segmentMap.get(i);
+			if (paramName != null) {
+				params.put(paramName, segments[i]);
+				continue;
+			}
+			if (!this.segments[i].equals(segments[i])) {
+				throw new IllegalArgumentException(
+						"Unnamed segment does not match pattern! [pattern=" + this.pattern + ",path=" + path + ",segment=" + i + "]");
+			}
+		}
 		return params;
 	}
 

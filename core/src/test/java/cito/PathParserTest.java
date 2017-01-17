@@ -57,4 +57,12 @@ public class PathParserTest {
 		final PathParser parser = new PathParser("{param1}/segment/{param2}");
 		parser.parse("/queue/first/segment/second");
 	}
+
+	@Test
+	public void parse_nonMatchingSegments() {
+		this.exception.expect(IllegalArgumentException.class);
+		this.exception.expectMessage("Unnamed segment does not match pattern! [pattern=/queue/{param1}/segment,path=/queue/first/another,segment=3]");
+		final PathParser parser = new PathParser("/queue/{param1}/segment");
+		parser.parse("/queue/first/another");
+	}
 }
