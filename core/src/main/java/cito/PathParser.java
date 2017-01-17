@@ -11,6 +11,8 @@ import java.util.Map;
  * @since v1.0 [17 Jan 2017]
  */
 public class PathParser {
+	private static final Result FAIL = new Result(Collections.emptyMap(), false);
+
 	private final String separator;
 	private final String pattern;
 	private final String[] segments;
@@ -51,13 +53,10 @@ public class PathParser {
 	/**
 	 * 
 	 * @param path
-	 * @return
+	 * @return the values of the params. If empty then it did not match.
 	 */
-	public Map<String, String> parse(String path) {
+	public Result parse(String path) {
 		final String[] segments = path.split(this.separator);
-		if (segments.length != this.segments.length) {
-			throw new IllegalArgumentException("Different number of segments! [pattern=" + this.pattern + ",path=" + path + "]");
-		}
 		final Map<String, String> params = new HashMap<>();
 		for (int i = 0; i < this.segments.length; i++) {
 			final String paramName = this.segmentMap.get(i);
@@ -66,11 +65,10 @@ public class PathParser {
 				continue;
 			}
 			if (!this.segments[i].equals(segments[i])) {
-				throw new IllegalArgumentException(
-						"Unnamed segment does not match pattern! [pattern=" + this.pattern + ",path=" + path + ",segment=" + i + "]");
+				return FAIL;
 			}
 		}
-		return params;
+		return new Result(params, true);
 	}
 
 
@@ -100,7 +98,42 @@ public class PathParser {
 	 * @param path
 	 * @return
 	 */
-	public static Map<String, String> parse(String pattern, String path) {
+	public static Result parse(String pattern, String path) {
 		return create(pattern).parse(path);
+	}
+
+
+	// --- Inner Classes ---
+
+	/**
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [17 Jan 2017]
+	 */
+	public static class Result {
+		private final Map<String, String> params;
+		private final boolean success;
+
+		/**
+		 * 
+		 * @param params
+		 */
+		public Result(Map<String, String> params, boolean success) {
+			this.params = params;
+			this.success = success;
+		}
+
+		public boolean isSuccess() {
+			return success;
+		}
+
+		/**
+		 * 
+		 * @param name
+		 * @return
+		 */
+		public String get(String name) {
+			return this.params.get(name);
+		}
 	}
 }
