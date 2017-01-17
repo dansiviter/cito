@@ -1,13 +1,14 @@
 package cito.artemis;
 
-import static cito.DestinationEvent.DestinationType.QUEUE;
-import static cito.DestinationEvent.DestinationType.TOPIC;
 import static cito.stomp.server.annotation.Qualifiers.onDestinaton;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.MESSAGE;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_CREATED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_DESTROYED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.TOPIC_CREATED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.TOPIC_DESTROYED;
+
+import java.util.Collection;
+import java.util.EnumSet;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -20,6 +21,7 @@ import javax.inject.Inject;
 import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationListener;
 import org.apache.activemq.artemis.jms.server.embedded.EmbeddedJMS;
+import org.apache.activemq.artemis.jms.server.management.JMSNotificationType;
 import org.slf4j.Logger;
 
 import cito.DestinationEvent.DestinationType;
@@ -33,6 +35,10 @@ import cito.DestinationEvent.Type;
  */
 @ApplicationScoped
 public class EventProducer implements NotificationListener {
+	private static final Collection<JMSNotificationType> ALL = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED, QUEUE_CREATED, QUEUE_DESTROYED);
+	private static final Collection<JMSNotificationType> CREATED = EnumSet.of(TOPIC_CREATED, QUEUE_CREATED);
+	private static final Collection<JMSNotificationType> TOPIC = EnumSet.of(TOPIC_DESTROYED, TOPIC_DESTROYED);
+
 	@Inject
 	private Logger log;
 	@Inject
@@ -52,15 +58,13 @@ public class EventProducer implements NotificationListener {
 
 	@Override
 	public void onNotification(Notification notif) {
-		if (notif.getType() != TOPIC_CREATED && notif.getType() != QUEUE_CREATED &&
-				notif.getType() != TOPIC_DESTROYED || notif.getType() != QUEUE_DESTROYED)
-		{
+		if (!ALL.contains(notif.getType())) {
 			return;
 		}
 
 		final String destination = notif.getProperties().getSimpleStringProperty(MESSAGE).toString();
-		final Type type = notif.getType() == TOPIC_CREATED || notif.getType() == QUEUE_CREATED ? Type.ADDED : Type.REMOVED;
-		final DestinationType destinationType = notif.getType() == QUEUE_DESTROYED || notif.getType() == QUEUE_CREATED ? QUEUE : TOPIC;
+		final Type type = CREATED.contains(notif.getType()) ? Type.ADDED : Type.REMOVED;
+		final DestinationType destinationType = TOPIC.contains(notif.getType()) ? DestinationType.TOPIC : DestinationType.QUEUE;
 
 		this.log.info("Destination changed. [type={},destinationType={},destination={}]", type, destinationType, destination);
 		this.destinationEvent.select(onDestinaton(type)).fire(new cito.DestinationEvent(type, destinationType, destination));
