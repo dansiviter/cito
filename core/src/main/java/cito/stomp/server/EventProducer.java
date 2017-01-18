@@ -33,8 +33,6 @@ public class EventProducer {
 
 	@Inject
 	private BeanManager manager;
-	@Inject
-	private SessionRegistry sessionRegistry;
 
 	/**
 	 * 

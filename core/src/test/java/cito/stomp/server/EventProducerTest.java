@@ -1,6 +1,5 @@
 package cito.stomp.server;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -44,7 +43,9 @@ public class EventProducerTest {
 	private BeanManager beanManager;
 	@Mock
 	private Extension extension;
-
+	@Mock
+	private ObserverMethod<MessageEvent> observerMethod;
+	
 	@InjectMocks
 	private EventProducer eventProducer;
 
@@ -55,8 +56,7 @@ public class EventProducerTest {
 
 	@Test
 	public void message_CONNECTED() {
-		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
-		when(this.extension.getObservers(OnConnected.class)).thenReturn(Collections.singleton(observerMethod));
+		when(this.extension.getObservers(OnConnected.class)).thenReturn(Collections.singleton(this.observerMethod));
 
 		final MessageEvent event = new BasicMessageEvent(
 				Frame.connnected("1.2", "sessionId", "server").build());
@@ -65,14 +65,12 @@ public class EventProducerTest {
 
 		verify(this.beanManager).getExtension(Extension.class);
 		verify(this.extension).getObservers(OnConnected.class);
-		verify(observerMethod).notify(event);
-		verifyNoMoreInteractions(observerMethod);
+		verify(this.observerMethod).notify(event);
 	}
 
 	@Test
-	public void message_SEND() {
-		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
-		when(this.extension.getObservers(OnSend.class)).thenReturn(Collections.singleton(observerMethod));
+	public void message_SEND() {;
+		when(this.extension.getObservers(OnSend.class)).thenReturn(Collections.singleton(this.observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSend("/topic/*")));
 
 		final MessageEvent event = new BasicMessageEvent(
@@ -82,15 +80,13 @@ public class EventProducerTest {
 
 		verify(this.beanManager).getExtension(Extension.class);
 		verify(this.extension).getObservers(OnSend.class);
-		verify(observerMethod).getObservedQualifiers();
-		verify(observerMethod).notify(event);
-		verifyNoMoreInteractions(observerMethod);
+		verify(this.observerMethod).getObservedQualifiers();
+		verify(this.observerMethod).notify(event);
 	}
 
 	@Test
 	public void message_SUBSCRIBE() {
-		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
-		when(this.extension.getObservers(OnSubscribe.class)).thenReturn(Collections.singleton(observerMethod));
+		when(this.extension.getObservers(OnSubscribe.class)).thenReturn(Collections.singleton(this.observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("/topic/*")));
 
 		final MessageEvent event = new BasicMessageEvent(
@@ -100,16 +96,15 @@ public class EventProducerTest {
 
 		verify(this.beanManager).getExtension(Extension.class);
 		verify(this.extension).getObservers(OnSubscribe.class);
-		verify(observerMethod).getObservedQualifiers();
-		verify(observerMethod).notify(event);
-		verifyNoMoreInteractions(observerMethod);
+		verify(this.observerMethod).getObservedQualifiers();
+		verify(this.observerMethod).notify(event);
+		verifyNoMoreInteractions(this.observerMethod);
 	}
 
 	@Test
 	public void message_UNSUBSCRIBE() {
-		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
 		when(this.extension.getObservers(OnUnsubscribe.class)).thenReturn(Collections.singleton(observerMethod));
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("/topic/*")));
+		when(this.observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("/topic/*")));
 		ReflectionUtil.<Map<String,String>>get(this.eventProducer, "idDestinationMap").put("id", "/topic/foo");
 
 		final MessageEvent event = new BasicMessageEvent(
@@ -119,14 +114,12 @@ public class EventProducerTest {
 
 		verify(this.beanManager).getExtension(Extension.class);
 		verify(this.extension).getObservers(OnUnsubscribe.class);
-		verify(observerMethod).getObservedQualifiers();
-		verify(observerMethod).notify(event);
-		verifyNoMoreInteractions(observerMethod);
+		verify(this.observerMethod).getObservedQualifiers();
+		verify(this.observerMethod).notify(event);
 	}
 
 	@Test
 	public void message_DISCONNECT() {
-		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
 		when(this.extension.getObservers(OnDisconnect.class)).thenReturn(Collections.singleton(observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("/topic/*")));
 
@@ -137,12 +130,12 @@ public class EventProducerTest {
 
 		verify(this.beanManager).getExtension(Extension.class);
 		verify(this.extension).getObservers(OnDisconnect.class);
-		verify(observerMethod).notify(event);
-		verifyNoMoreInteractions(observerMethod);
+		verify(this.observerMethod).notify(event);
+		verifyNoMoreInteractions(this.observerMethod);
 	}
 
 	@After
 	public void after() {
-		verifyNoMoreInteractions(this.beanManager, this.extension);
+		verifyNoMoreInteractions(this.beanManager, this.extension, this.observerMethod);
 	}
 }

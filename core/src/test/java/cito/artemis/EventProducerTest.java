@@ -2,9 +2,6 @@ package cito.artemis;
 
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import java.util.EnumSet;
-import java.util.Set;
-
 import javax.enterprise.event.Event;
 
 import org.apache.activemq.artemis.api.core.management.CoreNotificationType;

@@ -14,7 +14,6 @@ public class PathParser {
 	private static final Result FAIL = new Result(Collections.emptyMap(), false);
 
 	private final String separator;
-	private final String pattern;
 	private final String[] segments;
 
 	private final Map<Integer, String> segmentMap;
@@ -38,7 +37,6 @@ public class PathParser {
 			throw new IllegalArgumentException("Separators cannot include '{' or '}'!");
 		}
 		this.separator = separator;
-		this.pattern = pattern;
 		this.segments = pattern.split(separator);
 		final Map<Integer, String> segmentMap = new HashMap<>();
 		for (int i = 0; i < this.segments.length; i++) {

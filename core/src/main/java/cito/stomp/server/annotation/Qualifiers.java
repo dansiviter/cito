@@ -2,8 +2,6 @@ package cito.stomp.server.annotation;
 
 import javax.enterprise.util.AnnotationLiteral;
 
-import cito.DestinationEvent.Type;
-
 /**
  * 
  * @author Daniel Siviter
@@ -94,15 +92,6 @@ public enum Qualifiers { ;
 	 */
 	public static OnSend onSend(String value) {
 		return new OnSendLiteral(value == null ? "" : value);
-	}
-
-	/**
-	 * 
-	 * @param type
-	 * @return
-	 */
-	public static OnDestination onDestinaton(Type type) {
-		return new OnDestinationLiteral(type);
 	}
 
 
@@ -228,26 +217,6 @@ public enum Qualifiers { ;
 		@Override
 		public String value() {
 			return value;
-		}
-	}
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [18 Jul 2016]
-	 */
-	public static class OnDestinationLiteral extends AnnotationLiteral<OnDestination> implements OnDestination {
-		private static final long serialVersionUID = -5817203291593199363L;
-
-		private final Type type;
-
-		public OnDestinationLiteral(Type type) {
-			this.type = type;
-		}
-
-		@Override
-		public Type type() {
-			return this.type;
 		}
 	}
 }

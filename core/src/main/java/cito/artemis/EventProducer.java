@@ -1,6 +1,5 @@
 package cito.artemis;
 
-import static cito.stomp.server.annotation.Qualifiers.onDestinaton;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.MESSAGE;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_CREATED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_DESTROYED;
@@ -67,7 +66,7 @@ public class EventProducer implements NotificationListener {
 		final DestinationType destinationType = TOPIC.contains(notif.getType()) ? DestinationType.TOPIC : DestinationType.QUEUE;
 
 		this.log.info("Destination changed. [type={},destinationType={},destination={}]", type, destinationType, destination);
-		this.destinationEvent.select(onDestinaton(type)).fire(new cito.DestinationEvent(type, destinationType, destination));
+		this.destinationEvent.fire(new cito.DestinationEvent(type, destinationType, destination));
 	}
 
 	@PreDestroy
