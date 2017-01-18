@@ -36,7 +36,7 @@ import cito.DestinationEvent.Type;
 public class EventProducer implements NotificationListener {
 	private static final Collection<JMSNotificationType> ALL = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED, QUEUE_CREATED, QUEUE_DESTROYED);
 	private static final Collection<JMSNotificationType> CREATED = EnumSet.of(TOPIC_CREATED, QUEUE_CREATED);
-	private static final Collection<JMSNotificationType> TOPIC = EnumSet.of(TOPIC_DESTROYED, TOPIC_DESTROYED);
+	private static final Collection<JMSNotificationType> TOPIC = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED);
 
 	@Inject
 	private Logger log;
