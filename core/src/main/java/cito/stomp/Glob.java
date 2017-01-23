@@ -36,6 +36,7 @@ public class Glob {
 	private Pattern compiled;
 	private boolean hasWildcard;
 
+
 	/**
 	 * Construct the glob pattern object with a glob pattern string
 	 * 
@@ -105,7 +106,7 @@ public class Glob {
 				hasWildcard = true;
 				continue;
 			case '{': // start of a group
-				regex.append("(?:"); // non-capturing
+				regex.append("(?<"); // non-capturing
 				curlyOpen++;
 				hasWildcard = true;
 				continue;
@@ -116,7 +117,7 @@ public class Glob {
 				if (curlyOpen > 0) {
 					// end of a group
 					curlyOpen--;
-					regex.append(")");
+					regex.append(">[A-Za-z0-9\\-\\_]*)");
 					continue;
 				}
 				break;
@@ -152,7 +153,7 @@ public class Glob {
 		if (curlyOpen > 0) {
 			new PatternSyntaxException("Unclosed group", glob, len);
 		}
-		compiled = Pattern.compile(regex.toString());
+		this.compiled = Pattern.compile(regex.toString());
 	}
 
 	/**

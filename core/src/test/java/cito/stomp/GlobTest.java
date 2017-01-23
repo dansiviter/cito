@@ -43,4 +43,14 @@ public class GlobTest {
 		assertFalse(Glob.matches("/foo.bar/??/blagh", "/foo.bar/b/blagh"));
 		assertTrue(Glob.matches("/foo.bar/??/blagh", "/foo.bar/bl/blagh"));
 	}
+
+	@Test
+	public void capture() {
+		assertTrue(Glob.matches("/foo.bar/{hello}/blagh", "/foo.bar/hello/blagh"));
+	}
+
+	@Test
+	public void capture_hypen() {
+		assertTrue(Glob.matches("/foo.bar/{hello}/blagh", "/foo.bar/hello-world/blagh"));
+	}
 }

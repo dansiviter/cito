@@ -23,7 +23,6 @@ import org.apache.activemq.artemis.jms.server.embedded.EmbeddedJMS;
 import org.apache.activemq.artemis.jms.server.management.JMSNotificationType;
 import org.slf4j.Logger;
 
-import cito.DestinationEvent.DestinationType;
 import cito.DestinationEvent.Type;
 
 /**
@@ -61,12 +60,12 @@ public class EventProducer implements NotificationListener {
 			return;
 		}
 
-		final String destination = notif.getProperties().getSimpleStringProperty(MESSAGE).toString();
+		String destination = notif.getProperties().getSimpleStringProperty(MESSAGE).toString();
+		destination = (TOPIC.contains(notif.getType()) ? "/topic/" : "/queue/" ) + destination;
 		final Type type = CREATED.contains(notif.getType()) ? Type.ADDED : Type.REMOVED;
-		final DestinationType destinationType = TOPIC.contains(notif.getType()) ? DestinationType.TOPIC : DestinationType.QUEUE;
 
-		this.log.info("Destination changed. [type={},destinationType={},destination={}]", type, destinationType, destination);
-		this.destinationEvent.fire(new cito.DestinationEvent(type, destinationType, destination));
+		this.log.info("Destination changed. [type={},destination={}]", type, destination);
+		this.destinationEvent.fire(new cito.DestinationEvent(type, destination));
 	}
 
 	@PreDestroy

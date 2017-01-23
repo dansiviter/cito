@@ -1,85 +1,64 @@
 package cito;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+
+import cito.stomp.Glob;
 
 /**
- * Utility for parsing path parameters.
+ * Utility for parsing path parameters and extracting path parameters.
+ * 
+ * TODO create CDI based annotation and producer for convenience.
  * 
  * @author Daniel Siviter
  * @since v1.0 [17 Jan 2017]
  */
 public class PathParser {
-	private static final Result FAIL = new Result(Collections.emptyMap(), false);
-
-	private final String separator;
-	private final String[] segments;
-
-	private final Map<Integer, String> segmentMap;
+	private final String pattern;
+	private final Glob glob;
 
 	/**
-	 * Create a parser that uses forward slashes ('/') and period/full-stop ('.') as separators.
+	 * Create a parser.
 	 * 
 	 * @param pattern the pattern to parse.
 	 */
 	public PathParser(String pattern) {
-		this("/|\\.", pattern);
+		this.glob = Glob.from(this.pattern = pattern);
 	}
 
 	/**
 	 * 
-	 * @param separator
-	 * @param pattern
+	 * @param path the path to check.
+	 * @return the parse result.
 	 */
-	public PathParser(String separator, String pattern) {
-		if (separator.contains("{") || separator.contains("}")) {
-			throw new IllegalArgumentException("Separators cannot include '{' or '}'!");
-		}
-		this.separator = separator;
-		this.segments = pattern.split(separator);
-		final Map<Integer, String> segmentMap = new HashMap<>();
-		for (int i = 0; i < this.segments.length; i++) {
-			final String segment = this.segments[i];
-			if (isParam(segment)) {
-				segmentMap.put(i, segment.substring(1, segment.length() - 1));
-			}
-		}
-		this.segmentMap = Collections.unmodifiableMap(segmentMap);
+	public Result parse(CharSequence path) {
+		final Matcher matcher = this.glob.compiled().matcher(path);
+		return new Result(matcher);
 	}
 
-	/**
-	 * 
-	 * @param path
-	 * @return the values of the params. If empty then it did not match.
-	 */
-	public Result parse(String path) {
-		final String[] segments = path.split(this.separator);
-		final Map<String, String> params = new HashMap<>();
-		for (int i = 0; i < this.segments.length; i++) {
-			final String paramName = this.segmentMap.get(i);
-			if (paramName != null) {
-				params.put(paramName, segments[i]);
-				continue;
-			}
-			if (!this.segments[i].equals(segments[i])) {
-				return FAIL;
-			}
-		}
-		return new Result(params, true);
+	@Override
+	public String toString() {
+		return super.toString() + "[" + this.pattern + "]";
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(this.pattern);
+	}
+
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (getClass() != obj.getClass())
+			return false;
+		PathParser other = (PathParser) obj;
+		return Objects.equals(this.pattern, other.pattern);
 	}
 
 
 	// --- Static Methods ---
-
-	/**
-	 * 
-	 * @param segment
-	 * @return
-	 */
-	private static boolean isParam(String segment) {
-		return segment.startsWith("{") && segment.endsWith("}");
-	}
 
 	/**
 	 * 
@@ -109,20 +88,22 @@ public class PathParser {
 	 * @since v1.0 [17 Jan 2017]
 	 */
 	public static class Result {
-		private final Map<String, String> params;
-		private final boolean success;
+		private final Matcher matcher;
 
 		/**
 		 * 
-		 * @param params
+		 * @param matcher
 		 */
-		public Result(Map<String, String> params, boolean success) {
-			this.params = params;
-			this.success = success;
+		public Result(Matcher matcher) {
+			this.matcher = matcher;
 		}
 
+		/**
+		 * 
+		 * @return
+		 */
 		public boolean isSuccess() {
-			return success;
+			return matcher.matches();
 		}
 
 		/**
@@ -131,7 +112,7 @@ public class PathParser {
 		 * @return
 		 */
 		public String get(String name) {
-			return this.params.get(name);
+			return this.matcher.group(name);
 		}
 	}
 }

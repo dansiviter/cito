@@ -7,12 +7,10 @@ package cito;
  */
 public class DestinationEvent {
 	private final Type type;
-	private final DestinationType destinationType;
 	private final String destination;
 
-	public DestinationEvent(Type type, DestinationType destinationType, String destination) {
+	public DestinationEvent(Type type, String destination) {
 		this.type = type;
-		this.destinationType = destinationType;
 		this.destination = destination;
 	}
 
@@ -20,14 +18,13 @@ public class DestinationEvent {
 		return type;
 	}
 
-	public DestinationType getDestinationType() {
-		return destinationType;
-	}
-
 	public String getDestination() {
 		return destination;
 	}
 
+	public boolean isTopic() {
+		return destination.startsWith("/topic/");
+	}
 
 	// --- Inner Classes ---
 
@@ -39,15 +36,5 @@ public class DestinationEvent {
 	public enum Type {
 		ADDED,
 		REMOVED
-	}
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [19 Jul 2016]
-	 */
-	public enum DestinationType {
-		TOPIC,
-		QUEUE
 	}
 }
