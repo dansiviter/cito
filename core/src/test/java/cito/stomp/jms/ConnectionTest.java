@@ -78,7 +78,7 @@ public class ConnectionTest {
 		final Frame frame = mock(Frame.class);
 		when(frame.getCommand()).thenReturn(Command.MESSAGE);
 
-		this.connection.send(frame);
+		this.connection.sendToClient(frame);
 
 		verify(heartBeatMonitor).resetSend();
 		verify(frame).getCommand();

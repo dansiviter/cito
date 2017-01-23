@@ -63,7 +63,7 @@ public class Connection extends AbstractConnection {
 	}
 
 	@Override
-	public void send(Frame frame) {
+	public void sendToClient(Frame frame) {
 		this.heartBeatMonitor.resetSend();
 		this.log.info("Sending message to client. [sessionId={},command={}]", this.sessionId, frame.getCommand());
 		this.relay.send(new BasicMessageEvent(this.sessionId, frame));
@@ -133,7 +133,7 @@ public class Connection extends AbstractConnection {
 		if (version == null) {
 			final Frame.Builder error = Frame.error().version(SUPPORTED_VERSIONS);
 			error.body(MediaType.TEXT_PLAIN_TYPE, "Only STOMP v1.2 supported!");
-			send(error.build());
+			sendToClient(error.build());
 			throw new IllegalStateException("Only STOMP v1.2 supported!" + msg.frame().getHeaders(Headers.ACCEPT_VERSION));
 		}
 
@@ -149,7 +149,7 @@ public class Connection extends AbstractConnection {
 
 		createDelegate(login, passcode);
 
-		send(connected.build());
+		sendToClient(connected.build());
 
 		if (!version.equals("1.0") && heartBeat != null) {
 			final long readDelay = Math.max(heartBeat.x, HEARTBEAT_READ_DEFAULT);
@@ -184,7 +184,7 @@ public class Connection extends AbstractConnection {
 		try {
 			switch (msg.frame().getCommand()) {
 			case SEND:
-				getSession(msg.frame()).send(msg.frame());
+				getSession(msg.frame()).sendToBroker(msg.frame());
 				break;
 			case ACK: {
 				final String id = msg.frame().getFirstHeader(Headers.ID);
@@ -254,7 +254,7 @@ public class Connection extends AbstractConnection {
 	private void sendReceipt(Frame frame)  {
 		final String receiptId = frame.getFirstHeader(Headers.RECIEPT);
 		if (receiptId != null) {
-			send(Frame.receipt(receiptId).build());
+			sendToClient(Frame.receipt(receiptId).build());
 		}
 	}
 

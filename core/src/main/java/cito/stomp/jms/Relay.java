@@ -65,21 +65,21 @@ public class Relay {
 			this.errorHandler.onError(this, sessionId, msg.frame(), e);
 			return;
 		}
-		message(msg);
+		on(msg);
 	}
 
 	/**
 	 * 
-	 * @param msg
+	 * @param evt
 	 */
-	public void message(@Observes @FromServer MessageEvent msg) {
-		final String sessionId = msg.sessionId() != null ? msg.sessionId() : SystemConnection.SESSION_ID;
+	public void on(@Observes @FromServer MessageEvent evt) {
+		final String sessionId = evt.sessionId() != null ? evt.sessionId() : SystemConnection.SESSION_ID;
 
 		try {
-			AbstractConnection conn = msg.sessionId() != null ? this.connections.get(sessionId) : this.systemConn;
+			AbstractConnection conn = evt.sessionId() != null ? this.connections.get(sessionId) : this.systemConn;
 
-			if (msg.frame().getCommand() != null) {
-				switch (msg.frame().getCommand()) {
+			if (evt.frame().getCommand() != null) {
+				switch (evt.frame().getCommand()) {
 				case CONNECT:
 				case STOMP:
 					this.log.info("CONNECT/STOMP recieved. Opening connection to broker. [sessionId={}]", sessionId);
@@ -87,12 +87,12 @@ public class Relay {
 						throw new IllegalStateException("Connection already exists! [sessionId=" + sessionId + "]");
 					}
 					final Connection newConn = this.connectionInstance.get();
-					newConn.connect(msg);
+					newConn.connect(evt);
 					this.connections.put(sessionId, newConn);
 					return;
 				case DISCONNECT:
 					this.log.info("DISCONNECT recieved. Closing connection to broker. [sessionId={}]", sessionId);
-					((Connection) conn).disconnect(msg);
+					((Connection) conn).disconnect(evt);
 					close(sessionId);
 					return;
 				default:
@@ -103,9 +103,9 @@ public class Relay {
 			if (conn == null) {
 				throw new IllegalStateException("Session not found! [" + sessionId + "]");
 			}
-			conn.on(msg);
+			conn.on(evt);
 		} catch (JMSException | RuntimeException e) {
-			this.errorHandler.onError(this, sessionId, msg.frame(), e);
+			this.errorHandler.onError(this, sessionId, evt.frame(), e);
 		}
 	}
 

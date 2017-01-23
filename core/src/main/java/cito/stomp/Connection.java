@@ -21,7 +21,7 @@ public interface Connection {
 	 * @param frame
 	 * @throws IOException
 	 */
-	void send(Frame frame) throws IOException;
+	void sendToClient(Frame frame) throws IOException;
 
 	/**
 	 * 

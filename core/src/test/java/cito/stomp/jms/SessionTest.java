@@ -67,7 +67,7 @@ public class SessionTest {
 		final Destination destination = mock(Destination.class);
 		when(this.factory.toDestination(this.delegate, "/here")).thenReturn(destination);
 
-		this.session.send(frame);
+		this.session.sendToBroker(frame);
 
 		verify(frame).destination();
 		verify(this.factory).toMessage(this.delegate, frame);
@@ -92,7 +92,7 @@ public class SessionTest {
 		verify(this.delegate).getAcknowledgeMode();
 		verify(subscription).getSubscriptionId();
 		verify(this.factory).toFrame(message, "subscriptionId");
-		verify(this.conn).send(frame);
+		verify(this.conn).sendToClient(frame);
 		verifyNoMoreInteractions(message, subscription, message);
 	}
 
@@ -113,7 +113,7 @@ public class SessionTest {
 		verify(this.conn).addAckMessage(message);
 		verify(subscription).getSubscriptionId();
 		verify(this.factory).toFrame(message, "subscriptionId");
-		verify(this.conn).send(frame);
+		verify(this.conn).sendToClient(frame);
 		verifyNoMoreInteractions(message, subscription, message);
 	}
 

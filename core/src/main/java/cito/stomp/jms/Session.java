@@ -1,6 +1,8 @@
 package cito.stomp.jms;
 
 import java.io.IOException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -15,6 +17,7 @@ import cito.stomp.Frame;
  * @since v1.0 [21 Jul 2016]
  */
 public class Session {
+	private final Executor executor = Executors.newSingleThreadExecutor(); // not scalable
 	private final Factory factory;
 	private final AbstractConnection conn;
 	private final javax.jms.Session delegate;
@@ -31,7 +34,7 @@ public class Session {
 		return this.conn;
 	}
 
-	public javax.jms.Session getDelegate() {
+	javax.jms.Session getDelegate() {
 		return this.delegate;
 	}
 
@@ -47,7 +50,7 @@ public class Session {
 	 * @param frame
 	 * @throws JMSException
 	 */
-	public void send(Frame frame) throws JMSException {
+	public synchronized void sendToBroker(Frame frame) throws JMSException {
 		String destinationName = frame.destination();
 		final Message message = this.factory.toMessage(this.delegate, frame);
 		final Destination destination = this.factory.toDestination(this.delegate, destinationName);
@@ -66,7 +69,7 @@ public class Session {
 			((Connection) this.conn).addAckMessage(message);
 		}
 		final Frame frame = this.factory.toFrame(message, subscription.getSubscriptionId());
-		this.conn.send(frame);
+		this.conn.sendToClient(frame);
 	}
 
 	/**

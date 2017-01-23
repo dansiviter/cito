@@ -76,7 +76,7 @@ public class RelayTest {
 	@Test
 	public void message_CONNECT() throws JMSException {
 		final MessageEvent msg = new BasicMessageEvent("sessionId", Frame.builder(Command.CONNECT).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build());
-		this.relay.message(msg);
+		this.relay.on(msg);
 
 		verify(this.log).info("CONNECT/STOMP recieved. Opening connection to broker. [sessionId={}]", "sessionId");
 		verify(this.connectionInstance).get();
@@ -86,7 +86,7 @@ public class RelayTest {
 	@Test
 	public void message_STOMP() throws JMSException {
 		final MessageEvent msg = new BasicMessageEvent("sessionId", Frame.builder(Command.STOMP).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build());
-		this.relay.message(msg);
+		this.relay.on(msg);
 
 		verify(this.log).info("CONNECT/STOMP recieved. Opening connection to broker. [sessionId={}]", "sessionId");
 		verify(this.connectionInstance).get();
@@ -102,7 +102,7 @@ public class RelayTest {
 		when(session.isOpen()).thenReturn(true);
 
 		final MessageEvent msg = new BasicMessageEvent("sessionId", Frame.disconnect().build());
-		this.relay.message(msg);
+		this.relay.on(msg);
 
 		verify(this.log).info("DISCONNECT recieved. Closing connection to broker. [sessionId={}]", "sessionId");
 		verify(this.log).info("Destroying JMS connection. [{}]", "sessionId");

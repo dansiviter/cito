@@ -81,7 +81,7 @@ public class Client implements Connection {
 		this.session = ContainerProvider.getWebSocketContainer().connectToServer(this, this.uri);
 		this.state = State.CONNECTING;
 		final Frame connectFrame = Frame.connect(this.uri.getHost(), "1.2").heartbeat(5_000, 5_000).build();
-		send(connectFrame);
+		sendToClient(connectFrame);
 		this.connectFuture = new CompletableFuture<>();
 		final Frame connectedFrame = this.connectFuture.get(timeout, unit);
 		this.connectFuture = null;
@@ -92,7 +92,7 @@ public class Client implements Connection {
 	}
 
 	@Override
-	public void send(Frame frame) throws IOException {
+	public void sendToClient(Frame frame) throws IOException {
 		if (frame.isHeartBeat()) {
 			LOG.debug("Sending heart beat.");
 		} else {
@@ -159,7 +159,7 @@ public class Client implements Connection {
 	 * @throws IOException
 	 */
 	public void send(String destination, MediaType contentType, String body) throws IOException {
-		send(Frame.send(destination, contentType, body).build());
+		sendToClient(Frame.send(destination, contentType, body).build());
 	}
 
 	/**
@@ -176,7 +176,7 @@ public class Client implements Connection {
 			throws IOException, InterruptedException, ExecutionException, TimeoutException
 	{
 		final int receiptId = this.receiptId.incrementAndGet();
-		send(Frame.send(destination, contentType, body).build());
+		sendToClient(Frame.send(destination, contentType, body).build());
 		awaitReceipt(receiptId, timeout, unit);
 	}
 
@@ -199,7 +199,7 @@ public class Client implements Connection {
 	throws IOException, InterruptedException, ExecutionException, TimeoutException
 	{
 		final int receiptId = this.receiptId.incrementAndGet();
-		send(Frame.send(destination, contentType, body).reciept(receiptId).build());
+		sendToClient(Frame.send(destination, contentType, body).reciept(receiptId).build());
 		onReceipt(receiptId, timeout, unit, fn);
 	}
 
@@ -215,7 +215,7 @@ public class Client implements Connection {
 	public void disconnect(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
 		try {
 			final int recieptId = this.receiptId.incrementAndGet();
-			send(Frame.disconnect().reciept(recieptId).build());
+			sendToClient(Frame.disconnect().reciept(recieptId).build());
 			awaitReceipt(recieptId, timeout, unit);
 			close(new CloseReason(CloseCodes.NORMAL_CLOSURE, null));
 		} catch (IOException e) {
@@ -228,7 +228,7 @@ public class Client implements Connection {
 	 */
 	public void forceDisconnect() {
 		try {
-			send(Frame.disconnect().build());
+			sendToClient(Frame.disconnect().build());
 		} catch (IOException e) {
 			LOG.warn("Unable to send DISCONNECT!", e);
 		}

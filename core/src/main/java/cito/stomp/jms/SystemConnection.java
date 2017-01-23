@@ -42,7 +42,7 @@ public class SystemConnection extends AbstractConnection {
 	}
 
 	@Override
-	public void send(Frame frame) throws IOException {
+	public void sendToClient(Frame frame) throws IOException {
 		throw new UnsupportedOperationException("Cannot sent to client from system connection!");
 	}
 
@@ -66,7 +66,7 @@ public class SystemConnection extends AbstractConnection {
 		}
 
 		try {
-			getSession().send(msg.frame());
+			getSession().sendToBroker(msg.frame());
 		} catch (JMSException e) {
 			this.log.error("Error handling message! [sessionId={},command={}]", getSessionId(), msg.frame().getCommand());
 		}
