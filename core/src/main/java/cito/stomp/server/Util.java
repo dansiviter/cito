@@ -1,5 +1,8 @@
 package cito.stomp.server;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -34,5 +37,22 @@ public enum Util { ;
 	 */
 	public static boolean isEmpty(CharSequence s) {
 		return s != null && s.length() == 0;
+	}
+	
+	/**
+	 * 
+	 * @param annotation
+	 * @param annocations
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static <A extends Annotation> A[] getAnnotations(Class<A> annotation, Collection<? extends Annotation> annotations) {
+		final Collection<A> found = new ArrayList<>();
+		for (Annotation a : annotations) {
+			if (annotation.isAssignableFrom(annotation)) {
+				found.add(annotation.cast(a));
+			}
+		}
+		return found.toArray((A[]) Array.newInstance(annotation, 0));
 	}
 }

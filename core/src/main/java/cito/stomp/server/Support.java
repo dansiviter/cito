@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 
 import cito.stomp.Frame;
 import cito.stomp.ext.Serialiser;
-import cito.stomp.server.event.BasicMessageEvent;
 import cito.stomp.server.event.MessageEvent;
 
 /**
@@ -88,7 +87,7 @@ public abstract class Support {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		this.log.debug("Broadcasting... [destination={}]", destination);
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
-		this.msgEvent.select(fromServer()).fire(new BasicMessageEvent(frame));
+		this.msgEvent.select(fromServer()).fire(new MessageEvent(frame));
 	}
 
 	/**
@@ -188,7 +187,7 @@ public abstract class Support {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		this.log.debug("Sending... [sessionId={},destination={}]", sessionId, destination);
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();
-		this.msgEvent.select(fromServer()).fire(new BasicMessageEvent(frame));
+		this.msgEvent.select(fromServer()).fire(new MessageEvent(frame));
 	}
 
 	/**

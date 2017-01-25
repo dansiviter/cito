@@ -18,9 +18,12 @@ import javax.websocket.Session;
 
 import org.apache.deltaspike.core.api.provider.BeanProvider;
 
+import cito.DestinationEvent;
 import cito.QuietClosable;
+import cito.stomp.server.annotation.OnAdded;
 import cito.stomp.server.annotation.OnConnected;
 import cito.stomp.server.annotation.OnDisconnect;
+import cito.stomp.server.annotation.OnRemoved;
 import cito.stomp.server.annotation.OnSend;
 import cito.stomp.server.annotation.OnSubscribe;
 import cito.stomp.server.annotation.OnUnsubscribe;
@@ -35,7 +38,8 @@ import cito.stomp.server.scope.WebSocketSessionHolder;
  * @since v1.0 [12 Jul 2016]
  */
 public class Extension implements javax.enterprise.inject.spi.Extension {
-	private final Map<Class<? extends Annotation>, Set<ObserverMethod<MessageEvent>>> frameObservers = new ConcurrentHashMap<>();
+	private final Map<Class<? extends Annotation>, Set<ObserverMethod<MessageEvent>>> messageObservers = new ConcurrentHashMap<>();
+	private final Map<Class<? extends Annotation>, Set<ObserverMethod<DestinationEvent>>> destinationObservers = new ConcurrentHashMap<>();
 
 	private WebSocketContext webSocketContext;
 
@@ -44,11 +48,11 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param cls
 	 * @param method
 	 */
-	private <A extends Annotation> void registerFrameObserver(Class<A> cls, ObserverMethod<MessageEvent> method) {
-		Set<ObserverMethod<MessageEvent>> annotations = this.frameObservers.get(cls);
+	private <A extends Annotation> void registerMessageObserver(Class<A> cls, ObserverMethod<MessageEvent> method) {
+		Set<ObserverMethod<MessageEvent>> annotations = this.messageObservers.get(cls);
 		if (annotations == null) {
 			annotations = new HashSet<>();
-			this.frameObservers.put(cls, annotations);
+			this.messageObservers.put(cls, annotations);
 		}
 		annotations.add(method);
 	}
@@ -58,19 +62,19 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param e
 	 * @param beanManager
 	 */
-	public void register(@Observes ProcessObserverMethod<MessageEvent, ?> e, BeanManager beanManager) {
+	public void registerMessageEvent(@Observes ProcessObserverMethod<MessageEvent, ?> e, BeanManager beanManager) {
 		final ObserverMethod<MessageEvent> method = e.getObserverMethod();
 		for (Annotation a : method.getObservedQualifiers()) {
 			if (a instanceof OnConnected)
-				registerFrameObserver(OnConnected.class, method);
+				registerMessageObserver(OnConnected.class, method);
 			if (a instanceof OnSend)
-				registerFrameObserver(OnSend.class, method);
+				registerMessageObserver(OnSend.class, method);
 			if (a instanceof OnSubscribe)
-				registerFrameObserver(OnSubscribe.class, method);
+				registerMessageObserver(OnSubscribe.class, method);
 			if (a instanceof OnUnsubscribe)
-				registerFrameObserver(OnUnsubscribe.class, method);
+				registerMessageObserver(OnUnsubscribe.class, method);
 			if (a instanceof OnDisconnect)
-				registerFrameObserver(OnDisconnect.class, method);
+				registerMessageObserver(OnDisconnect.class, method);
 		}
 	}
 
@@ -79,8 +83,47 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param qualifier
 	 * @return
 	 */
-	public Set<ObserverMethod<MessageEvent>> getObservers(Class<? extends Annotation> qualifier) {
-		final Set<ObserverMethod<MessageEvent>> observers = this.frameObservers.get(qualifier);
+	public Set<ObserverMethod<MessageEvent>> getMessageObservers(Class<? extends Annotation> qualifier) {
+		final Set<ObserverMethod<MessageEvent>> observers = this.messageObservers.get(qualifier);
+		return observers == null ? Collections.emptySet() : observers;
+	}
+
+	/**
+	 * 
+	 * @param cls
+	 * @param method
+	 */
+	private <A extends Annotation> void registerDestinationObserver(Class<A> cls, ObserverMethod<DestinationEvent> method) {
+		Set<ObserverMethod<DestinationEvent>> annotations = this.destinationObservers.get(cls);
+		if (annotations == null) {
+			annotations = new HashSet<>();
+			this.destinationObservers.put(cls, annotations);
+		}
+		annotations.add(method);
+	}
+
+	/**
+	 * 
+	 * @param e
+	 * @param beanManager
+	 */
+	public void registerDestinationEvent(@Observes ProcessObserverMethod<DestinationEvent, ?> e, BeanManager beanManager) {
+		final ObserverMethod<DestinationEvent> method = e.getObserverMethod();
+		for (Annotation a : method.getObservedQualifiers()) {
+			if (a instanceof OnAdded)
+				registerDestinationObserver(OnAdded.class, method);
+			if (a instanceof OnRemoved)
+				registerDestinationObserver(OnRemoved.class, method);
+		}
+	}
+
+	/**
+	 * 
+	 * @param qualifier
+	 * @return
+	 */
+	public Set<ObserverMethod<DestinationEvent>> getDestinationObservers(Class<? extends Annotation> qualifier) {
+		final Set<ObserverMethod<DestinationEvent>> observers = this.destinationObservers.get(qualifier);
 		return observers == null ? Collections.emptySet() : observers;
 	}
 

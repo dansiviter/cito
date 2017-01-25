@@ -11,7 +11,6 @@ import cito.stomp.Frame;
 import cito.stomp.Frame.Builder;
 import cito.stomp.Headers;
 import cito.stomp.server.annotation.FromServer;
-import cito.stomp.server.event.BasicMessageEvent;
 import cito.stomp.server.event.MessageEvent;
 
 /**
@@ -40,7 +39,7 @@ public class ErrorHandler {
 			error.recieptId(cause.receipt());
 		}
 		error.body(MediaType.TEXT_PLAIN_TYPE, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
-		this.messageEvent.fire(new BasicMessageEvent(sessionId, error.build()));
+		this.messageEvent.fire(new MessageEvent(sessionId, error.build()));
 		relay.close(sessionId);
 	}
 }

@@ -1,13 +1,16 @@
 package cito.artemis;
 
+import static cito.stomp.server.Util.getAnnotations;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.MESSAGE;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_CREATED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_DESTROYED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.TOPIC_CREATED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.TOPIC_DESTROYED;
 
+import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -15,6 +18,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.ObserverMethod;
 import javax.inject.Inject;
 
 import org.apache.activemq.artemis.core.server.management.Notification;
@@ -23,7 +28,16 @@ import org.apache.activemq.artemis.jms.server.embedded.EmbeddedJMS;
 import org.apache.activemq.artemis.jms.server.management.JMSNotificationType;
 import org.slf4j.Logger;
 
+import cito.DestinationEvent;
 import cito.DestinationEvent.Type;
+import cito.DestinationEventProducer;
+import cito.QuietClosable;
+import cito.ReflectionUtil;
+import cito.stomp.Glob;
+import cito.stomp.server.Extension;
+import cito.stomp.server.PathParamProvider;
+import cito.stomp.server.annotation.OnAdded;
+import cito.stomp.server.annotation.OnRemoved;
 
 /**
  * Produces events based on the state of the broker.
@@ -37,6 +51,8 @@ public class EventProducer implements NotificationListener {
 	private static final Collection<JMSNotificationType> CREATED = EnumSet.of(TOPIC_CREATED, QUEUE_CREATED);
 	private static final Collection<JMSNotificationType> TOPIC = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED);
 
+	@Inject
+	private BeanManager manager;
 	@Inject
 	private Logger log;
 	@Inject
@@ -65,11 +81,57 @@ public class EventProducer implements NotificationListener {
 		final Type type = CREATED.contains(notif.getType()) ? Type.ADDED : Type.REMOVED;
 
 		this.log.info("Destination changed. [type={},destination={}]", type, destination);
-		this.destinationEvent.fire(new cito.DestinationEvent(type, destination));
+		final cito.DestinationEvent evt = new cito.DestinationEvent(type, destination);
+		try (QuietClosable c = DestinationEventProducer.set(evt)) {
+			this.destinationEvent.fire(evt);
+		}
+	}
+
+	/**
+	 * 
+	 * @param msg
+	 */
+	public void message(@Observes DestinationEvent msg) {
+		final Extension extension = this.manager.getExtension(Extension.class);
+
+		final String destination = msg.getDestination();
+		switch (msg.getType()) {
+		case ADDED: {
+			notify(OnAdded.class, extension.getDestinationObservers(OnAdded.class), destination, msg);
+			break;
+		}
+		case REMOVED: {
+			notify(OnRemoved.class, extension.getDestinationObservers(OnRemoved.class), destination, msg);
+			break;
+		}
+		default:
+			break;
+		}
 	}
 
 	@PreDestroy
 	public void destroy() {
 		this.broker.getActiveMQServer().getManagementService().removeNotificationListener(this);
+	}
+
+	/**
+	 * 
+	 * @param annotation
+	 * @param observerMethods
+	 * @param destination
+	 * @param evt
+	 */
+	private static <A extends Annotation> void notify(Class<A> annotation, Set<ObserverMethod<DestinationEvent>> observerMethods, String destination, DestinationEvent evt) {
+		for (ObserverMethod<DestinationEvent> om : observerMethods) {
+			for (A a : getAnnotations(annotation, om.getObservedQualifiers())) {
+				final String value = ReflectionUtil.invoke(a, "value");
+				if (!Glob.from(value).matches(destination)) {
+					continue;
+				}
+				try (QuietClosable closable = PathParamProvider.set(value)) {
+					om.notify(evt);
+				}
+			}
+		}
 	}
 }

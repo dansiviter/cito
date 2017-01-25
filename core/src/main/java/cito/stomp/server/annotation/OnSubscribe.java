@@ -1,6 +1,7 @@
 package cito.stomp.server.annotation;
 
 import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Repeatable;
@@ -17,7 +18,7 @@ import javax.inject.Qualifier;
  * @since v1.0 [12 Jul 2016]
  */
 @Qualifier
-@Target(PARAMETER)
+@Target({ PARAMETER, METHOD })
 @Retention(RUNTIME)
 @Repeatable(OnSubscribes.class)
 public @interface OnSubscribe {

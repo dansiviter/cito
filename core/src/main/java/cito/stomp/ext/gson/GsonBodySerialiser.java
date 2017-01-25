@@ -46,5 +46,4 @@ public class GsonBodySerialiser implements BodyWriter<Object>, BodyReader<Object
 		this.gson.toJson(t, type, writer);
 		writer.flush();
 	}
-
 }

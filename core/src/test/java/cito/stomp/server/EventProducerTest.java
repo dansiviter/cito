@@ -28,7 +28,6 @@ import cito.stomp.server.annotation.OnSend;
 import cito.stomp.server.annotation.OnSubscribe;
 import cito.stomp.server.annotation.OnUnsubscribe;
 import cito.stomp.server.annotation.Qualifiers;
-import cito.stomp.server.event.BasicMessageEvent;
 import cito.stomp.server.event.MessageEvent;
 
 /**
@@ -56,46 +55,46 @@ public class EventProducerTest {
 
 	@Test
 	public void message_CONNECTED() {
-		when(this.extension.getObservers(OnConnected.class)).thenReturn(Collections.singleton(this.observerMethod));
+		when(this.extension.getMessageObservers(OnConnected.class)).thenReturn(Collections.singleton(this.observerMethod));
 
-		final MessageEvent event = new BasicMessageEvent(
+		final MessageEvent event = new MessageEvent(
 				Frame.connnected("1.2", "sessionId", "server").build());
 
 		this.eventProducer.message(event);
 
 		verify(this.beanManager).getExtension(Extension.class);
-		verify(this.extension).getObservers(OnConnected.class);
+		verify(this.extension).getMessageObservers(OnConnected.class);
 		verify(this.observerMethod).notify(event);
 	}
 
 	@Test
 	public void message_SEND() {;
-		when(this.extension.getObservers(OnSend.class)).thenReturn(Collections.singleton(this.observerMethod));
+		when(this.extension.getMessageObservers(OnSend.class)).thenReturn(Collections.singleton(this.observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSend("/topic/*")));
 
-		final MessageEvent event = new BasicMessageEvent(
+		final MessageEvent event = new MessageEvent(
 				Frame.send("/topic/foo", MediaType.APPLICATION_JSON_TYPE, "{}").build());
 
 		this.eventProducer.message(event);
 
 		verify(this.beanManager).getExtension(Extension.class);
-		verify(this.extension).getObservers(OnSend.class);
+		verify(this.extension).getMessageObservers(OnSend.class);
 		verify(this.observerMethod).getObservedQualifiers();
 		verify(this.observerMethod).notify(event);
 	}
 
 	@Test
 	public void message_SUBSCRIBE() {
-		when(this.extension.getObservers(OnSubscribe.class)).thenReturn(Collections.singleton(this.observerMethod));
+		when(this.extension.getMessageObservers(OnSubscribe.class)).thenReturn(Collections.singleton(this.observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("/topic/*")));
 
-		final MessageEvent event = new BasicMessageEvent(
+		final MessageEvent event = new MessageEvent(
 				Frame.builder(Command.SUBSCRIBE).destination("/topic/foo").subscription("id").build());
 
 		this.eventProducer.message(event);
 
 		verify(this.beanManager).getExtension(Extension.class);
-		verify(this.extension).getObservers(OnSubscribe.class);
+		verify(this.extension).getMessageObservers(OnSubscribe.class);
 		verify(this.observerMethod).getObservedQualifiers();
 		verify(this.observerMethod).notify(event);
 		verifyNoMoreInteractions(this.observerMethod);
@@ -103,33 +102,33 @@ public class EventProducerTest {
 
 	@Test
 	public void message_UNSUBSCRIBE() {
-		when(this.extension.getObservers(OnUnsubscribe.class)).thenReturn(Collections.singleton(observerMethod));
+		when(this.extension.getMessageObservers(OnUnsubscribe.class)).thenReturn(Collections.singleton(observerMethod));
 		when(this.observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("/topic/*")));
 		ReflectionUtil.<Map<String,String>>get(this.eventProducer, "idDestinationMap").put("id", "/topic/foo");
 
-		final MessageEvent event = new BasicMessageEvent(
+		final MessageEvent event = new MessageEvent(
 				Frame.builder(Command.UNSUBSCRIBE).subscription("id").build());
 
 		this.eventProducer.message(event);
 
 		verify(this.beanManager).getExtension(Extension.class);
-		verify(this.extension).getObservers(OnUnsubscribe.class);
+		verify(this.extension).getMessageObservers(OnUnsubscribe.class);
 		verify(this.observerMethod).getObservedQualifiers();
 		verify(this.observerMethod).notify(event);
 	}
 
 	@Test
 	public void message_DISCONNECT() {
-		when(this.extension.getObservers(OnDisconnect.class)).thenReturn(Collections.singleton(observerMethod));
+		when(this.extension.getMessageObservers(OnDisconnect.class)).thenReturn(Collections.singleton(observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("/topic/*")));
 
-		final MessageEvent event = new BasicMessageEvent(
+		final MessageEvent event = new MessageEvent(
 				Frame.builder(Command.DISCONNECT).build());
 
 		this.eventProducer.message(event);
 
 		verify(this.beanManager).getExtension(Extension.class);
-		verify(this.extension).getObservers(OnDisconnect.class);
+		verify(this.extension).getMessageObservers(OnDisconnect.class);
 		verify(this.observerMethod).notify(event);
 		verifyNoMoreInteractions(this.observerMethod);
 	}

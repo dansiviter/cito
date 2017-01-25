@@ -1,7 +1,5 @@
 package cito.stomp.server.event;
 
-import java.lang.reflect.Type;
-
 import cito.stomp.Frame;
 
 /**
@@ -9,35 +7,33 @@ import cito.stomp.Frame;
  * @author Daniel Siviter
  * @since v1.0 [19 Jul 2016]
  */
-public interface MessageEvent {
+public class MessageEvent {
+	private final String sessionId;
+	private final Frame frame;
+
+	public MessageEvent(Frame frame) {
+		this(null, frame);
+	}
+
+	public MessageEvent(String sessionId, Frame frame) {
+		this.sessionId = sessionId;
+		this.frame = frame;
+	}
+
 	/**
 	 * @return the originating session identifier. If this is a internally generated message (i.e. application code)
 	 * then this will be {@code null}.
 	 */
-	String sessionId();
+	public String sessionId() {
+		return sessionId;
+	}
 
 	/**
 	 * @return the STOMP frame.
 	 */
-	Frame frame();
-
-	/**
-	 * 
-	 * 
-	 * @param type
-	 * @return
-	 */
-	default <T> T getBean(Class<T> type) {
-		return getBean((Type) type);
+	public Frame frame() {
+		return frame;
 	}
 
-	/**
-	 * 
-	 * 
-	 * @param type
-	 * @return
-	 */
-	default <T> T getBean(Type type) {
-		throw new UnsupportedOperationException();
-	}
+
 }

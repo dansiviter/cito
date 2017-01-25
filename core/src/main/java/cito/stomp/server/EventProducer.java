@@ -1,17 +1,20 @@
 package cito.stomp.server;
 
+import static cito.stomp.server.Util.getAnnotations;
+
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.ObserverMethod;
 import javax.inject.Inject;
 
+import cito.QuietClosable;
 import cito.ReflectionUtil;
 import cito.stomp.Glob;
 import cito.stomp.server.annotation.OnConnected;
@@ -45,35 +48,31 @@ public class EventProducer {
 
 		switch (msg.frame().getCommand()) {
 		case CONNECTED: { // on client thread as it's response to CONNECT
-			extension.getObservers(OnConnected.class).forEach(e -> e.notify(msg));
+			extension.getMessageObservers(OnConnected.class).forEach(ObserverMethod::notify);
 			break;
 		}
 		case SEND: {
 			final String destination = msg.frame().destination();
-			extension.getObservers(OnSend.class).stream().filter(
+			extension.getMessageObservers(OnSend.class).stream().filter(
 					e -> matches(OnSend.class, e.getObservedQualifiers(), destination)).forEach(
-							e -> e.notify(msg));
+							ObserverMethod::notify);
 			break;
 		}
 		case SUBSCRIBE: {
 			final String id = msg.frame().subscription();
 			final String destination = msg.frame().destination();
 			idDestinationMap.put(id, destination);
-			extension.getObservers(OnSubscribe.class).stream().filter(
-					e -> matches(OnSubscribe.class, e.getObservedQualifiers(), destination)).forEach(
-							e -> e.notify(msg));
+			notify(OnSubscribe.class, extension.getMessageObservers(OnSubscribe.class), destination, msg);
 			break;
 		}
 		case UNSUBSCRIBE: {
 			final String id = msg.frame().subscription();
 			final String destination = this.idDestinationMap.remove(id);
-			extension.getObservers(OnUnsubscribe.class).stream().filter(
-					e -> matches(OnUnsubscribe.class, e.getObservedQualifiers(), destination)).forEach(
-							e -> e.notify(msg));
+			notify(OnUnsubscribe.class, extension.getMessageObservers(OnUnsubscribe.class), destination, msg);
 			break;
 		}
 		case DISCONNECT: {
-			extension.getObservers(OnDisconnect.class).forEach(e -> e.notify(msg));
+			extension.getMessageObservers(OnDisconnect.class).forEach(ObserverMethod::notify);
 			break;
 		}
 		default:
@@ -90,23 +89,6 @@ public class EventProducer {
 	 * @param annocations
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
-	private static <A extends Annotation> A[] getAnnotations(Class<A> annotation, Collection<? extends Annotation> annotations) {
-		final Collection<A> found = new ArrayList<>();
-		for (Annotation a : annotations) {
-			if (annotation.isAssignableFrom(annotation)) {
-				found.add(annotation.cast(a));
-			}
-		}
-		return found.toArray((A[]) Array.newInstance(annotation, 0));
-	}
-
-	/**
-	 * 
-	 * @param annotation
-	 * @param annocations
-	 * @return
-	 */
 	private static <A extends Annotation> boolean matches(Class<A> annotation, Collection<? extends Annotation> annotations, String destination) {
 		for (A a : getAnnotations(annotation, annotations)) {
 			if (Glob.from(ReflectionUtil.invoke(a, "value")).matches(destination)) {
@@ -114,5 +96,26 @@ public class EventProducer {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * 
+	 * @param annotation
+	 * @param observerMethods
+	 * @param destination
+	 * @param evt
+	 */
+	private static <A extends Annotation> void notify(Class<A> annotation, Set<ObserverMethod<MessageEvent>> observerMethods, String destination, MessageEvent evt) {
+		for (ObserverMethod<MessageEvent> om : observerMethods) {
+			for (A a : getAnnotations(annotation, om.getObservedQualifiers())) {
+				final String value = ReflectionUtil.invoke(a, "value");
+				if (!Glob.from(value).matches(destination)) {
+					continue;
+				}
+				try (QuietClosable closable = PathParamProvider.set(value)) {
+					om.notify(evt);
+				}
+			}
+		}
 	}
 }

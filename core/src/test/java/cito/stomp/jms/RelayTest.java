@@ -31,7 +31,6 @@ import cito.stomp.Frame;
 import cito.stomp.Headers;
 import cito.stomp.server.SecurityContext;
 import cito.stomp.server.SessionRegistry;
-import cito.stomp.server.event.BasicMessageEvent;
 import cito.stomp.server.event.MessageEvent;
 import cito.stomp.server.security.SecurityRegistry;
 
@@ -75,7 +74,7 @@ public class RelayTest {
 
 	@Test
 	public void message_CONNECT() throws JMSException {
-		final MessageEvent msg = new BasicMessageEvent("sessionId", Frame.builder(Command.CONNECT).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build());
+		final MessageEvent msg = new MessageEvent("sessionId", Frame.builder(Command.CONNECT).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build());
 		this.relay.on(msg);
 
 		verify(this.log).info("CONNECT/STOMP recieved. Opening connection to broker. [sessionId={}]", "sessionId");
@@ -85,7 +84,7 @@ public class RelayTest {
 
 	@Test
 	public void message_STOMP() throws JMSException {
-		final MessageEvent msg = new BasicMessageEvent("sessionId", Frame.builder(Command.STOMP).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build());
+		final MessageEvent msg = new MessageEvent("sessionId", Frame.builder(Command.STOMP).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build());
 		this.relay.on(msg);
 
 		verify(this.log).info("CONNECT/STOMP recieved. Opening connection to broker. [sessionId={}]", "sessionId");
@@ -101,7 +100,7 @@ public class RelayTest {
 		when(this.sessionRegistry.getSession("sessionId")).thenReturn(Optional.of(session));
 		when(session.isOpen()).thenReturn(true);
 
-		final MessageEvent msg = new BasicMessageEvent("sessionId", Frame.disconnect().build());
+		final MessageEvent msg = new MessageEvent("sessionId", Frame.disconnect().build());
 		this.relay.on(msg);
 
 		verify(this.log).info("DISCONNECT recieved. Closing connection to broker. [sessionId={}]", "sessionId");

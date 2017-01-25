@@ -11,14 +11,19 @@ import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
 /**
- * 
+ *
  * @author Daniel Siviter
- * @since v1.0 [23 Nov 2016]
+ * @since v1.0 [25 Jan 2017]
  */
 @Qualifier
 @Target({ PARAMETER, METHOD })
 @Retention(RUNTIME)
-public @interface PathParam {
+public @interface OnRemoved {
+	/**
+	 * A regular expression of the topic pattern required.
+	 * 
+	 * @return
+	 */
 	@Nonbinding
-	String value();
+	String value() default ".*";
 }
