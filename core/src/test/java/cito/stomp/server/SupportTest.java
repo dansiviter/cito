@@ -31,6 +31,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.slf4j.Logger;
 
 import cito.stomp.ext.Serialiser;
 import cito.stomp.server.event.MessageEvent;
@@ -43,6 +44,8 @@ import cito.stomp.server.event.MessageEvent;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class SupportTest {
+	@Mock
+	private Logger log;
 	@Mock
 	private Event<MessageEvent> msgEvent;
 	@Mock
@@ -72,6 +75,7 @@ public class SupportTest {
 		assertEquals("destination", msgEvent.frame().destination());
 		assertEquals("application/json", msgEvent.frame().contentType().toString());
 
+		verify(this.log).debug("Broadcasting... [destination={}]", "destination");
 		verify(this.serialiser).writeTo(any(), any(Class.class), eq(MediaType.APPLICATION_JSON_TYPE), any(OutputStream.class));
 	}
 
@@ -87,6 +91,8 @@ public class SupportTest {
 		assertEquals("destination", msgEvent.frame().destination());
 		assertEquals("text/plain", msgEvent.frame().contentType().toString());
 
+
+		verify(this.log).debug("Broadcasting... [destination={}]", "destination");
 		verify(this.serialiser).writeTo(any(), any(Class.class), eq(MediaType.TEXT_PLAIN_TYPE), any(OutputStream.class));
 	}
 
@@ -112,6 +118,8 @@ public class SupportTest {
 		assertEquals("destination", msgEvent1.frame().destination());
 		assertEquals("application/json", msgEvent1.frame().contentType().toString());
 
+		verify(this.log).debug("Sending... [sessionId={},destination={}]", "session0", "destination");
+		verify(this.log).debug("Sending... [sessionId={},destination={}]", "session1", "destination");
 		verify(this.registry).getSessions(principal);
 		verify(this.serialiser, times(2)).writeTo(any(), any(Class.class), eq(MediaType.APPLICATION_JSON_TYPE), any(OutputStream.class));
 		verify(session0).getId();
@@ -141,7 +149,9 @@ public class SupportTest {
 		assertEquals("destination", msgEvent1.frame().destination());
 		assertEquals("text/plain", msgEvent1.frame().contentType().toString());
 
-		verify(this.registry).getSessions(principal);
+		verify(this.log).debug("Sending... [sessionId={},destination={}]", "session0", "destination");
+		verify(this.log).debug("Sending... [sessionId={},destination={}]", "session1", "destination");
+			verify(this.registry).getSessions(principal);
 		verify(this.serialiser, times(2)).writeTo(any(), any(Class.class), eq(MediaType.TEXT_PLAIN_TYPE), any(OutputStream.class));
 		verify(session0).getId();
 		verify(session1).getId();
@@ -160,6 +170,7 @@ public class SupportTest {
 		assertEquals("destination", msgEvent.frame().destination());
 		assertEquals("application/json", msgEvent.frame().contentType().toString());
 
+		verify(this.log).debug("Sending... [sessionId={},destination={}]", "sessionId", "destination");
 		verify(this.serialiser).writeTo(any(), any(Class.class), eq(MediaType.APPLICATION_JSON_TYPE), any(OutputStream.class));
 	}
 
@@ -175,13 +186,14 @@ public class SupportTest {
 		assertEquals("destination", msgEvent.frame().destination());
 		assertEquals("text/plain", msgEvent.frame().contentType().toString());
 
+		verify(this.log).debug("Sending... [sessionId={},destination={}]", "sessionId", "destination");
 		verify(this.serialiser).writeTo(any(), any(Class.class), eq(MediaType.TEXT_PLAIN_TYPE), any(OutputStream.class));
 	}
 
 	@After
 	public void after() {
 		verify(this.msgEvent, atLeastOnce()).select(fromServer());
-		verifyNoMoreInteractions(this.msgEvent, this.registry, this.serialiser, this.principal);
+		verifyNoMoreInteractions(this.log, this.msgEvent, this.registry, this.serialiser, this.principal);
 	}
 
 

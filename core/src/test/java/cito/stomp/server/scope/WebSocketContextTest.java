@@ -25,6 +25,7 @@ import cito.stomp.server.annotation.WebSocketScope;
  * @since v1.0 [22 Nov 2016]
  */
 @RunWith(MockitoJUnitRunner.class)
+@Ignore
 public class WebSocketContextTest {
 	@Mock
 	private BeanManager beanManager;
@@ -53,7 +54,7 @@ public class WebSocketContextTest {
 		verify(this.sessionHolder).remove();
 	}
 
-	@Test @Ignore
+	@Test
 	public void dispose() {
 		this.context.dispose(session);
 

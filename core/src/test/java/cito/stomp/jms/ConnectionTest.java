@@ -81,7 +81,7 @@ public class ConnectionTest {
 
 		verify(heartBeatMonitor).resetSend();
 		verify(frame).getCommand();
-		verify(this.log).info("Senging message to client. [sessionId={},command={}]", "ABC123", Command.MESSAGE);
+		verify(this.log).info("Sending message to client. [sessionId={},command={}]", "ABC123", Command.MESSAGE);
 		verify(this.relay).send(any(MessageEvent.class));
 		verifyNoMoreInteractions(heartBeatMonitor, frame);
 	}
@@ -103,7 +103,7 @@ public class ConnectionTest {
 		verify(this.log).info("Starting JMS connection... [sessionId={}]", "ABC123");
 		verify(jmsConnection).setClientID("ABC123");
 		verify(jmsConnection).start();
-		verify(this.log).info("Senging message to client. [sessionId={},command={}]", "ABC123", Command.CONNECTED);
+		verify(this.log).info("Sending message to client. [sessionId={},command={}]", "ABC123", Command.CONNECTED);
 		verify(this.relay).send(any(MessageEvent.class));
 		verifyNoMoreInteractions(heartBeatMonitor, jmsConnection);
 	}
