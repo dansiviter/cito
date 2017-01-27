@@ -4,14 +4,15 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 
 import cito.stomp.Glob;
+import cito.stomp.server.annotation.PathParam;
 
 /**
- * Utility for parsing path parameters and extracting path parameters.
- * 
- * TODO create CDI based annotation and producer for convenience.
+ * Utility for parsing paths and performing parameters expansion.
  * 
  * @author Daniel Siviter
  * @since v1.0 [17 Jan 2017]
+ * @see Glob
+ * @see PathParam
  */
 public class PathParser {
 	private final String pattern;

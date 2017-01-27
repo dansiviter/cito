@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * A class for POSIX glob pattern with brace expansions.
+ * A class for POSIX GLOB pattern with brace expansions.
  * 
  * Altered to be useful with message destinations rather than pure File paths.
  */

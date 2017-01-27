@@ -10,7 +10,12 @@ import java.lang.annotation.Target;
 import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
+import cito.stomp.Command;
+import cito.stomp.Glob;
+import cito.stomp.server.event.MessageEvent;
+
 /**
+ * Observable qualifier {@link MessageEvent} for when a user performs a {@link Command#SEND}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [12 Jul 2016]
@@ -21,10 +26,11 @@ import javax.inject.Qualifier;
 @Repeatable(OnSends.class)
 public @interface OnSend {
 	/**
-	 * A regular expression of the topic pattern required.
+	 * A GLOB expression of the topic pattern required.
 	 * 
 	 * @return
+	 * @see Glob
 	 */
 	@Nonbinding
-	String value() default ".*";
+	String value() default "**";
 }

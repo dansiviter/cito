@@ -53,9 +53,7 @@ public class EventProducer {
 		}
 		case SEND: {
 			final String destination = msg.frame().destination();
-			extension.getMessageObservers(OnSend.class).stream().filter(
-					e -> matches(OnSend.class, e.getObservedQualifiers(), destination)).forEach(
-							ObserverMethod::notify);
+			notify(OnSend.class, extension.getMessageObservers(OnSend.class), destination, msg);
 			break;
 		}
 		case SUBSCRIBE: {

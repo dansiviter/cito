@@ -10,8 +10,18 @@ import java.lang.annotation.Target;
 import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
+import cito.stomp.Command;
+import cito.stomp.Glob;
+import cito.stomp.server.event.MessageEvent;
+
 /**
- * Qualifier to distinguish subscription events.
+ * Observable {@link MessageEvent} for when a user performs a {@link Command#UNSUBSCRIBE} to a destination.
+ * 
+ * <pre>
+ * 	public void on(&#064;Observes &#064;OnUnsubscribe("/topic/{param}.world}") MessageEvent e) {
+ * 		// do something
+ * 	}
+ * </pre>
  * 
  * @author Daniel Siviter
  * @since v1.0 [12 Jul 2016]
@@ -22,10 +32,11 @@ import javax.inject.Qualifier;
 @Repeatable(OnUnsubscribes.class)
 public @interface OnUnsubscribe {
 	/**
-	 * A regular expression of the topic pattern required.
+	 * A GLOB expression of the topic pattern required.
 	 * 
 	 * @return
+	 * @see Glob
 	 */
 	@Nonbinding
-	String value() default ".*";
+	String value() default "**";
 }

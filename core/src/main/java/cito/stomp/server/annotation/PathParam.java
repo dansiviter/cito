@@ -11,6 +11,15 @@ import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
 /**
+ * Inject an expanded path parameter into the method:
+ * <pre>
+ * 	public void on(
+ * 			&#064;Observes &#064;OnSend("{param}.world}") MessageEvent e,
+ * 			&#064;PathParam("param") String param)
+ * 	{
+ * 		// do something
+ * 	}
+ * </pre>
  * 
  * @author Daniel Siviter
  * @since v1.0 [23 Nov 2016]
