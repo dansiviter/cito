@@ -2,6 +2,7 @@ package cito.stomp.server;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -15,9 +16,11 @@ import java.util.Set;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
+import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
+import javax.enterprise.inject.spi.InjectionTarget;
 import javax.enterprise.inject.spi.ObserverMethod;
 import javax.enterprise.inject.spi.ProcessObserverMethod;
 import javax.websocket.Session;
@@ -80,7 +83,7 @@ public class ExtensionTest {
 
 		this.extension.registerMessageEvent(processObserverMethod, beanManager);
 
-		assertEquals(observerMethod, getFrameObservers(this.extension).get(OnConnected.class).iterator().next());
+		assertEquals(observerMethod, getMessageObservers(this.extension).get(OnConnected.class).iterator().next());
 
 		verify(processObserverMethod).getObserverMethod();
 		verify(observerMethod).getObservedQualifiers();
@@ -97,7 +100,7 @@ public class ExtensionTest {
 
 		this.extension.registerMessageEvent(processObserverMethod, beanManager);
 
-		assertEquals(observerMethod, getFrameObservers(this.extension).get(OnSend.class).iterator().next());
+		assertEquals(observerMethod, getMessageObservers(this.extension).get(OnSend.class).iterator().next());
 
 		verify(processObserverMethod).getObserverMethod();
 		verify(observerMethod).getObservedQualifiers();
@@ -114,7 +117,7 @@ public class ExtensionTest {
 
 		this.extension.registerMessageEvent(processObserverMethod, beanManager);
 
-		assertEquals(observerMethod, getFrameObservers(this.extension).get(OnSubscribe.class).iterator().next());
+		assertEquals(observerMethod, getMessageObservers(this.extension).get(OnSubscribe.class).iterator().next());
 
 		verify(processObserverMethod).getObserverMethod();
 		verify(observerMethod).getObservedQualifiers();
@@ -131,7 +134,7 @@ public class ExtensionTest {
 
 		this.extension.registerMessageEvent(processObserverMethod, beanManager);
 
-		assertEquals(observerMethod, getFrameObservers(this.extension).get(OnUnsubscribe.class).iterator().next());
+		assertEquals(observerMethod, getMessageObservers(this.extension).get(OnUnsubscribe.class).iterator().next());
 
 		verify(processObserverMethod).getObserverMethod();
 		verify(observerMethod).getObservedQualifiers();
@@ -148,7 +151,7 @@ public class ExtensionTest {
 
 		this.extension.registerMessageEvent(processObserverMethod, beanManager);
 
-		assertEquals(observerMethod, getFrameObservers(this.extension).get(OnDisconnect.class).iterator().next());
+		assertEquals(observerMethod, getMessageObservers(this.extension).get(OnDisconnect.class).iterator().next());
 
 		verify(processObserverMethod).getObserverMethod();
 		verify(observerMethod).getObservedQualifiers();
@@ -159,7 +162,7 @@ public class ExtensionTest {
 	@SuppressWarnings("unchecked")
 	public void getObservers() {
 		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
-		getFrameObservers(this.extension).put(OnSubscribe.class, Collections.singleton(observerMethod));
+		getMessageObservers(this.extension).put(OnSubscribe.class, Collections.singleton(observerMethod));
 
 		final Set<ObserverMethod<MessageEvent>> results = this.extension.getMessageObservers(OnSubscribe.class);
 
@@ -171,11 +174,22 @@ public class ExtensionTest {
 	@Test
 	public void registerContexts() {
 		final AfterBeanDiscovery afterBeanDiscovery = mock(AfterBeanDiscovery.class);
+		final CreationalContext creationalContext = mock(CreationalContext.class);
+		when(this.beanManager.createCreationalContext(null)).thenReturn(creationalContext);
+		final AnnotatedType annotatedType = mock(AnnotatedType.class);
+		when(this.beanManager.createAnnotatedType(any())).thenReturn(annotatedType);
+		final InjectionTarget injectionTarget = mock(InjectionTarget.class);
+		when(this.beanManager.createInjectionTarget(any())).thenReturn(injectionTarget);
+
 		this.extension.registerContexts(afterBeanDiscovery, this.beanManager);
 
 		verify(afterBeanDiscovery).addContext(any(WebSocketContext.class));
 		verify(this.beanManager).isPassivatingScope(WebSocketScope.class);
-		verifyNoMoreInteractions(afterBeanDiscovery);
+		verify(this.beanManager).createAnnotatedType(any());
+		verify(this.beanManager).createCreationalContext(null);
+		verify(this.beanManager).createInjectionTarget(annotatedType);
+		verify(injectionTarget).inject(any(WebSocketContext.class), eq(creationalContext));
+		verifyNoMoreInteractions(afterBeanDiscovery, creationalContext, injectionTarget);
 	}
 
 	@Test
@@ -244,7 +258,7 @@ public class ExtensionTest {
 	 * @param e
 	 * @return
 	 */
-	private static Map<Class<? extends Annotation>, Set<ObserverMethod<MessageEvent>>> getFrameObservers(Extension e) {
-		return ReflectionUtil.get(e, "frameObservers");
+	private static Map<Class<? extends Annotation>, Set<ObserverMethod<MessageEvent>>> getMessageObservers(Extension e) {
+		return ReflectionUtil.get(e, "messageObservers");
 	}
 }

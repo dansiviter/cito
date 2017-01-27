@@ -48,7 +48,7 @@ public class EventProducer {
 
 		switch (msg.frame().getCommand()) {
 		case CONNECTED: { // on client thread as it's response to CONNECT
-			extension.getMessageObservers(OnConnected.class).forEach(ObserverMethod::notify);
+			extension.getMessageObservers(OnConnected.class).forEach(om -> om.notify(msg));
 			break;
 		}
 		case SEND: {
@@ -70,7 +70,7 @@ public class EventProducer {
 			break;
 		}
 		case DISCONNECT: {
-			extension.getMessageObservers(OnDisconnect.class).forEach(ObserverMethod::notify);
+			extension.getMessageObservers(OnDisconnect.class).forEach(om -> om.notify(msg));
 			break;
 		}
 		default:

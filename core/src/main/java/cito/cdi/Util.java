@@ -29,8 +29,8 @@ public enum Util { ;
 		}
 		CreationalContext<?> creationalContext = beanManager.createCreationalContext(null);
 
-		AnnotatedType<?> annotatedType = beanManager.createAnnotatedType(instance.getClass());
-		InjectionTarget injectionTarget = beanManager.createInjectionTarget(annotatedType);
+		final AnnotatedType<?> annotatedType = beanManager.createAnnotatedType(instance.getClass());
+		final InjectionTarget injectionTarget = beanManager.createInjectionTarget(annotatedType);
 		injectionTarget.inject(instance, creationalContext);
 	}
 }
