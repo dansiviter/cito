@@ -29,9 +29,9 @@ When a user sends a message to the server this can be recieved using the `@OnSen
 
 	public void onSend(@Observes @OnSend MessageEvent) { ... }
 	
-It is also possible to perform automatic serialisation of beans using the `@Payload` annotation:
+It is also possible to perform automatic serialisation of beans using the `@Body` annotation:
 
-	public void onSend(@Observes @OnSend MessageEvent, @Payload MyBean myBean) { ... }
+	public void onSend(@Observes @OnSend MessageEvent, @Body MyBean myBean) { ... }
 
 `@OnSend` accepts a destination pattern to match. See the 'Destination Filtering' section.
 

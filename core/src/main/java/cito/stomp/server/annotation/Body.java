@@ -9,7 +9,14 @@ import java.lang.annotation.Target;
 
 import javax.inject.Qualifier;
 
+import cito.stomp.Frame;
+import cito.stomp.server.event.MessageEvent;
+
 /**
+ * Injects the {@link Frame#getBody()} from the {@link MessageEvent#frame()}, performing deserialisation if required.
+ * <pre>
+ * 	public void onSend(&#064;Observes &#064;OnSend MessageEvent, &#064;Body MyBean myBean) { ... }
+ * </pre>
  * 
  * @author Daniel Siviter
  * @since v1.0 [25 Jan 2017]
