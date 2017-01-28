@@ -26,12 +26,12 @@ import cito.stomp.server.ws.WebSocketConfigurator;
 		encoders = FrameEncoding.class,
 		decoders = FrameEncoding.class,
 		configurator = WebSocketConfigurator.class
-)
+		)
 public class WebSocketServer extends AbstractServer {
 	@OnOpen
 	@Override
-	public void open(Session session, EndpointConfig config) {
-		super.open(session, config);
+	public void onOpen(Session session, EndpointConfig config) {
+		super.onOpen(session, config);
 	}
 
 	@OnMessage
@@ -42,13 +42,13 @@ public class WebSocketServer extends AbstractServer {
 
 	@OnClose
 	@Override
-	public void close(Session session, CloseReason reason) {
-		super.close(session, reason);
+	public void onClose(Session session, CloseReason reason) {
+		super.onClose(session, reason);
 	}
 
 	@OnError
 	@Override
-	public void error(Session session, Throwable t) {
-		super.error(session, t);
+	public void onError(Session session, Throwable t) {
+		super.onError(session, t);
 	}
 }

@@ -172,6 +172,7 @@ public class ExtensionTest {
 	}
 
 	@Test
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void registerContexts() {
 		final AfterBeanDiscovery afterBeanDiscovery = mock(AfterBeanDiscovery.class);
 		final CreationalContext creationalContext = mock(CreationalContext.class);

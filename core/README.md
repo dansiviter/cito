@@ -1,4 +1,4 @@
-# Citō Core
+# Citō Core #
 
 Citō uses a number of technologies from the JEE 7 catalogue, namely:
 
@@ -7,6 +7,7 @@ Citō uses a number of technologies from the JEE 7 catalogue, namely:
 * JAX-RS - MediaTypes (will potentially be removed to reduce dependencies),
 
 Both JMS, JAX-RS and CDI implementations must exist for it to work, and JAX-B for performing [de]serialisation binding. If you're just using Strings or binary data, then JAX-B is not required.
+
 
 ## Deployment Models ##
 
@@ -17,7 +18,8 @@ Citō can be deployed in fours ways:
 * Standalone, remove JMS broker,
 * Clustered, remote JMS broker.
 
-In its simplest form it utilises [Apache ActiveMQ Artemis](http://activemq.apache.org/artemis/) to act as an embedded broker. This is a very high performant broker that before the HornetQ codebase was donated to Apache it posted an 8 million messages/sec on [SPECjms2007](http://planet.jboss.org/post/8_2_million_messages_second_with_specjms) benchmark in addition to scaling well. I'd challenge any application to actually have a need to send more than 8 million messages/second, but the option is there.
+Citō utilises highly scalable [Apache ActiveMQ Artemis](http://activemq.apache.org/artemis/) to act as an embedded message broker. This is a very high performant broker that has been shown to post 8 million messages/sec on [SPECjms2007](http://planet.jboss.org/post/8_2_million_messages_second_with_specjms) benchmark (when formally HornetQ) in addition to scaling well.
+
 
 ## Messaging ##
 
@@ -37,11 +39,11 @@ It is also possible to perform automatic serialisation of beans using the `@Body
 
 ### `SUBSCRIBE` & `UNSUBSCRIBE` ###
 
-When a user subscribes or unsubscribes to a destination the event can be captured using the `@OnSubscribe` and `@OnUnSubscribe`
+When a user subscribes or unsubscribes to a destination the event can be captured using the `@OnSubscribe` and `@OnUnsubscribe`
 
 	public void onSubscribe(@Observes @OnSubscribe MessageEvent) { ... }
 
-Both `@OnSubscribe` and `@OnUnSubscribe` accept a destination pattern to match. See the 'Destination Filtering' section.
+Both `@OnSubscribe` and `@OnUnsubscribe` accept a destination pattern to match. See the 'Destination Filtering' section.
 
 For the first subscription and last unsubscription to a topic see the following 'Destination Changed' section.
 
@@ -57,6 +59,7 @@ In this circumstance all events will be passed to the method. It is also possibl
 
 Both `@OnAdded` and `@OnRemoved` accept a destination pattern to match. See the 'Destination Filtering' section.
 
+
 ### Destination Filtering ###
 
 A number of annotations related to subscriptions can accept a destination pattern which will be filtered against. The pattern matching is based on POSIX GLOB patterns. For example, the pattern `/topic/hello.*` will match anything with the base pattern:
@@ -68,7 +71,7 @@ A number of annotations related to subscriptions can accept a destination patter
 
 See `cito.stomp.Glob` for more information.
 
-In addition to matching patterns it's also possible to use path parameters, via curly braces parenthesis ('{}') and `@PathParam` annotation for use within the method. For example:
+In addition to matching patterns it's also possible to use path parameters, via curly braces parenthesis (`{}`) and `@PathParam` annotation for use within the method. For example:
 
 	public void on(
 			@Observes @OnAdded("/topic/{param}.world") DestinationEvent,
@@ -78,6 +81,7 @@ In addition to matching patterns it's also possible to use path parameters, via 
 	}
 
 See `cito.PathParser` for more information.
+
 
 ### Sending & Broadcasting ###
 
@@ -110,25 +114,27 @@ This will broadcast, but to all sessions for a specific user:
 
 	this.support.broadcastTo(user, "/topic/hello-world", MediaType.TEXT_PLAIN, "Hello");
 
-** Send to Session **
+**Send to Session**
 
 Finally the least granular approach will only send to a specific session of a user:
 
 	final String sessionId = ... // the user session
 	this.support.sendTo(sessionId, "/topic/hello-world", MediaType.TEXT_PLAIN, "Hello");
 
-	
+
 # Potential Future Work #
 
 Create GitHub Issues for these to permit voting.
 
-## Message Sending Injection ## 
+
+## Message Sending Injection ##
 
 	@Inject
 	@OnSend("/topic/myTopic")
 	private Send myTopic;
 
 Viable?
+
 
 ## PathParam Conversion/Serialisation ##
 
