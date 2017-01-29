@@ -121,6 +121,18 @@ Finally the least granular approach will only send to a specific session of a us
 	final String sessionId = ... // the user session
 	this.support.sendTo(sessionId, "/topic/hello-world", MediaType.TEXT_PLAIN, "Hello");
 
+## Scope ##
+
+To assist with maintaining beans in line with WebSocket sessions you can use the `@WebSocketScope`. This will be active during:
+
+* a new connection is created - see `@OnOpen`,
+* a message is received for a session - see `@OnMessage`,
+* an error is observed - see `@OnError`,
+* the connection is closed - see `@OnClose`.
+
+After a `@OnClose` all beans associated with the scope will be destroyed.
+
+*Warn:* As it is only possible to have one WebSocket scope active per thread, events may not be propagated to a bean observing events that originated from a different scope.
 
 # Potential Future Work #
 

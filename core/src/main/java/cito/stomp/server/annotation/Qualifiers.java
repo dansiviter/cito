@@ -47,6 +47,15 @@ public enum Qualifiers { ;
 	 * 
 	 * @return
 	 */
+	public static OnError onError() {
+		return new OnErrorLiteral();
+	}
+
+
+	/**
+	 * 
+	 * @return
+	 */
 	public static OnClose onClose() {
 		return new OnCloseLiteral();
 	}
@@ -132,7 +141,16 @@ public enum Qualifiers { ;
 	private static class OnOpenLiteral extends AnnotationLiteral<OnOpen> implements OnOpen {
 		private static final long serialVersionUID = 3720802781401347308L;
 	}
-	
+
+	/**
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [19 Jul 2016]
+	 */
+	private static class OnErrorLiteral extends AnnotationLiteral<OnError> implements OnError {
+		private static final long serialVersionUID = -2764506588497003639L;
+	}
+
 	/**
 	 * 
 	 * @author Daniel Siviter

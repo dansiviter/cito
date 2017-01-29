@@ -17,15 +17,9 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 
 /**
- * {@code WebSocketScoped} scope is active:
- * </p>
- * 
- * <ul>
- * <li>during the WebSocket lifecycle methods {@link OnOpen}. {@link OnClose}, {@link OnError}, and {@link OnMessage}.
- * </ul>
- * 
- * <p>
- * The context is destroyed when {@link OnClose} completes.
+ * Links a bean scope with that of a WebSocket Session. It will be active during the WebSocket lifecycle methods
+ * {@link OnOpen}, {@link OnMessage}, {@link OnError}, and {@link OnClose}. The context is destroyed when
+ * {@link OnClose} completes.
  * 
  * @author Daniel Siviter
  * @since v1.0 [17 Aug 2016]

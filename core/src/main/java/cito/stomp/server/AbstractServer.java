@@ -1,8 +1,6 @@
 package cito.stomp.server;
 
 import static cito.stomp.server.annotation.Qualifiers.fromClient;
-import static cito.stomp.server.annotation.Qualifiers.onClose;
-import static cito.stomp.server.annotation.Qualifiers.onOpen;
 
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.spi.BeanManager;
@@ -19,8 +17,8 @@ import cito.QuietClosable;
 import cito.stomp.Frame;
 import cito.stomp.server.annotation.FromClient;
 import cito.stomp.server.annotation.Qualifiers;
-import cito.stomp.server.event.MessageEvent;
 import cito.stomp.server.event.ClientMessageEventProducer;
+import cito.stomp.server.event.MessageEvent;
 
 /**
  * 
@@ -38,6 +36,8 @@ public abstract class AbstractServer extends Endpoint {
 	private Event<MessageEvent> messageEvent;
 	@Inject
 	private Event<Session> sessionEvent;
+	@Inject
+	private Event<Throwable> errorEvent;
 
 	/**
 	 * 
@@ -79,6 +79,15 @@ public abstract class AbstractServer extends Endpoint {
 	}
 
 	@Override
+	public void onError(Session session, Throwable t) {
+		this.log.warn("WebSocket error. [id={},principle={}]", session.getId(), session.getUserPrincipal(), t);
+		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
+			this.registry.unregister(session);
+			this.errorEvent.select(Qualifiers.onError()).fire(t);
+		}
+	}
+
+	@Override
 	public void onClose(Session session, CloseReason reason) {
 		this.log.info("WebSocket connection closed. [id={},principle={},code={},reason={}]", session.getId(), session.getUserPrincipal(), reason.getCloseCode(), reason.getReasonPhrase());
 		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
@@ -86,9 +95,5 @@ public abstract class AbstractServer extends Endpoint {
 			this.sessionEvent.select(Qualifiers.onClose()).fire(session);
 		}
 		Extension.disposeScope(this.beanManager, session);
-	}
-	@Override
-	public void onError(Session session, Throwable t) {
-		this.log.warn("WebSocket error. [id={},principle={}]", session.getId(), session.getUserPrincipal(), t);
 	}
 }
