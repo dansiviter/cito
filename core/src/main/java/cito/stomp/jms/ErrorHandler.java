@@ -32,13 +32,16 @@ public class ErrorHandler {
 	 * @param cause
 	 * @param e
 	 */
-	public void onError(Relay relay, String sessionId, Frame cause, Exception e) {
+	public void onError(Relay relay, String sessionId, Frame cause, String msg, Exception e) {
 		this.log.warn("Error while processing frame! [sessionId={},frame.command={}]", sessionId, cause.getCommand(), e);
 		final Builder error = Frame.error();
 		if (cause != null && cause.containsHeader(Headers.RECIEPT)) {
 			error.recieptId(cause.receipt());
 		}
-		error.body(MediaType.TEXT_PLAIN_TYPE, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+		if (msg == null) {
+			msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+		}
+		error.body(MediaType.TEXT_PLAIN_TYPE, msg);
 		this.messageEvent.fire(new MessageEvent(sessionId, error.build()));
 		relay.close(sessionId);
 	}

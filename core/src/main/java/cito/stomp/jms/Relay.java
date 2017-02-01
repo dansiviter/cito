@@ -23,7 +23,6 @@ import cito.stomp.server.annotation.FromServer;
 import cito.stomp.server.annotation.OnClose;
 import cito.stomp.server.event.MessageEvent;
 import cito.stomp.server.security.SecurityRegistry;
-import cito.stomp.server.security.SecurityViolationException;
 
 /**
  * STOMP broker relay to JMS.
@@ -59,10 +58,9 @@ public class Relay {
 	public void clientMessage(@Observes @FromClient MessageEvent msg) {
 		final String sessionId = msg.sessionId() != null ? msg.sessionId() : SystemConnection.SESSION_ID;
 
-		try {
-			this.securityRegistry.isPermitted(msg.frame(), this.securityCtx.get());
-		} catch (SecurityViolationException e) {
-			this.errorHandler.onError(this, sessionId, msg.frame(), e);
+		final boolean permitted = this.securityRegistry.isPermitted(msg.frame(), this.securityCtx.get());
+		if (!permitted) {
+			this.errorHandler.onError(this, sessionId, msg.frame(), "Not permitted!", null);
 			return;
 		}
 		on(msg);
@@ -105,7 +103,7 @@ public class Relay {
 			}
 			conn.on(evt);
 		} catch (JMSException | RuntimeException e) {
-			this.errorHandler.onError(this, sessionId, evt.frame(), e);
+			this.errorHandler.onError(this, sessionId, evt.frame(), null, e);
 		}
 	}
 

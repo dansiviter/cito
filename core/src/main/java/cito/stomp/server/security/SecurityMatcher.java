@@ -12,7 +12,7 @@ public interface SecurityMatcher {
 	/**
 	 * 
 	 * @param ctx
-	 * @throws SecurityViolationException
+	 * @return
 	 */
-	void isPermitted(SecurityContext ctx) throws SecurityViolationException;
+	boolean isPermitted(SecurityContext ctx);
 }

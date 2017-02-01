@@ -1,45 +1,41 @@
 package cito.stomp.server.security;
 
-import javax.annotation.Priority;
 import javax.enterprise.context.Dependent;
 
 /**
  * Used for configuring the the {@link SecurityRegistry}. It's recommended these are created using {@link Dependent} as
  * they'll only be used on startup of the {@link SecurityRegistry} and then discarded.
  * 
- * TODO
+ * <pre>
+ *	&#064;Dependent
+ *	public class Configurer implements SecurityConfigurer {
+ *		&#064;Override
+ *		public void configure(SecurityRegistry registry) {
+ *			registry.builder().nullDestination().permitAll(); // important for most message types including CONNECT, DISCONNECT
+ *			registry.builder().matches("/topic/rate.*").principleExists().build(); // user must be logged in
+ *			registry.builder().matches("/topic/rate.EURUSD").roles("trader", "sales").build(); // user has roles 'trader' OR 'sales', logged in is implied
+ *		}
+ *	}
+ * </pre>
+ * 
+ * It is possible to perform registration on the fly using the registry directly:
+ * <pre>
+ * 	&#064;Inject
+ * 	private SecurityRegistry registry;
+ * 
+ * 	public void add() {
+ * 		registry.configure(r -> r.builder().nullDestination().permitAll());
+ * 	}
+ * </pre>
  * 
  * @author Daniel Siviter
  * @since v1.0 [5 Oct 2016]
  */
-@Dependent
+@FunctionalInterface
 public interface SecurityConfigurer {
 	/**
 	 * 
 	 * @param registry
 	 */
 	void configure(SecurityRegistry registry);
-
-	@Dependent @Priority(1)
-	public static class Blagh implements SecurityConfigurer {
-		@Override
-		public void configure(SecurityRegistry registry) {
-			registry.builder().nullDestination().permitAll();
-//			registry.builder().matches("/*").principleExists().build();
-		}
-	}
-
-	@Dependent @Priority(2)
-	public static class Blagh1 implements SecurityConfigurer {
-		@Override
-		public void configure(SecurityRegistry registry) {
-		}
-	}
-
-	@Dependent @Priority(3)
-	public static class Blagh2 implements SecurityConfigurer {
-		@Override
-		public void configure(SecurityRegistry registry) {
-		}
-	}
 }

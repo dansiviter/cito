@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.security.DenyAll;
 import javax.annotation.security.PermitAll;
@@ -257,10 +258,8 @@ public class Builder {
 	 */
 	public static class PrincipalMatcher implements SecurityMatcher {
 		@Override
-		public void isPermitted(SecurityContext securityCtx) throws SecurityViolationException{
-			if (securityCtx.getUserPrincipal() == null) {
-				throw new SecurityViolationException("No user principal!");
-			}
+		public boolean isPermitted(SecurityContext securityCtx) {
+			return securityCtx.getUserPrincipal() != null;
 		}
 	}
 
@@ -283,13 +282,13 @@ public class Builder {
 		}
 
 		@Override
-		public void isPermitted(SecurityContext securityCtx) throws SecurityViolationException {
+		public boolean isPermitted(SecurityContext securityCtx) {
 			if (this.annotation.annotationType() == DenyAll.class) {
-				throw new SecurityViolationException("All denied!");
+				return false;
 			}
 
 			if (this.annotation.annotationType() == PermitAll.class) { // XXX needed?
-				return;
+				return true;
 			}
 
 			if (this.annotation.annotationType() == RolesAllowed.class) {
@@ -297,13 +296,11 @@ public class Builder {
 
 				for (String role : roles) {
 					if (securityCtx.isUserInRole(role)) {
-						return;
+						return true;
 					}
 				}
-				throw new SecurityViolationException("Not in roles! " + Arrays.toString(roles));
 			}
-
-
+			return false;
 		}
 	}
 
@@ -313,12 +310,20 @@ public class Builder {
 	 * @since v1.0 [25 Oct 2016]
 	 */
 	public static class Limitation implements FrameMatcher, SecurityMatcher {
+		private static final AtomicInteger ID = new AtomicInteger();
+
+		private final int id;
 		private final List<FrameMatcher> frameMatchers;
 		private final List<SecurityMatcher> securityMatchers;
 
 		public Limitation(List<FrameMatcher> frameMatchers, List<SecurityMatcher> securityMatchers) {
+			this.id = ID.incrementAndGet();
 			this.frameMatchers = Collections.unmodifiableList(new ArrayList<>(frameMatchers));
 			this.securityMatchers = Collections.unmodifiableList(new ArrayList<>(securityMatchers));
+		}
+
+		public int getId() {
+			return id;
 		}
 
 		@Override
@@ -332,10 +337,13 @@ public class Builder {
 		}
 
 		@Override
-		public void isPermitted(SecurityContext ctx) throws SecurityViolationException {
+		public boolean isPermitted(SecurityContext ctx) {
 			for (SecurityMatcher matcher : this.securityMatchers) {
-				matcher.isPermitted(ctx);		
+				if (!matcher.isPermitted(ctx)) {
+					return false;
+				}
 			}
+			return true;
 		}
 	}
 }

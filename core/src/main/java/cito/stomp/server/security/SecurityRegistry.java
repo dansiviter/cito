@@ -1,11 +1,16 @@
 package cito.stomp.server.security;
 
+import static cito.ReflectionUtil.getAnnotationValue;
+
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.Instance;
@@ -50,12 +55,14 @@ public class SecurityRegistry {
 	 * @param frame
 	 * @param ctx
 	 * @return
-	 * @throws SecurityViolationException
 	 */
-	public void isPermitted(Frame frame, SecurityContext ctx) throws SecurityViolationException{
+	public boolean isPermitted(Frame frame, SecurityContext ctx) {
 		for (Limitation limitation : getMatching(frame)) {
-			limitation.isPermitted(ctx);
+			if (!limitation.isPermitted(ctx)) {
+				return false;
+			}
 		}
+		return true;
 	}
 
 	/**
@@ -68,11 +75,21 @@ public class SecurityRegistry {
 
 	/**
 	 * 
+	 * @param configurer
+	 */
+	public void configure(SecurityConfigurer configurer) {
+		configurer.configure(this);
+	}
+
+	/**
+	 * 
 	 */
 	@PostConstruct
 	public void init() {
-		this.configurers.forEach(c -> { 
-			c.configure(this);
+		final Set<SecurityConfigurer> configurers = new TreeSet<>(Comparator.comparing(SecurityRegistry::getPriority));
+		this.configurers.forEach(configurers::add);
+		configurers.forEach(c -> { 
+			configure(c);
 			this.configurers.destroy(c);
 		});
 	}
@@ -87,5 +104,15 @@ public class SecurityRegistry {
 	 */
 	public static Builder builder(SecurityRegistry registry) {
 		return new Builder(registry);
+	}
+
+	/**
+	 * Returns the {@link Priority#value()} if available or 5000 if not.
+	 * 
+	 * @param config
+	 * @return
+	 */
+	private static int getPriority(SecurityConfigurer config) {
+		return getAnnotationValue(config, Priority.class, 5000);
 	}
 }

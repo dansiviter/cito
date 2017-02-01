@@ -1,11 +1,17 @@
 package cito;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
+/**
+ * 
+ * @author Daniel Siviter
+ * @since v1.0 [12 Jul 2016]
+ */
 public enum ReflectionUtil { ;
 	/**
 	 * 
@@ -177,5 +183,67 @@ public enum ReflectionUtil { ;
 		{
 			method.setAccessible(true);
 		}
+	}
+
+	/**
+	 * 
+	 * @param cls
+	 * @param annotation
+	 * @return
+	 */
+	public static <A extends Annotation> A getAnnotation(Class<?> cls, Class<A> annotation) {
+		return annotation.cast(cls.getAnnotation(annotation));
+	}
+
+	/**
+	 * 
+	 * @param obj
+	 * @param annotation
+	 * @return
+	 */
+	public static <A extends Annotation> A getAnnotation(Object obj, Class<A> annotation) {
+		return getAnnotation(obj.getClass(), annotation);
+	}
+
+	/**
+	 * 
+	 * @param cls
+	 * @param annotation
+	 * @param def
+	 * @return
+	 */
+	public static <V, A extends Annotation> V getAnnotationValue(Class<?> cls, Class<A> annotation, V def) {
+		final A a = getAnnotation(cls, annotation);
+		return a != null ? get(a, "value") : def;
+	}
+
+	/**
+	 * 
+	 * @param obj
+	 * @param annotation
+	 * @param def
+	 * @return
+	 */
+	public static <V, A extends Annotation> V getAnnotationValue(Object obj, Class<A> annotation, V def) {
+		return getAnnotationValue(obj.getClass(), annotation, def);
+	}
+
+	/**
+	 * 
+	 * @param cls
+	 * @param annotation
+	 * @return
+	 */
+	public static <V, A extends Annotation> V getAnnotationValue(Class<?> cls, Class<A> annotation) {
+		return getAnnotationValue(cls,  null);
+	}
+
+	/**
+	 * 
+	 * @param obj
+	 * @return
+	 */
+	public static <V, A extends Annotation> V getAnnotationValue(Object obj, Class<A> annotation) {
+		return getAnnotationValue(obj.getClass(),  null);
 	}
 }
