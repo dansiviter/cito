@@ -130,7 +130,7 @@ By default all detinations are permitted to all users. However, it may be essent
 	public class Configurer implements SecurityConfigurer {
 		@Override
 		public void configure(SecurityRegistry registry) {
-			registry.builder().nullDestination().permitAll(); // important for most message types including CONNECT, DISCONNECT
+			registry.builder().nullDestination().permitAll().build(); // important for most message types including CONNECT, DISCONNECT
 			registry.builder().matches("/topic/rate.*").principleExists().build(); // user must be logged in
 			registry.builder().matches("/topic/rate.EURUSD").roles("trader", "sales").build(); // user has roles 'trader' OR 'sales', logged in is implied
 		}
