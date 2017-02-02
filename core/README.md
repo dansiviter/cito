@@ -156,6 +156,22 @@ After a `@OnClose` all beans associated with the scope will be destroyed.
 
 *Warn:* As it is only possible to have one WebSocket scope active per thread, events may not be propagated to a bean observing events that originated from a different scope.
 
+
+## Serialisation ##
+
+Both receive, via `@OnSend` and `@Body` annotations, and send, via `Support` permit automatic serialisation of beans based on MIME/Content-Type. At the moment only JSON (via [GSON](https://github.com/google/gson) and the Content-Type `application/json`) is supported. However, it is possible to add your own by implementing the `cito.ext.BodyReader` and `cito.ext.BodyWriter` interfaces and making them available to the CDI runtime.
+
+It is also possible to use the serialisation features using the `cito.ext.Serialiser` class:
+
+	@Inject
+	private Serialiser serialiser;
+	
+	public void doSomething() {
+		InputStream is = ...
+		MyBean myBean = serialiser.readFrom(MyBean.class, MediaType.APPLICATION_JSON, is);
+	}
+
+
 # Potential Future Work #
 
 Create GitHub Issues for these to permit voting.

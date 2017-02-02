@@ -1,19 +1,20 @@
-package cito.event;
+package cito.broker;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 
 import cito.QuietClosable;
+import cito.event.DestinationEvent;
 
 /**
+ * Acts as both a interface to detect if {@link DestinationEvent}s will be produced by the broker and to hold/produce
+ * {@link DestinationEvent} within the CDI runtime.
  * 
  * @author Daniel Siviter
  * @since v1.0 [25 Jan 2017]
  */
-@ApplicationScoped
-public class DestinationEventProducer {
-	private static final ThreadLocal<DestinationEvent> HOLDER = new ThreadLocal<>();
+public interface DestinationEventProducer {
+	public static final ThreadLocal<DestinationEvent> HOLDER = new ThreadLocal<>();
 
 	@Produces @Dependent
 	public static DestinationEvent get() {

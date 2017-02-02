@@ -1,4 +1,4 @@
-package cito.artemis;
+package cito.broker.artemis;
 
 import static cito.Util.getAnnotations;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.MESSAGE;
@@ -24,7 +24,7 @@ import javax.inject.Inject;
 
 import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationListener;
-import org.apache.activemq.artemis.jms.server.embedded.EmbeddedJMS;
+import org.apache.activemq.artemis.jms.server.JMSServerManager;
 import org.apache.activemq.artemis.jms.server.management.JMSNotificationType;
 import org.slf4j.Logger;
 
@@ -34,19 +34,19 @@ import cito.QuietClosable;
 import cito.ReflectionUtil;
 import cito.annotation.OnAdded;
 import cito.annotation.OnRemoved;
+import cito.broker.DestinationEventProducer;
 import cito.event.DestinationEvent;
-import cito.event.DestinationEventProducer;
 import cito.event.DestinationEvent.Type;
 import cito.server.Extension;
 
 /**
- * Produces events based on the state of the broker.
+ * Produces events based on the state of the embedded broker.
  * 
  * @author Daniel Siviter
  * @since v1.0 [18 Jul 2016]
  */
 @ApplicationScoped
-public class EventProducer implements NotificationListener {
+public class EmbeddedEventProducer implements NotificationListener, DestinationEventProducer {
 	private static final Collection<JMSNotificationType> ALL = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED, QUEUE_CREATED, QUEUE_DESTROYED);
 	private static final Collection<JMSNotificationType> CREATED = EnumSet.of(TOPIC_CREATED, QUEUE_CREATED);
 	private static final Collection<JMSNotificationType> TOPIC = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED);
@@ -56,7 +56,7 @@ public class EventProducer implements NotificationListener {
 	@Inject
 	private Logger log;
 	@Inject
-	private EmbeddedJMS broker;
+	private JMSServerManager serverManager;
 	@Inject
 	private Event<cito.event.DestinationEvent> destinationEvent;
 
@@ -67,7 +67,11 @@ public class EventProducer implements NotificationListener {
 
 	@PostConstruct
 	public void init() {
-		this.broker.getActiveMQServer().getManagementService().addNotificationListener(this);
+		if (this.serverManager == null) {
+			return;
+		}
+		log.info("Sourcing DestinationEvents from embedded broker.");
+		this.serverManager.getActiveMQServer().getManagementService().addNotificationListener(this);
 	}
 
 	@Override
@@ -111,7 +115,10 @@ public class EventProducer implements NotificationListener {
 
 	@PreDestroy
 	public void destroy() {
-		this.broker.getActiveMQServer().getManagementService().removeNotificationListener(this);
+		if (this.serverManager == null) {
+			return;
+		}
+		this.serverManager.getActiveMQServer().getManagementService().removeNotificationListener(this);
 	}
 
 	/**

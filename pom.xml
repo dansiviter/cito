@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>cito</groupId>
 	<artifactId>cito-root</artifactId>
-	<name>Cit&#x00D5; Parent</name>
+	<name>CitÕ Root</name>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
@@ -14,11 +14,12 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-		<deltaSpike.version>1.7.2</deltaSpike.version>
+		<delta-spike.version>1.7.2</delta-spike.version>
 	</properties>
 
 	<modules>
 		<module>core</module>
+		<module>artemis</module>
 		<module>websocket</module>
 		<!-- <module>sockjs</module> -->
 		<module>bom</module>
@@ -112,17 +113,17 @@
 			<dependency>
 				<groupId>org.apache.deltaspike.core</groupId>
 				<artifactId>deltaspike-core-api</artifactId>
-				<version>${deltaSpike.version}</version>
+				<version>${delta-spike.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.deltaspike.core</groupId>
 				<artifactId>deltaspike-core-impl</artifactId>
-				<version>${deltaSpike.version}</version>
+				<version>${delta-spike.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.deltaspike.modules</groupId>
 				<artifactId>deltaspike-security-module-impl</artifactId>
-				<version>${deltaSpike.version}</version>
+				<version>${delta-spike.version}</version>
 			</dependency>
 
 
@@ -192,4 +193,5 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	<url>https://github.com/dansiviter/cito</url>
 </project>

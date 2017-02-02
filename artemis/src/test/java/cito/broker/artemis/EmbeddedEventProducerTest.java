@@ -1,4 +1,4 @@
-package cito.artemis;
+package cito.broker.artemis;
 
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -16,6 +16,8 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
+import cito.server.EventProducer;
+
 /**
  * Unit test for {@link EventProducer}.
  * 
@@ -23,7 +25,7 @@ import org.slf4j.Logger;
  * @since v1.0 [17 Jan 2017]
  */
 @RunWith(MockitoJUnitRunner.class)
-public class EventProducerTest {
+public class EmbeddedEventProducerTest {
 	@Mock
 	private Logger log;
 	@Mock
@@ -32,7 +34,7 @@ public class EventProducerTest {
 	private Event<cito.event.DestinationEvent> destinationEvent;
 
 	@InjectMocks
-	private EventProducer eventProducer;
+	private EmbeddedEventProducer eventProducer;
 
 	@Test
 	public void unknownEvent() {
