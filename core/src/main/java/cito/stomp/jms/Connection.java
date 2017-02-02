@@ -16,8 +16,7 @@ import javax.jms.JMSException;
 import javax.websocket.CloseReason;
 import javax.ws.rs.core.MediaType;
 
-import com.google.common.base.Strings;
-
+import cito.Strings;
 import cito.event.MessageEvent;
 import cito.stomp.Command;
 import cito.stomp.Frame;
