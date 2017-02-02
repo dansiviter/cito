@@ -68,7 +68,7 @@ public class SystemConnection extends AbstractConnection {
 		try {
 			getSession().sendToBroker(msg.frame());
 		} catch (JMSException e) {
-			this.log.error("Error handling message! [sessionId={},command={}]", getSessionId(), msg.frame().getCommand());
+			this.log.error("Error handling message! [sessionId={},command={}]", getSessionId(), msg.frame().getCommand(), e);
 		}
 	}
 }

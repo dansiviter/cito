@@ -232,7 +232,7 @@ public class Connection extends AbstractConnection {
 			}
 			sendReceipt(msg.frame());
 		} catch (JMSException e) {
-			this.log.error("Error handling message! [sessionId={},command={}]", this.sessionId, msg.frame().getCommand());
+			this.log.error("Error handling message! [sessionId={},command={}]", this.sessionId, msg.frame().getCommand(), e);
 		}
 	}
 
