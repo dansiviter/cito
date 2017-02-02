@@ -1,5 +1,6 @@
 package cito.broker;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 
@@ -13,7 +14,8 @@ import cito.event.DestinationEvent;
  * @author Daniel Siviter
  * @since v1.0 [25 Jan 2017]
  */
-public interface DestinationEventProducer {
+@ApplicationScoped
+public class DestinationEventProducer {
 	public static final ThreadLocal<DestinationEvent> HOLDER = new ThreadLocal<>();
 
 	@Produces @Dependent

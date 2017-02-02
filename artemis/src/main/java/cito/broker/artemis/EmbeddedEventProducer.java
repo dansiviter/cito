@@ -46,7 +46,7 @@ import cito.server.Extension;
  * @since v1.0 [18 Jul 2016]
  */
 @ApplicationScoped
-public class EmbeddedEventProducer implements NotificationListener, DestinationEventProducer {
+public class EmbeddedEventProducer implements NotificationListener {
 	private static final Collection<JMSNotificationType> ALL = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED, QUEUE_CREATED, QUEUE_DESTROYED);
 	private static final Collection<JMSNotificationType> CREATED = EnumSet.of(TOPIC_CREATED, QUEUE_CREATED);
 	private static final Collection<JMSNotificationType> TOPIC = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED);

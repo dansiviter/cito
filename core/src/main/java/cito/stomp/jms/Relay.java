@@ -99,7 +99,8 @@ public class Relay {
 			}
 
 			if (conn == null) {
-				throw new IllegalStateException("Session not found! [" + sessionId + "]");
+				this.log.error("Session not found! Was there a previous error? [{}]", sessionId);
+				return;
 			}
 			conn.on(evt);
 		} catch (JMSException | RuntimeException e) {

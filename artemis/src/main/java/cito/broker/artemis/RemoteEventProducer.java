@@ -19,14 +19,12 @@ import javax.jms.Topic;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.slf4j.Logger;
 
-import cito.broker.DestinationEventProducer;
-
 /**
  * 
  * @author Daniel Siviter
  * @since v1.0 [2 Feb 2017]
  */
-public class RemoteEventProducer implements DestinationEventProducer, MessageListener {
+public class RemoteEventProducer implements MessageListener {
 	@Inject
 	@ConfigProperty(name = "artemis.notificationTopic", defaultValue = "jms.topic.notifications")
 	private String notificationTopic;

@@ -1,6 +1,6 @@
 package cito.broker.artemis;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -19,13 +19,17 @@ import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.jms.server.JMSServerManager;
 import org.apache.activemq.artemis.jms.server.impl.JMSServerManagerImpl;
+import org.slf4j.Logger;
 
 /**
  * 
  * @author Daniel Siviter
  * @since v1.0 [2 Feb 2017]
  */
+@ApplicationScoped
 public class BrokerProvider {
+	@Inject
+	private Logger log;
 	@Inject
 	private BrokerConfig config;
 
@@ -39,6 +43,7 @@ public class BrokerProvider {
 	@PostConstruct
 	public void init() {
 		if (this.config.startEmbeddedBroker()) {
+			this.log.info("Starting embedded broker.");
 			try {
 				ActiveMQServer activeMQServer = ActiveMQServers.newActiveMQServer(this.config.getEmbeddedConfiguration(), false);
 				this.jmsServerManager = new JMSServerManagerImpl(activeMQServer);
@@ -67,8 +72,8 @@ public class BrokerProvider {
 	 * @throws Exception
 	 */
 	private ActiveMQConnectionFactory createConnectionFactory() throws Exception {
-		Map<String, Object> params = new HashMap<>();
-		params.put(org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants.SERVER_ID_PROP_NAME, "1");
+		Map<String, Object> params = Collections.singletonMap(
+				org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants.SERVER_ID_PROP_NAME, "1");
 		final ActiveMQConnectionFactory activeMQConnectionFactory;
 		if (config.getUrl() != null) {
 			activeMQConnectionFactory = ActiveMQJMSClient.createConnectionFactory(config.getUrl(), null);
@@ -93,6 +98,7 @@ public class BrokerProvider {
 	@PreDestroy
 	public void destroy() {
 		if (this.config.startEmbeddedBroker()) {
+			this.log.info("Stopping embedded broker.");
 			try {
 				this.jmsServerManager.stop();
 			} catch (Exception e) {
