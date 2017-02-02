@@ -3,8 +3,7 @@ package cito;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
-import cito.stomp.Glob;
-import cito.stomp.server.annotation.PathParam;
+import cito.annotation.PathParam;
 
 /**
  * Utility for parsing paths and performing parameters expansion.

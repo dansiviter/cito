@@ -8,6 +8,6 @@ To achieve that it leverages JEE7 technology stack to ensure ease of integration
 
 For usage information see the individual projects:
 
-* [Core](/core/README.md) - The crux of the technology,
-* [WebSocket](/websocket/README.md) - A basic WebSocket endpoint for those who don't need graceful fallback and browser compatibility,
-* [SockJS](/sockjs/README.md) - A SockJS based endpoint to provide a high level of compatibility with legacy browsers and assist with piping data through corporate firewalls.
+* [Core](/core) - The crux of the technology,
+* [WebSocket](/websocket) - A basic WebSocket endpoint for those who don't need graceful fallback and browser compatibility,
+* [SockJS](/sockjs) - A SockJS based endpoint to provide a high level of compatibility with legacy browsers and assist with piping data through corporate firewalls.

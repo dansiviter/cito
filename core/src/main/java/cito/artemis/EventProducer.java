@@ -1,6 +1,6 @@
 package cito.artemis;
 
-import static cito.stomp.server.Util.getAnnotations;
+import static cito.Util.getAnnotations;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.MESSAGE;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_CREATED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_DESTROYED;
@@ -28,16 +28,16 @@ import org.apache.activemq.artemis.jms.server.embedded.EmbeddedJMS;
 import org.apache.activemq.artemis.jms.server.management.JMSNotificationType;
 import org.slf4j.Logger;
 
-import cito.DestinationEvent;
-import cito.DestinationEvent.Type;
-import cito.DestinationEventProducer;
+import cito.Glob;
+import cito.PathParamProvider;
 import cito.QuietClosable;
 import cito.ReflectionUtil;
-import cito.stomp.Glob;
-import cito.stomp.server.Extension;
-import cito.stomp.server.PathParamProvider;
-import cito.stomp.server.annotation.OnAdded;
-import cito.stomp.server.annotation.OnRemoved;
+import cito.annotation.OnAdded;
+import cito.annotation.OnRemoved;
+import cito.event.DestinationEvent;
+import cito.event.DestinationEventProducer;
+import cito.event.DestinationEvent.Type;
+import cito.server.Extension;
 
 /**
  * Produces events based on the state of the broker.
@@ -58,7 +58,7 @@ public class EventProducer implements NotificationListener {
 	@Inject
 	private EmbeddedJMS broker;
 	@Inject
-	private Event<cito.DestinationEvent> destinationEvent;
+	private Event<cito.event.DestinationEvent> destinationEvent;
 
 	/**
 	 * @param init used initialise on startup of application.
@@ -81,7 +81,7 @@ public class EventProducer implements NotificationListener {
 		final Type type = CREATED.contains(notif.getType()) ? Type.ADDED : Type.REMOVED;
 
 		this.log.info("Destination changed. [type={},destination={}]", type, destination);
-		final cito.DestinationEvent evt = new cito.DestinationEvent(type, destination);
+		final cito.event.DestinationEvent evt = new cito.event.DestinationEvent(type, destination);
 		try (QuietClosable c = DestinationEventProducer.set(evt)) {
 			this.destinationEvent.fire(evt);
 		}

@@ -9,10 +9,10 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import cito.server.AbstractServer;
+import cito.server.ws.FrameEncoding;
+import cito.server.ws.WebSocketConfigurator;
 import cito.stomp.Frame;
-import cito.stomp.server.AbstractServer;
-import cito.stomp.server.ws.FrameEncoding;
-import cito.stomp.server.ws.WebSocketConfigurator;
 
 /**
  * Defines a basic WebSocket endpoint.

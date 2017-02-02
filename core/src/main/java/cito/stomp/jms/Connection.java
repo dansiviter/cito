@@ -18,12 +18,12 @@ import javax.ws.rs.core.MediaType;
 
 import com.google.common.base.Strings;
 
+import cito.event.MessageEvent;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Frame.HeartBeat;
 import cito.stomp.Headers;
 import cito.stomp.HeartBeatMonitor;
-import cito.stomp.server.event.MessageEvent;
 
 /**
  * 

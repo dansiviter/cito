@@ -7,8 +7,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.jms.JMSException;
 
+import cito.event.MessageEvent;
 import cito.stomp.Frame;
-import cito.stomp.server.event.MessageEvent;
 
 /**
  * 

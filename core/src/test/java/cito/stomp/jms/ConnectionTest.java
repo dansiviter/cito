@@ -31,10 +31,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
+import cito.event.MessageEvent;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.HeartBeatMonitor;
-import cito.stomp.server.event.MessageEvent;
 
 /**
  * Unit tests for {@link Connection}.

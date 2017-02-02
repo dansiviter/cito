@@ -38,7 +38,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
-import cito.LinkedCaseInsensitiveMap;
+import cito.collections.LinkedCaseInsensitiveMap;
 
 /**
  * Defines a STOMP frame

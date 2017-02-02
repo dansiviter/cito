@@ -15,14 +15,14 @@ import javax.websocket.Session;
 
 import org.slf4j.Logger;
 
-import cito.stomp.server.SecurityContext;
-import cito.stomp.server.SessionRegistry;
-import cito.stomp.server.annotation.FromBroker;
-import cito.stomp.server.annotation.FromClient;
-import cito.stomp.server.annotation.FromServer;
-import cito.stomp.server.annotation.OnClose;
-import cito.stomp.server.event.MessageEvent;
-import cito.stomp.server.security.SecurityRegistry;
+import cito.annotation.FromBroker;
+import cito.annotation.FromClient;
+import cito.annotation.FromServer;
+import cito.annotation.OnClose;
+import cito.event.MessageEvent;
+import cito.server.SecurityContext;
+import cito.server.SessionRegistry;
+import cito.server.security.SecurityRegistry;
 
 /**
  * STOMP broker relay to JMS.

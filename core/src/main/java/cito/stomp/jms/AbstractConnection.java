@@ -12,7 +12,7 @@ import javax.websocket.CloseReason.CloseCodes;
 
 import org.slf4j.Logger;
 
-import cito.stomp.server.event.MessageEvent;
+import cito.event.MessageEvent;
 
 /**
  * 

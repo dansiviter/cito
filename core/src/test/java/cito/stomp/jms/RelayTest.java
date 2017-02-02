@@ -26,13 +26,13 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
+import cito.event.MessageEvent;
+import cito.server.SecurityContext;
+import cito.server.SessionRegistry;
+import cito.server.security.SecurityRegistry;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Headers;
-import cito.stomp.server.SecurityContext;
-import cito.stomp.server.SessionRegistry;
-import cito.stomp.server.event.MessageEvent;
-import cito.stomp.server.security.SecurityRegistry;
 
 /**
  * Unit test for {@link Relay}.

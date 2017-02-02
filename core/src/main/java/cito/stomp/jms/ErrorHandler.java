@@ -7,11 +7,11 @@ import javax.ws.rs.core.MediaType;
 
 import org.slf4j.Logger;
 
+import cito.annotation.FromServer;
+import cito.event.MessageEvent;
 import cito.stomp.Frame;
 import cito.stomp.Frame.Builder;
 import cito.stomp.Headers;
-import cito.stomp.server.annotation.FromServer;
-import cito.stomp.server.event.MessageEvent;
 
 /**
  * 

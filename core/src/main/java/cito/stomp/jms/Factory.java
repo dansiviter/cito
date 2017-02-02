@@ -25,7 +25,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
-import cito.LinkedCaseInsensitiveMap;
+import cito.collections.LinkedCaseInsensitiveMap;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Frame.Builder;

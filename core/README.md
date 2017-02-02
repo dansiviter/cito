@@ -15,7 +15,7 @@ Citō can be deployed in fours ways:
 
 * Standalone, embedded broker,
 * Clustered, embedded broker,
-* Standalone, remove JMS broker,
+* Standalone, remote JMS broker,
 * Clustered, remote JMS broker.
 
 Citō utilises highly scalable [Apache ActiveMQ Artemis](http://activemq.apache.org/artemis/) to act as an embedded message broker. This is a very high performant broker that has been shown to post 8 million messages/sec on [SPECjms2007](http://planet.jboss.org/post/8_2_million_messages_second_with_specjms) benchmark (when formally HornetQ) in addition to scaling well.
@@ -124,10 +124,10 @@ Finally the least granular approach will only send to a specific session of a us
 
 ## Security ##
 
-By default all detinations are permitted to all users. However, it may be essential to prevent access for a user with a specific role, or just those who have passed authorisation. To do this implement `SecurityConfigurer` class:
+By default all detinations are permitted to all users. However, it may be essential to prevent access for a user with a specific role, or just those who have passed authorisation. To do this implement `SecurityCustomiser` class:
 
 	@Dependent // preferred scope
-	public class Configurer implements SecurityConfigurer {
+	public class Customiser implements SecurityCustomiser {
 		@Override
 		public void configure(SecurityRegistry registry) {
 			registry.builder().nullDestination().permitAll().build(); // important for most message types including CONNECT, DISCONNECT
@@ -136,11 +136,11 @@ By default all detinations are permitted to all users. However, it may be essent
 		}
 	}
 
-*Warn:* Depending on the authorisation scheme in your app NULL destinations, such as CONNECT, may need to circumvent security so authorisation can be done. An example of it's usage is above.
+*Warn:* Depending on the authorisation scheme in your app NULL destinations, such as `CONNECT`, may need to circumvent security so authorisation can be done. An example of it's usage is above.
 
-If using multiple `SecurityConfigurer` classes It is possible to ensure priority of addition to the registry by using the `javax.annotation.@Priority` annotation. By default they'll be assigned a priority of 5000 and therefore processed in the order they are given to the registry by the CDI implementation.
+If using multiple `SecurityCustomiser` classes It is possible to ensure priority of addition to the registry by using the `javax.annotation.@Priority` annotation. By default they'll be assigned a priority of 5000 and therefore processed in the order they are given to the registry by the CDI implementation.
 
-Using `SecurityConfigurer` class means the rules will be analysed at start up. If you wish to alter the limitations at runtime use the `SecurityRegistry` class directly.
+Using `SecurityCustomiser` class means the rules will be analysed at start up. If you wish to alter the limitations at runtime use the `SecurityRegistry` class directly.
 
 
 ## Scope ##

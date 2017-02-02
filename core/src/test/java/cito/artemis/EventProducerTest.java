@@ -29,7 +29,7 @@ public class EventProducerTest {
 	@Mock
 	private EmbeddedJMS broker;
 	@Mock
-	private Event<cito.DestinationEvent> destinationEvent;
+	private Event<cito.event.DestinationEvent> destinationEvent;
 
 	@InjectMocks
 	private EventProducer eventProducer;
