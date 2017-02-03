@@ -5,6 +5,7 @@ import java.util.Map;
 
 import javax.enterprise.inject.Vetoed;
 
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
@@ -34,7 +35,8 @@ public class DefaultBrokerConfig extends BrokerConfigAdapter {
 		return new ConfigurationImpl()
 				.setSecurityEnabled(false)
 				.setPersistenceEnabled(false)
-				.setJMXManagementEnabled(false)
+//				.setJMXManagementEnabled(false)
+				.setManagementNotificationAddress(new SimpleString("jms.topic.notifications"))
 				.addAcceptorConfiguration(new TransportConfiguration(InVMAcceptorFactory.class.getName(), params));
 	}
 }

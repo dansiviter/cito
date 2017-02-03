@@ -74,18 +74,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>org.codehaus.stomp</groupId>
-			<artifactId>stompconnect</artifactId>
-			<version>1.0</version>
-			<exclusions>
-				<exclusion>
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
 
 		<!-- Test Dependency -->
 

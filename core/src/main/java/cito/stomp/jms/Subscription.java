@@ -40,7 +40,7 @@ public class Subscription implements MessageListener {
 	public Subscription(Session session, String id, Frame frame, Factory factory) throws JMSException {
 		this.session = session;
 		this.id = id;
-		this.destination = factory.toDestination(session.getDelegate(), frame.getFirstHeader(Headers.DESTINATION));
+		this.destination = session.toDestination(frame.getFirstHeader(Headers.DESTINATION));
 
 		// only consume messages that are for everyone OR only for me
 		String selector = frame.getFirstHeader(Headers.SELECTOR);
@@ -50,7 +50,7 @@ public class Subscription implements MessageListener {
 			selector = String.format(COMPLEX_SELECTOR, this.session.getConnection().getSessionId(), selector);
 		}
 
-		this.consumer = session.getDelegate().createConsumer(this.destination, selector);
+		this.consumer = session.createConsumer(this.destination, selector);
 		this.consumer.setMessageListener(this);
 	}
 
@@ -73,7 +73,7 @@ public class Subscription implements MessageListener {
 	@Override
 	public void onMessage(Message message) {
 		try {
-			int ackMode = session.getDelegate().getAcknowledgeMode();
+			int ackMode = this.session.getAcknowledgeMode();
 			if (ackMode == javax.jms.Session.CLIENT_ACKNOWLEDGE) {
 				synchronized (this) {
 					((Connection) this.session.getConnection()).addAckMessage(message);

@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import cito.ReflectionUtil;
 import cito.stomp.Frame;
 import cito.stomp.Headers;
 
@@ -50,7 +51,7 @@ public class FactoryTest {
 		when(jmsConn.createSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE)).thenReturn(jmsSession);
 
 		final Session session = this.factory.toSession(conn, false, javax.jms.Session.AUTO_ACKNOWLEDGE);
-		assertEquals(jmsSession, session.getDelegate());
+		assertEquals(jmsSession, ReflectionUtil.get(session, "delegate"));
 
 		verify(conn).getDelegate();
 		verify(jmsConn).createSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);

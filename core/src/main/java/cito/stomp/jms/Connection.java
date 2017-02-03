@@ -203,12 +203,12 @@ public class Connection extends AbstractConnection {
 			}
 			case COMMIT: {
 				final Session txSession = this.txSessions.remove(msg.frame().transaction());
-				txSession.getDelegate().commit();
+				txSession.commit();
 				break;
 			}
 			case ABORT: {
 				final Session txSession = this.txSessions.remove(msg.frame().transaction());
-				txSession.getDelegate().rollback();
+				txSession.rollback();
 				break;
 			}
 			case SUBSCRIBE: {

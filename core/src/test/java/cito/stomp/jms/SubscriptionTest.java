@@ -1,10 +1,10 @@
 package cito.stomp.jms;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -40,8 +40,6 @@ public class SubscriptionTest {
 	@Mock
 	private AbstractConnection connection;
 	@Mock
-	private javax.jms.Session jmsSession;
-	@Mock
 	private MessageConsumer messageConsumer;
 
 	private Frame frame;
@@ -50,10 +48,9 @@ public class SubscriptionTest {
 	@Before
 	public void before() throws JMSException {
 		this.frame = Frame.subscribe("id", "/foo").build();
-		when(this.factory.toDestination(any(javax.jms.Session.class), eq("/foo"))).thenReturn(this.destination);
+		when(this.session.toDestination(eq("/foo"))).thenReturn(this.destination);
 		when(this.session.getConnection()).thenReturn(connection);
-		when(this.session.getDelegate()).thenReturn(this.jmsSession);
-		when(this.jmsSession.createConsumer(eq(this.destination), anyString())).thenReturn(this.messageConsumer);
+		when(this.session.createConsumer(eq(this.destination), anyString())).thenReturn(this.messageConsumer);
 		this.subscription = new Subscription(this.session, "id", frame, this.factory);
 	}
 
@@ -64,7 +61,7 @@ public class SubscriptionTest {
 		this.subscription.onMessage(message);
 
 		verify(this.session).send(message, this.subscription);
-		verify(this.jmsSession).getAcknowledgeMode();
+		verify(this.session).getAcknowledgeMode();
 		verifyNoMoreInteractions(message);
 	}
 
@@ -77,12 +74,11 @@ public class SubscriptionTest {
 
 	@After
 	public void after() throws JMSException {
-		verify(this.session, atLeastOnce()).getDelegate();
-		verify(this.factory).toDestination(any(javax.jms.Session.class), eq("/foo"));
+		verify(this.session).toDestination(eq("/foo"));
 		verify(this.session).getConnection();
 		verify(this.connection).getSessionId();
-		verify(this.jmsSession).createConsumer(eq(this.destination), anyString());
+		verify(this.session).createConsumer(eq(this.destination), anyString());
 		verify(this.messageConsumer).setMessageListener(this.subscription);
-		verifyNoMoreInteractions(this.session, this.factory, this.destination, this.connection, this.jmsSession, messageConsumer);
+		verifyNoMoreInteractions(this.session, this.factory, this.destination, this.connection, messageConsumer);
 	}
 }

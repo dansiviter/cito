@@ -1,7 +1,7 @@
 package cito.broker.artemis;
 
 import static cito.Util.getAnnotations;
-import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.MESSAGE;
+import static org.apache.activemq.artemis.api.core.management.ManagementHelper.HDR_NOTIFICATION_TYPE;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_CREATED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_DESTROYED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.TOPIC_CREATED;
@@ -21,11 +21,17 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.ObserverMethod;
 import javax.inject.Inject;
+import javax.jms.JMSConsumer;
+import javax.jms.JMSContext;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.Topic;
 
-import org.apache.activemq.artemis.core.server.management.Notification;
-import org.apache.activemq.artemis.core.server.management.NotificationListener;
-import org.apache.activemq.artemis.jms.server.JMSServerManager;
+import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
+import org.apache.activemq.artemis.api.core.management.NotificationType;
 import org.apache.activemq.artemis.jms.server.management.JMSNotificationType;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.slf4j.Logger;
 
 import cito.Glob;
@@ -40,13 +46,15 @@ import cito.event.DestinationEvent.Type;
 import cito.server.Extension;
 
 /**
- * Produces events based on the state of the embedded broker.
+ * Produces {@link DestinationEvent}s based on the Artemis notification topic. By default this will listen to
+ * {@code jmx.topic.notifications} which is the one setup for the embedded broker. However, if you're using a remote
+ * instance be sure to check what is used on that and set {@code artemis.notificationTopic} property.
  * 
  * @author Daniel Siviter
- * @since v1.0 [18 Jul 2016]
+ * @since v1.0 [2 Feb 2017]
  */
 @ApplicationScoped
-public class EmbeddedEventProducer implements NotificationListener {
+public class EventProducer implements MessageListener {
 	private static final Collection<JMSNotificationType> ALL = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED, QUEUE_CREATED, QUEUE_DESTROYED);
 	private static final Collection<JMSNotificationType> CREATED = EnumSet.of(TOPIC_CREATED, QUEUE_CREATED);
 	private static final Collection<JMSNotificationType> TOPIC = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED);
@@ -54,11 +62,16 @@ public class EmbeddedEventProducer implements NotificationListener {
 	@Inject
 	private BeanManager manager;
 	@Inject
+	@ConfigProperty(name = "artemis.notificationTopic", defaultValue = "notifications")
+	private String notificationTopic;
+	@Inject
 	private Logger log;
 	@Inject
-	private JMSServerManager serverManager;
+	private JMSContext ctx;
 	@Inject
 	private Event<cito.event.DestinationEvent> destinationEvent;
+
+	private JMSConsumer consumer;
 
 	/**
 	 * @param init used initialise on startup of application.
@@ -67,27 +80,31 @@ public class EmbeddedEventProducer implements NotificationListener {
 
 	@PostConstruct
 	public void init() {
-		if (this.serverManager == null) {
-			return;
-		}
-		log.info("Sourcing DestinationEvents from embedded broker.");
-		this.serverManager.getActiveMQServer().getManagementService().addNotificationListener(this);
+		log.info("Sourcing DestinationEvents from remote broker.");
+		final Topic topic = this.ctx.createTopic(this.notificationTopic);
+		this.consumer = this.ctx.createConsumer(topic);
+		this.consumer.setMessageListener(this);
 	}
 
 	@Override
-	public void onNotification(Notification notif) {
-		if (!ALL.contains(notif.getType())) {
-			return;
-		}
+	public void onMessage(Message msg) {
+		try {
+			final NotificationType notifType = valueofNotificationType(msg.getStringProperty(HDR_NOTIFICATION_TYPE.toString()));
+			if (!ALL.contains(notifType)) {
+				return;
+			}
 
-		String destination = notif.getProperties().getSimpleStringProperty(MESSAGE).toString();
-		destination = (TOPIC.contains(notif.getType()) ? "/topic/" : "/queue/" ) + destination;
-		final Type type = CREATED.contains(notif.getType()) ? Type.ADDED : Type.REMOVED;
+			String destination = msg.getStringProperty(JMSNotificationType.MESSAGE.toString());
+			destination = (TOPIC.contains(notifType) ? "/topic/" : "/queue/" ) + destination;
+			final Type type = CREATED.contains(notifType) ? Type.ADDED : Type.REMOVED;
 
-		this.log.info("Destination changed. [type={},destination={}]", type, destination);
-		final cito.event.DestinationEvent evt = new cito.event.DestinationEvent(type, destination);
-		try (QuietClosable c = DestinationEventProducer.set(evt)) {
-			this.destinationEvent.fire(evt);
+			this.log.info("Destination changed. [type={},destination={}]", type, destination);
+			final cito.event.DestinationEvent evt = new cito.event.DestinationEvent(type, destination);
+			try (QuietClosable c = DestinationEventProducer.set(evt)) {
+				this.destinationEvent.fire(evt);
+			}
+		} catch (JMSException | RuntimeException e) {
+			this.log.error("Unable to process notification!", e);
 		}
 	}
 
@@ -115,11 +132,14 @@ public class EmbeddedEventProducer implements NotificationListener {
 
 	@PreDestroy
 	public void destroy() {
-		if (this.serverManager == null) {
+		if (this.consumer == null) {
 			return;
 		}
-		this.serverManager.getActiveMQServer().getManagementService().removeNotificationListener(this);
+		this.consumer.close();
 	}
+
+
+	// --- Static Methods ---
 
 	/**
 	 * 
@@ -140,5 +160,25 @@ public class EmbeddedEventProducer implements NotificationListener {
 				}
 			}
 		}
+	}
+
+	/**
+	 * 
+	 * @param name
+	 * @return
+	 */
+	private static NotificationType valueofNotificationType(String name) {
+		for (JMSNotificationType jmsType : JMSNotificationType.values()) {
+			if (name.equals(jmsType.name())) {
+				return jmsType;
+			}
+		}
+		for (CoreNotificationType coreType : CoreNotificationType.values()) {
+			if (name.equals(coreType.name())) {
+				return coreType;
+			}
+		}
+		throw new IllegalArgumentException(
+				"No enum constant " + NotificationType.class.getCanonicalName() + "." + name);
 	}
 }
