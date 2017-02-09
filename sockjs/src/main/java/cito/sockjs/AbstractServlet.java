@@ -36,7 +36,7 @@ public abstract class AbstractServlet extends HttpServlet {
 	protected Session getSession(String sessionId) throws ServletException {
 		Session session = this.ctx.getSession(sessionId);
 		if (session == null) {
-			this.ctx.register(session = createSession(sessionId, this.ctx), ctx.getInitialiser().createEndpoint());
+//			this.ctx.register(session = createSession(sessionId, this.ctx), ctx.getInitialiser().createEndpoint());
 		}
 		return session;
 	}

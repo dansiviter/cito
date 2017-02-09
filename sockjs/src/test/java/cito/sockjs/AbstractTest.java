@@ -11,6 +11,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.UUID;
 
+import javax.websocket.Endpoint;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -201,7 +202,7 @@ public abstract class AbstractTest {
 		}
 
 		@Override
-		public Class<?> endpointClass() {
+		public Class<? extends Endpoint> endpointClass() {
 			return EchoEndpoint.class;
 		}
 	}

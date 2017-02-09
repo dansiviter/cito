@@ -327,7 +327,7 @@ public class WebSocketServerTest extends AbstractTest {
 //				FrameEncoding.class,
 				Frame.class,
 //				cito.stomp.Headers.class,
-				WebSocketInitialiser.class,
+//				WebSocketInitialiser.class,
 				Headers.class);
 	}
 }

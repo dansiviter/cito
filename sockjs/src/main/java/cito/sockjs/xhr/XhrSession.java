@@ -50,15 +50,15 @@ public class XhrSession extends ServletSession {
 
 		@Override
 		public void sendText(String text) throws IOException {
-			queue.add(text)
+//			queue.add(text)
 		}
 
 		@Override
 		public void sendText(String partialMessage, boolean isLast) throws IOException {
 			final Writer writer = asyncCtx.getResponse().getWriter();
 			writer.append(partialMessage);
-			if (isLast)
-				writer.append(DELIMITER);
+//			if (isLast)
+//				writer.append(DELIMITER);
 		}
 	}
 }

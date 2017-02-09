@@ -23,7 +23,7 @@ public interface Initialiser {
 	 * 
 	 * @return
 	 */
-	Class<? extends Endpoint> endpointClass();
+	Class<? > endpointClass();
 
 	/**
 	 * 	

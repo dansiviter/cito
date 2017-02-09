@@ -4,8 +4,10 @@ import static cito.sockjs.Headers.CONTENT_TYPE;
 
 import java.io.IOException;
 
+import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.websocket.Session;
 
 /**
  * 
@@ -29,5 +31,11 @@ public class GreetingServlet extends AbstractServlet {
 		resp.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
 		resp.setStatus(HttpServletResponse.SC_OK);
 		resp.getWriter().print("Welcome to SockJS!\n");
+	}
+
+	@Override
+	protected Session createSession(String sessionId, AsyncContext asyncCtx) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

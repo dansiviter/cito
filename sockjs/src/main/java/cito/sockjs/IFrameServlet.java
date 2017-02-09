@@ -15,11 +15,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.websocket.Session;
 
 /**
  * 
@@ -63,5 +65,11 @@ public class IFrameServlet extends AbstractServlet {
 		resp.setHeader(E_TAG, md5Hash);
 		resp.setDateHeader(EXPIRES, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(CACHE_DURATION_SECONDS));
 		resp.getWriter().print(this.template);
+	}
+
+	@Override
+	protected Session createSession(String sessionId, AsyncContext asyncCtx) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

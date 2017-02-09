@@ -11,11 +11,13 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonWriter;
+import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.websocket.Session;
 
 /**
  * 
@@ -77,5 +79,11 @@ public class InfoServlet extends AbstractServlet {
 	 */
 	public static long generateEntropy() {
 		return RANDOM.nextLong();
+	}
+
+	@Override
+	protected Session createSession(String sessionId, AsyncContext asyncCtx) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
