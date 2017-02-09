@@ -11,6 +11,8 @@
 	<artifactId>cito-bom</artifactId>
 	<name>Cit&#x00D5; Bill of Materials</name>
 	<packaging>pom</packaging>
+	
+	<licenses></licenses>
 
 	<dependencyManagement>
 		<dependencies>
