@@ -1,4 +1,4 @@
-# Citō (Working Title)
+# Citō
 
 > /ˈki.to/ quickly, speedily, soon
 
@@ -13,14 +13,15 @@ For usage information see the individual projects:
 * [WebSocket](/websocket) - A basic WebSocket endpoint for those who don't need graceful fallback and browser compatibility,
 * [SockJS](/sockjs) - A SockJS based endpoint to provide a high level of compatibility with legacy browsers and assist with piping data through corporate firewalls. **In development!**
 
+
 ## Frequently Asked Questions ##
 
 **Why don't I just use a WebSocket broker directly?**
 
 Citō adds value in three main ways:
 
-* Broad Messaging Features: Eventing on receiving messages, subscriptions, etc,
+* Broad Messaging Features: events on receiving messages, first subscribe, last unsubscribe, etc,
 * Simplicity and Flexibility of setup: Permitting complex topologies if required, but generally unnecessary,
-* Unified Point of Origin: Streaming/Push data and ReST in one place promoting supportability and ease of scaling,
+* Unified Point of Origin: Streaming/Push data and ReST in one place promoting ease of scaling, support and maintenance,
 
 If you don't need the features then, by all means, don't use Citō. Simplicity is at the core adding a technology that's not needed goes against this.

@@ -23,7 +23,6 @@ import javax.websocket.WebSocketContainer;
  * @since v1.0 [3 Jan 2017]
  */
 public abstract class SessionAdapter implements Session {
-
 	@Override
 	public WebSocketContainer getContainer() {
 		return null;

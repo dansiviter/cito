@@ -1,12 +1,7 @@
 package cito.sockjs;
 
-import static java.util.Objects.*;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import javax.websocket.Endpoint;
-import javax.websocket.Session;
 
 /**
  * 
@@ -14,31 +9,22 @@ import javax.websocket.Session;
  * @since v1.0 [4 Jan 2017]
  */
 public class Context {
-	private final Map<String, EndpointHolder> sessions = new ConcurrentHashMap<>();
+	private final Map<String, ServletSession> sessions = new ConcurrentHashMap<>();
 
-	private final Initialiser initialiser;
+	private final Config config;
 
-	public Context(Initialiser initialiser) {
-		this.initialiser = initialiser;
+	private boolean webSocketSupported;
+
+	public Context(Config config) {
+		this.config = config;
 	}
 
-	public Initialiser getInitialiser() {
-		return initialiser;
+	public Config getConfig() {
+		return config;
 	}
 
-	public void register(Session session, Endpoint endpoint) {
-		this.sessions.put(session.getId(), new EndpointHolder(
-				requireNonNull(session),
-				requireNonNull(endpoint)));
-	}
-
-	/**
-	 * 
-	 * @param sessionId
-	 * @return
-	 */
-	public Session getSession(String sessionId) {
-		return this.sessions.get(sessionId).session;
+	public ServletSession register(ServletSession session) {
+		return this.sessions.putIfAbsent(session.getId(), session);
 	}
 
 	/**
@@ -46,8 +32,8 @@ public class Context {
 	 * @param sessionId
 	 * @return
 	 */
-	public Endpoint getEndpoint(String sessionId) {
-		return this.sessions.get(sessionId).endpoint;
+	public ServletSession getSession(String sessionId) {
+		return this.sessions.get(sessionId);
 	}
 
 	/**
@@ -58,21 +44,18 @@ public class Context {
 		this.sessions.remove(sessionId);
 	}
 
-
-	// --- Inner Classes ---
+	/**
+	 * @return the webSocketSupported
+	 */
+	public boolean isWebSocketSupported() {
+		return webSocketSupported;
+	}
 
 	/**
 	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [4 Jan 2017]
+	 * @param supported
 	 */
-	private static class EndpointHolder {
-		private final Session session;
-		private final Endpoint endpoint;
-
-		public EndpointHolder(Session session, Endpoint endpoint) {
-			this.session = session;
-			this.endpoint = endpoint;
-		}
+	void setWebSocketSupported(boolean supported) {
+		this.webSocketSupported = supported;
 	}
 }

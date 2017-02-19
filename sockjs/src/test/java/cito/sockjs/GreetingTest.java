@@ -10,17 +10,18 @@ import javax.ws.rs.core.Response;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.wildfly.swarm.undertow.WARArchive;
 
 /**
- * Unit test for {@link GreetingServlet}.
+ * Unit test for {@link GreetingHandler}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [29 Dec 2016]
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-12">SockJS 0.3.3 Greeting</a>
  */
-public class GreetingServletTest extends AbstractTest {
+public class GreetingTest extends AbstractTest {
 	/**
 	 * The most important part of the url scheme, is without doubt, the top url. Make sure the greeting is valid.
 	 */
@@ -32,7 +33,6 @@ public class GreetingServletTest extends AbstractTest {
 		assertEquals(MediaType.valueOf("text/plain; charset=UTF-8"), response.getMediaType());
 		assertEquals("Welcome to SockJS!\n", response.readEntity(String.class));
 		assertTrue(response.getCookies().isEmpty());
-		response.close();
 	}
 
 	/**
@@ -61,10 +61,11 @@ public class GreetingServletTest extends AbstractTest {
 		res.close();
 	}
 
+
+	// --- Static Methods ---
+
 	@Deployment
-	public static WARArchive createDeployment() {
-		final WARArchive archive = ShrinkWrap.create(WARArchive.class).addClasses(GreetingServlet.class, Headers.class);
-		archive.addServlet("servlet", GreetingServlet.class.getName()).withUrlPattern("/*");
-		return archive;
+	public static WebArchive createDeployment() {
+		return createWebArchive();
 	}
 }

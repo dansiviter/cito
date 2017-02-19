@@ -52,7 +52,7 @@ public class FramingTest extends AbstractTest {
 				
 		// Sending messages to not existing sessions is invalid.
 		r = target("000", "bad_session", XHR_SEND).request().post(Entity.json("[\"a\"]"));
-		verify404(r);
+		verify404(XHR_SEND, r);
 
 		// The session must time out after 5 seconds of not having a receiving connection. The server must send a
 		// heartbeat frame every 25 seconds. The heartbeat frame contains a single h character. This delay may be

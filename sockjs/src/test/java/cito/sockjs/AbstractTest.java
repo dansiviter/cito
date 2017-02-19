@@ -1,31 +1,37 @@
 package cito.sockjs;
 
 import static cito.RegExMatcher.regEx;
+import static org.jboss.shrinkwrap.api.ShrinkWrap.create;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.StringJoiner;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import javax.servlet.ServletContainerInitializer;
 import javax.websocket.Endpoint;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.runner.RunWith;
 import org.mockito.internal.matchers.GreaterThan;
-import org.wildfly.swarm.undertow.WARArchive;
+import org.wildfly.swarm.spi.api.JARArchive;
+
+import cito.sockjs.jaxrs.JsonMessageBodyReader;
 
 /**
  * 
@@ -44,7 +50,10 @@ public abstract class AbstractTest {
 	 * @return
 	 */
 	protected Client createClient() {
-		return ClientBuilder.newClient();
+		return new ResteasyClientBuilder()
+				.socketTimeout(1, TimeUnit.MINUTES)
+				.register(JsonMessageBodyReader.class)
+				.build();
 	}
 
 	/**
@@ -60,7 +69,7 @@ public abstract class AbstractTest {
 	 * @return
 	 */
 	protected WebTarget target() {
-		return client().target(this.deploymenUri);
+		return client().target(this.deploymenUri).path("test");
 	}
 
 	/**
@@ -71,28 +80,29 @@ public abstract class AbstractTest {
 	 * @return
 	 */
 	protected WebTarget target(String server, String session, String type) {
-		return client().target(this.deploymenUri).path(server).path(session).path(type);
+		return target().path(server).path(session).path(type);
 	}
 
 	/**
 	 * We are going to test several 404/not found pages. We don't define a body or a content type.
 	 * 
-	 * @param r
+	 * @param path
+	 * @param res
 	 */
-	protected static void verify404(Response r) {
-		assertEquals(Status.NOT_FOUND, r.getStatusInfo());
+	protected static void verify404(String path, Response res) {
+		assertEquals(path, Status.NOT_FOUND, res.getStatusInfo());
 	}
 
 	/**
 	 * In some cases 405/method not allowed is more appropriate.
 	 * 
-	 * @param r
+	 * @param res
 	 */
-	protected static void verify405(Response r) {
-		assertEquals(Status.METHOD_NOT_ALLOWED, r.getStatusInfo());
-		assertNull(r.getHeaderString(HttpHeaders.CONTENT_TYPE));
-		assertNotNull(r.getHeaderString(HttpHeaders.ALLOW));
-		assertFalse(r.hasEntity());
+	protected static void verify405(Response res) {
+		assertEquals(Status.METHOD_NOT_ALLOWED, res.getStatusInfo());
+		assertNull(res.getHeaderString(HttpHeaders.CONTENT_TYPE));
+		assertNotNull(res.getHeaderString(HttpHeaders.ALLOW));
+		assertFalse(res.hasEntity());
 	}
 
 	/**
@@ -104,60 +114,72 @@ public abstract class AbstractTest {
 	 */
 	protected void verifyOptions(String path, String... allowedMethods) {
 		for (String origin : new String[] { null, "test", "null" }) {
-			verifyOptions(target().path(path).request().header("Origin", origin).options(), origin, allowedMethods);
+			final Response r = target().path(path).request().header("Origin", origin).options();
+			verifyOptions(r, origin, allowedMethods);
 		}
 	}
 
 	/**
 	 * 
-	 * @param r
+	 * @param res
+	 * @param origin the origin to test or {@code null}.
 	 * @param allowedMethods
 	 */
-	protected static void verifyOptions(Response r, String origin, String... allowedMethods) {
-		assertEquals(Status.NO_CONTENT, r.getStatusInfo());
-		assertThat(r.getHeaderString(HttpHeaders.CACHE_CONTROL), regEx("public, max-age=[1-9][0-9]{6}"));
-		assertNotNull(r.getHeaderString(HttpHeaders.EXPIRES));
-		assertThat(Long.parseLong(r.getHeaderString("access-control-max-age")), new GreaterThan<>(1000000L));
-		assertEquals(r.getHeaders().get("Access-Control-Allow-Methods"), Arrays.asList(allowedMethods));
-		assertFalse(r.hasEntity());
-		verifyCors(r, origin);
+	protected static void verifyOptions(Response res, String origin, String... allowedMethods) {
+		assertEquals(Status.NO_CONTENT, res.getStatusInfo());
+		assertThat("'max-age' must be large, one year (31536000) is best", res.getHeaderString(HttpHeaders.CACHE_CONTROL), regEx("public, max-age=[1-9][0-9]{6,}"));
+		assertNotNull(res.getHeaderString(HttpHeaders.EXPIRES));
+		assertThat(Long.parseLong(res.getHeaderString("access-control-max-age")), new GreaterThan<>(1000000L));
+		final StringJoiner joiner = new StringJoiner(", ");
+		Arrays.asList(allowedMethods).forEach(joiner::add);
+		assertEquals(res.getHeaderString("Access-Control-Allow-Methods"), joiner.toString());
+		verifyEmptyEntity(res);
+		verifyCors(res, origin);
 	}
 
 	/**
 	 * 
-	 * @return
+	 * @param res
 	 */
-	protected static void verifyNoCookie(Response r) {
-		assertNull(r.getHeaderString(HttpHeaders.SET_COOKIE));
-
+	protected static void verifyNoCookie(Response res) {
+		assertNull(res.getHeaderString(HttpHeaders.SET_COOKIE));
 	}
 
 	/**
 	 * Most of the XHR/Ajax based transports do work CORS if proper headers are set.
 	 *
-	 * @param r
-	 * @param origin
+	 * @param res
+	 * @param origin the origin to test or {@code null}.
 	 */
-	protected static void verifyCors(Response r, String origin) {
-		if (origin != null && !"null".equals(origin)) {
-			assertEquals(r.getHeaderString("access-control-allow-origin"), origin);
+	protected static void verifyCors(Response res, String origin) {
+		if (origin != null) {
+			assertEquals(origin, res.getHeaderString("access-control-allow-origin"));
 		} else {
-			assertEquals(r.getHeaderString("access-control-allow-origin"), "*");
+			assertEquals("*", res.getHeaderString("access-control-allow-origin"));
 		}
 		// In order to get cookies (JSESSIONID mostly) flying, we need to set allow-credentials header to true.
-		assertEquals("true", r.getHeaderString("access-control-allow-credentials"));
+		assertEquals("true", res.getHeaderString("access-control-allow-credentials"));
 	}
 
 	/**
 	 * Sometimes, due to transports limitations we need to request private data using GET method. In such case it's very
 	 * important to disallow any caching.
 	 * 
-	 * @param r
+	 * @param res
 	 */
-	protected static void verifyNotCached(Response r) {
-		assertEquals("no-store, no-cache, must-revalidate, max-age=0", r.getHeaderString(HttpHeaders.CACHE_CONTROL));
-		assertNull(r.getHeaderString(HttpHeaders.EXPIRES));
-		assertNull(r.getHeaderString(HttpHeaders.LAST_MODIFIED));
+	protected static void verifyNotCached(Response res) {
+		assertEquals("no-store, no-cache, must-revalidate, max-age=0", res.getHeaderString(HttpHeaders.CACHE_CONTROL));
+		assertNull(res.getHeaderString(HttpHeaders.EXPIRES));
+		assertNull(res.getHeaderString(HttpHeaders.LAST_MODIFIED));
+	}
+
+	/**
+	 * {@link Response#hasEntity()} may actually return {@code true} if it has a media type.
+	 * 
+	 * @param res
+	 */
+	protected static void verifyEmptyEntity(Response res) {
+		assertTrue(!res.hasEntity() || Util.isEmptyOrNull(res.readEntity(String.class)));
 	}
 
 	/**
@@ -168,37 +190,41 @@ public abstract class AbstractTest {
 		return UUID.randomUUID().toString();
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
+	protected static JARArchive createJar() {
+		return create(JARArchive.class)
+				.addAsServiceProvider(ServletContainerInitializer.class, Initialiser.class)
+				.addPackages(true, "cito/sockjs")
+				.addAsResource("cito/sockjs", "/cito/sockjs/iframe.html");
+	}
 
-	// --- Static Methods ---
-
-	@Deployment
-	public static WARArchive createDeployment() {
-		return ShrinkWrap.create(WARArchive.class)
-				.addPackage(SockJsInitialiser.class.getPackage());
-//				.addClasses(
-//				WebSocketServer.class,
-//				AbstractServer.class,
-//				WebSocketConfigurator.class,
-//				FrameEncoding.class,
-//				Frame.class,
-//				cito.stomp.Headers.class,
-//				WebSocketInitialiser.class,
-//				Headers.class);
+	/**
+	 * 
+	 * @return
+	 */
+	public static WebArchive createWebArchive() {
+		return create(WebArchive.class)
+				.addAsLibrary(createJar())
+				.addAsLibrary(create(JARArchive.class).addPackages(true, "org/apache/commons/lang3"))
+				.addClass(TestConfig.class);
 	}
 
 
 	// --- Inner Classes ---
 
 	/**
-	 * Loaded by {@link SockJsInitialiser}.
+	 * Loaded by {@link Initialiser}.
 	 * 
 	 * @author Daniel Siviter
 	 * @since v1.0 [4 Jan 2017]
 	 */
-	public static class TestInitialiser implements Initialiser {
+	public static class TestConfig implements Config {
 		@Override
 		public String path() {
-			return "echo";
+			return "test";
 		}
 
 		@Override

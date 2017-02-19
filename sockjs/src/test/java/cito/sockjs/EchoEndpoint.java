@@ -22,8 +22,7 @@ public class EchoEndpoint extends Endpoint {
 	@Override
 	public void onOpen(Session session, EndpointConfig config) {
 		final RemoteEndpoint.Basic remote = session.getBasicRemote();
-		session.addMessageHandler(new MessageHandler.Whole<String>() {
-
+		session.addMessageHandler(String.class, new MessageHandler.Whole<String>() {
 			@Override
 			public void onMessage(String message) {
 				try {
@@ -34,6 +33,4 @@ public class EchoEndpoint extends Endpoint {
 			}
 		});
 	}
-
-
 }

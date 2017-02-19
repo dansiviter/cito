@@ -10,7 +10,7 @@ import javax.servlet.AsyncListener;
  * @author Daniel Siviter
  * @since v1.0 [29 Jul 2016]
  */
-public abstract class AsyncHandler implements AsyncListener {
+public abstract class AsyncAdapter implements AsyncListener {
 	@Override
 	public void onComplete(AsyncEvent event) throws IOException { }
 

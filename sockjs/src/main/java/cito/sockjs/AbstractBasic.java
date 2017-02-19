@@ -5,10 +5,8 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 
-import javax.servlet.AsyncContext;
 import javax.websocket.EncodeException;
 import javax.websocket.RemoteEndpoint;
-import javax.websocket.RemoteEndpoint.Basic;
 
 /**
  * 
@@ -17,12 +15,6 @@ import javax.websocket.RemoteEndpoint.Basic;
  */
 public abstract class AbstractBasic implements RemoteEndpoint.Basic {
 	private boolean batchingAllowed;
-
-	protected final AsyncContext asyncCtx;
-	
-	protected AbstractBasic(AsyncContext asyncCtx) {
-		this.asyncCtx = asyncCtx;
-	}
 
 	@Override
 	public void setBatchingAllowed(boolean allowed) throws IOException {
@@ -36,7 +28,7 @@ public abstract class AbstractBasic implements RemoteEndpoint.Basic {
 
 	@Override
 	public void flushBatch() throws IOException {
-		this.asyncCtx.getResponse().flushBuffer();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -66,7 +58,7 @@ public abstract class AbstractBasic implements RemoteEndpoint.Basic {
 
 	@Override
 	public Writer getSendWriter() throws IOException {
-		return asyncCtx.getResponse().getWriter();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

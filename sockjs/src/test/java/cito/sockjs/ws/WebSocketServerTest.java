@@ -315,19 +315,19 @@ public class WebSocketServerTest extends AbstractTest {
 	public void hasPathParams() {
 		
 	}
-
-	// --- Static Methods ---
-
-	@Deployment
-	public static WARArchive createDeployment() {
-		return ShrinkWrap.create(WARArchive.class).addClasses(
-				WebSocketServer.class,
-//				AbstractServer.class,
-//				WebSocketConfigurator.class,
-//				FrameEncoding.class,
-				Frame.class,
-//				cito.stomp.Headers.class,
-//				WebSocketInitialiser.class,
-				Headers.class);
-	}
+//
+//	// --- Static Methods ---
+//
+//	@Deployment
+//	public static WARArchive createDeployment() {
+//		return ShrinkWrap.create(WARArchive.class).addClasses(
+//				WebSocketServer.class,
+////				AbstractServer.class,
+////				WebSocketConfigurator.class,
+////				FrameEncoding.class,
+//				Frame.class,
+////				cito.stomp.Headers.class,
+////				WebSocketInitialiser.class,
+//				Headers.class);
+//	}
 }

@@ -159,7 +159,7 @@ public enum ReflectionUtil { ;
 	 * @param params
 	 * @return
 	 */
-	public static Method findMethod(Class<?> clazz, String name, Class<?>[] params) {
+	public static Method findMethod(Class<?> clazz, String name, Class<?>... params) {
 		Class<?> searchType = clazz;
 		while (!Object.class.equals(searchType) && searchType != null) {
 			for (Method method : searchType.getDeclaredMethods()) {
