@@ -1,3 +1,5 @@
+[![Travis](https://img.shields.io/travis/dansiviter/cito/master.svg?style=flat-square)](https://travis-ci.org/dansiviter/cito)
+
 # Citō
 
 > /ˈki.to/ quickly, speedily, soon
