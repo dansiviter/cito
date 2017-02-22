@@ -3,11 +3,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>cito</groupId>
+	<groupId>io.cito</groupId>
 	<artifactId>cito-root</artifactId>
 	<name>CitÕ Root</name>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>0.1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
+
+	<url>https://github.com/dansiviter/cito</url>
 
 	<licenses>
 		<license>
@@ -187,7 +189,6 @@
 		</dependency>
 
 
-
 		<!-- Test Dependencies -->
 
 		<dependency>
@@ -201,5 +202,5 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	<url>https://github.com/dansiviter/cito</url>
+
 </project>
