@@ -16,7 +16,6 @@
 package cito.sockjs;
 
 import static java.nio.channels.Channels.newReader;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.nio.channels.Pipe;
@@ -29,7 +28,6 @@ import javax.json.stream.JsonParser.Event;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.HttpHeaders;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
@@ -40,7 +38,7 @@ import cito.sockjs.nio.ReadStream;
  * @author Daniel Siviter
  * @since v1.0 [11 Feb 2017]
  */
-public class XhrSendHandler extends AbstractHandler {
+public class XhrSendHandler extends AbstractSessionHandler {
 	private static final long serialVersionUID = 8893825977852213991L;
 
 	private static final String CONTENT_TYPE_VALUE = "text/plain; charset=UTF-8";
@@ -49,43 +47,29 @@ public class XhrSendHandler extends AbstractHandler {
 	 * @param servlet
 	 */
 	public XhrSendHandler(Servlet servlet) {
-		super(servlet);
+		super(servlet, CONTENT_TYPE_VALUE, false, "POST");
 	}
 
 	@Override
-	public void service(HttpAsyncContext asyncCtx) throws ServletException, IOException {
-		final HttpServletRequest req = asyncCtx.getRequest();
-		final HttpServletResponse res = asyncCtx.getResponse();
-
-		if ("OPTIONS".equals(req.getMethod())) {
-			options(asyncCtx, "OPTIONS", "POST");
-			return;
-		}
-		if (!"POST".equals(req.getMethod())) {
-			sendErrorNonBlock(asyncCtx, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-			return;
-		}
-
-		final ServletSession session = this.servlet.getSession(req);
-		if (session == null) {
-			this.servlet.log("Session not found! [" + Util.session(this.servlet, req) + "]");
-			sendErrorNonBlock(asyncCtx, HttpServletResponse.SC_NOT_FOUND);
-			return;
-		}
-
-		res.setHeader(HttpHeaders.CONTENT_TYPE, CONTENT_TYPE_VALUE);
-		setCors(req, res);
-		setCacheControl(asyncCtx);
+	protected void handle(HttpAsyncContext async, ServletSession session, boolean initial)
+	throws ServletException, IOException
+	{
+		final HttpServletRequest req = async.getRequest();
 
 		if (req.getContentLength() <= 0) {
 			this.servlet.log("Payload expected.");
-			sendErrorNonBlock(asyncCtx, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Payload expected.");
+			sendErrorNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Payload expected.");
+			return;
+		}
+		if (session == null) {
+			this.servlet.log("Session not found! [" + Util.session(this.servlet, async.getRequest()) + "]");
+			sendErrorNonBlock(async, HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}
 		
 		final Pipe pipe = Pipe.open();
-		asyncCtx.start(() -> start(session, asyncCtx, pipe.source()));
-		req.getInputStream().setReadListener(new ReadStream(asyncCtx, pipe.sink(), () -> pipe.sink().close()));
+		async.start(() -> start(session, async, pipe.source()));
+		req.getInputStream().setReadListener(new ReadStream(async, pipe.sink(), () -> pipe.sink().close()));
 	}
 
 	/**

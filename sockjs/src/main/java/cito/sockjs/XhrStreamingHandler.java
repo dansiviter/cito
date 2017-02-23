@@ -17,17 +17,17 @@ package cito.sockjs;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.nio.channels.Pipe;
+import java.nio.channels.Pipe.SinkChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 
-import javax.json.Json;
-import javax.json.stream.JsonGenerator;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import cito.sockjs.nio.WriteStream;
 
@@ -36,16 +36,17 @@ import cito.sockjs.nio.WriteStream;
  * @author Daniel Siviter
  * @since v1.0 [3 Jan 2017]
  */
-public class XhrHandler extends AbstractSessionHandler {
+public class XhrStreamingHandler extends AbstractSessionHandler {
 	private static final long serialVersionUID = -527374807374550532L;
 	private static final byte[] SEPARATOR = "\n".getBytes(StandardCharsets.UTF_8);
 	private static final String CONTENT_TYPE_VALUE = "application/javascript; charset=UTF-8";
+	private static final String PRELUDE = StringUtils.leftPad("", 2048, "h");
 
 	/**
 	 * 
 	 * @param ctx
 	 */
-	public XhrHandler(Servlet servlet) {
+	public XhrStreamingHandler(Servlet servlet) {
 		super(servlet, CONTENT_TYPE_VALUE, true, "POST");
 	}
 
@@ -53,6 +54,8 @@ public class XhrHandler extends AbstractSessionHandler {
 	protected void handle(HttpAsyncContext async, ServletSession session, boolean initial)
 	throws ServletException, IOException
 	{
+		final HttpServletResponse res = async.getResponse();
+
 		if (initial) {
 			final ServletOutputStream out = async.getResponse().getOutputStream();
 			out.write(OPEN_FRAME);
@@ -62,19 +65,8 @@ public class XhrHandler extends AbstractSessionHandler {
 		}
 
 		final Pipe pipe = Pipe.open();
-		final WritableByteChannel dest = pipe.sink();
-		try (JsonGenerator generator = Json.createGenerator(Channels.newOutputStream(dest))) {
-			dest.write(ByteBuffer.wrap(ARRAY_FRAME));
-			generator.writeStartArray();
-			try (Sender sender = new XhrSender(session, generator)) {
-				session.setSender(sender);
-			}
-			generator.writeEnd();
-			generator.flush();
-			dest.write(ByteBuffer.wrap(SEPARATOR));
-		}
-
-		async.getResponse().getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
+		session.setSender(new XhrStreamingSender(session, pipe.sink()));
+		res.getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
 	}
 
 
@@ -85,22 +77,68 @@ public class XhrHandler extends AbstractSessionHandler {
 	 * @author Daniel Siviter
 	 * @since v1.0 [18 Feb 2017]
 	 */
-	private class XhrSender implements Sender {
+	private class XhrStreamingSender implements Sender {
 		private final ServletSession session;
-		private final JsonGenerator generator;
+		private final WritableByteChannel dest;
+		private boolean first = true;
+		private int bytesSent;
+		private final ByteBuffer buffer = ByteBuffer.allocate(5);
 
-		public XhrSender(ServletSession session, JsonGenerator generator) {
+		public XhrStreamingSender(ServletSession session, SinkChannel dest) throws IOException {
 			this.session = session;
-			this.generator = generator;
+			this.dest = dest;
+			this.dest.write(toByteBuffer(PRELUDE));
 		}
 
 		@Override
 		public void send(String frame, boolean last) throws IOException {
-			this.generator.write(StringEscapeUtils.escapeJson(frame));
+			if (this.first) {
+				this.first = !this.first;
+				write(toByteBuffer("a["));
+			} else {
+				write(toByteBuffer(","));
+			}
+			if (write(toByteBuffer(StringEscapeUtils.escapeJson(frame)))) {
+				return;
+			}
+
+			if (last) {
+				write(toByteBuffer("]\n"));
+				this.first = true;
+			}
 		}
+	
+		/**
+		 * 
+		 * @param buf
+		 * @return
+		 * @throws IOException
+		 */
+		private boolean write(ByteBuffer buf) throws IOException {
+			this.dest.write(buf);
+			if ((bytesSent += buf.capacity()) > servlet.ctx.getConfig().maxStreamBytes()) {
+				servlet.log("Limit to streaming bytes reached. Closing sender.");
+				close();
+				return false;
+			}
+			return true;
+		}
+
+		/**
+		 * 
+		 * @param str
+		 * @return
+		 */
+		private ByteBuffer toByteBuffer(String str) {
+			buffer.reset();
+			buffer.put(str.getBytes(UTF_8));
+			return buffer;
+		}
+
 
 		@Override
 		public void close() throws IOException {
+			this.dest.write(toByteBuffer("]\n"));
 			this.session.setSender(null);
 		}
 	}

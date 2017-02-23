@@ -2,7 +2,6 @@ package cito.sockjs;
 
 import static cito.sockjs.HashUtil.md5;
 import static cito.sockjs.Headers.CACHE_CONTROL;
-import static cito.sockjs.Headers.CONTENT_TYPE;
 import static cito.sockjs.Headers.EXPIRES;
 import static cito.sockjs.Headers.E_TAG;
 
@@ -35,7 +34,7 @@ public class IFrameHandler extends AbstractHandler {
 	 * @param servlet
 	 */
 	public IFrameHandler(Servlet servlet) {
-		super(servlet);
+		super(servlet, "text/html;charset=UTF-8", "GET");
 	}
 
 	@Override
@@ -52,34 +51,28 @@ public class IFrameHandler extends AbstractHandler {
 	}
 
 	@Override
-	public void service(HttpAsyncContext asyncCtx) throws ServletException, IOException {
-		final HttpServletRequest req = asyncCtx.getRequest();
-		final HttpServletResponse res = asyncCtx.getResponse();
-
-		if (!"GET".equals(req.getMethod())) {
-			sendErrorNonBlock(asyncCtx, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-			asyncCtx.complete();
-			return;
-		}
+	protected void handle(HttpAsyncContext async) throws ServletException, IOException {
+		final HttpServletRequest req = async.getRequest();
+		final HttpServletResponse res = async.getResponse();
 
 		if (!req.getRequestURI().endsWith(".html")) {
 			this.servlet.log("Invalid path! [" + req.getRequestURI() + "]");
-			sendErrorNonBlock(asyncCtx, HttpServletResponse.SC_NOT_FOUND);
-			asyncCtx.complete();
+			sendErrorNonBlock(async, HttpServletResponse.SC_NOT_FOUND);
+			async.complete();
 			return;
 		}
 
 		final EntityTag eTag = EntityTag.ifNoneMatch(req);
 		if (this.eTag.equals(eTag)) {
 			res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-			asyncCtx.complete();
+			res.setContentType(null);
+			async.complete();
 			return;
 		}
 		res.setHeader(CACHE_CONTROL, "public, max-age=31536000"); // 1 year
-		res.setHeader(CONTENT_TYPE, "text/html; charset=UTF-8");
 		res.setHeader(E_TAG, this.eTag.toString());
 		res.setDateHeader(EXPIRES, ZonedDateTime.now(ZoneOffset.UTC.normalized()).plusYears(1).toEpochSecond());
 		res.getWriter().print(this.template);
-		asyncCtx.complete();
+		async.complete();
 	}
 }

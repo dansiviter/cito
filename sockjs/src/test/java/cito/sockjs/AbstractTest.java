@@ -42,6 +42,7 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.After;
 import org.junit.runner.RunWith;
 import org.mockito.internal.matchers.GreaterThan;
 import org.wildfly.swarm.spi.api.JARArchive;
@@ -67,6 +68,7 @@ public abstract class AbstractTest {
 	protected Client createClient() {
 		return new ResteasyClientBuilder()
 				.socketTimeout(1, TimeUnit.MINUTES)
+				.connectionPoolSize(2)
 				.register(JsonMessageBodyReader.class)
 				.build();
 	}
@@ -97,6 +99,16 @@ public abstract class AbstractTest {
 	protected WebTarget target(String server, String session, String type) {
 		return target().path(server).path(session).path(type);
 	}
+
+	@After
+	public void after() {
+		if (this.client != null) {
+			this.client.close();
+		}
+	}
+
+
+	// --- Static Methods ---
 
 	/**
 	 * We are going to test several 404/not found pages. We don't define a body or a content type.
@@ -245,6 +257,11 @@ public abstract class AbstractTest {
 		@Override
 		public Class<? extends Endpoint> endpointClass() {
 			return EchoEndpoint.class;
+		}
+
+		@Override
+		public int maxStreamBytes() {
+			return 4_096;
 		}
 	}
 }

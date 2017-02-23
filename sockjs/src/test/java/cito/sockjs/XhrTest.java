@@ -18,6 +18,11 @@ package cito.sockjs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
@@ -25,9 +30,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -40,6 +47,7 @@ import org.junit.Test;
 public class XhrTest extends AbstractTest {
 	private static final String XHR = "xhr";
 	private static final String XHR_SEND  = XHR + "_send";
+	private static final String XHR_STREAMING  = XHR + "_streaming";
 
 	/**
 	 * The transport must support CORS requests, and answer correctly to OPTIONS requests.
@@ -47,21 +55,27 @@ public class XhrTest extends AbstractTest {
 	@Test
 	@RunAsClient
 	public void options_xhr() {
-		verifyOptions("abc/abc/" + XHR, HttpMethod.OPTIONS, HttpMethod.POST);
+		verifyOptions("abc/abc/" + XHR, HttpMethod.POST, HttpMethod.OPTIONS);
 	}
 
 	@Test
 	@RunAsClient
 	public void options_xhrSend() {
-		verifyOptions("abc/abc/" + XHR_SEND, HttpMethod.OPTIONS, HttpMethod.POST);
+		verifyOptions("abc/abc/" + XHR_SEND, HttpMethod.POST, HttpMethod.OPTIONS);
+	}
+
+	@Test
+	@RunAsClient
+	public void options_xhrStreaming() {
+		verifyOptions("abc/abc/" + XHR_STREAMING, HttpMethod.POST, HttpMethod.OPTIONS);
 	}
 
 	/**
-	 * Test the transport itself.
+	 * Test the polling transport.
 	 */
 	@Test
 	@RunAsClient
-	public void transport() {
+	public void transport_polling() {
 		final String uuid = uuid();
 		Response res = target("000", uuid, XHR).request().post(Entity.json(null));
 		assertEquals(Status.OK, res.getStatusInfo());
@@ -87,6 +101,62 @@ public class XhrTest extends AbstractTest {
 		assertEquals(Status.OK, res.getStatusInfo());
 		assertEquals("a[\"x\"]\n", res.readEntity(String.class));
 	}
+
+	/**
+	 * Test the streaming transport.
+	 * @throws IOException 
+	 */
+	@Test
+	@RunAsClient
+	@Ignore
+	public void transport_streaming() throws IOException {
+		final String uuid = uuid();
+		Response res = target("000", uuid, XHR_STREAMING).request().post(Entity.json(null));
+		assertEquals(Status.OK, res.getStatusInfo());
+		assertEquals("application/javascript;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
+		verifyCors(res, null);
+		// iOS 6 caches POSTs. Make sure we send no-cache header.
+		verifyNotCached(res);
+
+		// The transport must first send 2KiB of h bytes as prelude.
+		final InputStream entity = res.readEntity(InputStream.class);
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(entity))) {
+			assertEquals(StringUtils.leftPad("", 2048, "h"), reader.readLine());
+			assertEquals("o", reader.readLine());
+
+			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 
+			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
+			verifyEmptyEntity(res0);
+
+			assertEquals("a[\"x\"]\n", reader.readLine());
+			res0.close();
+		}
+	}
+
+	@Test
+	@RunAsClient
+	public void response_limit() {
+		// Single streaming request will buffer all data until closed. In order to remove (garbage collect) old messages from the browser memory we should close the connection every now and then. By default we should close a streaming request every 128KiB messages was send. The test server should have this limit decreased to 4096B.
+
+		//		url = base_url + '/000/' + str(uuid.uuid4())
+		//		r = POST_async(url + '/xhr_streaming')
+		//		self.assertEqual(r.status, 200)
+		//		self.assertTrue(r.read()) # prelude
+		//		self.assertEqual(r.read(), 'o\n')
+
+		//Test server should gc streaming session after 4096 bytes were sent (including framing).
+
+		//		msg = '"' + ('x' * 128) + '"'
+		//		for i in range(31):
+		//			r1 = POST(url + '/xhr_send', body='[' + msg + ']')
+		//			self.assertEqual(r1.status, 204)
+		//			self.assertEqual(r.read(), 'a[' + msg + ']\n')
+		// The connection should be closed after enough data was delivered.
+
+		//			self.assertFalse(r.read())
+	}
+
+
 
 	/**
 	 * Publishing messages to a non-existing session must result in a 404 error.
@@ -136,13 +206,13 @@ public class XhrTest extends AbstractTest {
 		Response res = target("000", uuid, XHR).request().post(Entity.json(null));
 		assertEquals(Status.OK, res.getStatusInfo());
 		assertEquals("o\n", res.readEntity(String.class));
-	
+
 		final String[] cTypes = {
 				"text/plain",
-//				"T", // FIXME unable to parse this ATM so cannot test
+				//				"T", // FIXME unable to parse this ATM so cannot test
 				"application/json", 
 				"application/xml",
-//				"", // FIXME
+				//				"", // FIXME
 				"application/json; charset=utf-8",
 				"text/xml; charset=utf-8",
 				"text/xml"
@@ -183,6 +253,9 @@ public class XhrTest extends AbstractTest {
 		verifyCors(r, null);
 		assertNull(r.getHeaderString("Access-Control-Allow-Headers"));
 	}
+
+
+	// --- Static Methods ---
 
 	@Deployment
 	public static WebArchive createDeployment() {

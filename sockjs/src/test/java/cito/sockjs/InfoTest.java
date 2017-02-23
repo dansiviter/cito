@@ -87,7 +87,7 @@ public class InfoTest extends AbstractTest {
 	@Test
 	@RunAsClient
 	public void test_options() {
-		verifyOptions("info", "OPTIONS", "GET");
+		verifyOptions("info", "GET", "OPTIONS");
 	}
 
 	/**

@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
+ * The link between SockJS and the servlet container. See {@link Config} for usage.
  * 
  * @author Daniel Siviter
  * @since v1.0 [4 Jan 2017]
@@ -50,24 +51,15 @@ public class Servlet extends GenericServlet {
 		this.handers.put("info", new InfoHandler(this).init());
 		this.handers.put("xhr", new XhrHandler(this).init());
 		this.handers.put("xhr_send", new XhrSendHandler(this).init());
+		this.handers.put("xhr_streaming", new XhrStreamingHandler(this).init());
 	}
 
 	@Override
-	public void service(ServletRequest req, ServletResponse res)
-			throws ServletException, IOException
-	{
-		HttpServletRequest  request;
-		HttpServletResponse response;
-
-		if (!(req instanceof HttpServletRequest &&
-				res instanceof HttpServletResponse)) {
+	public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
+		if (!(req instanceof HttpServletRequest && res instanceof HttpServletResponse)) {
 			throw new ServletException("non-HTTP request or response");
 		}
-
-		request = (HttpServletRequest) req;
-		response = (HttpServletResponse) res;
-
-		service(request, response);
+		service((HttpServletRequest) req, (HttpServletResponse) res);
 	}
 
 	/**
