@@ -5,10 +5,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>io.cito</groupId>
-		<artifactId>cito-root</artifactId>
+		<artifactId>root</artifactId>
 		<version>0.1.0-SNAPSHOT</version>
 	</parent>
-	<artifactId>cito-core</artifactId>
+	<artifactId>core</artifactId>
 	<name>Cit&#x00D5; Core</name>
 
 	<properties>
