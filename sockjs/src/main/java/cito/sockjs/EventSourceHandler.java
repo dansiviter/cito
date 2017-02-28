@@ -1,4 +1,5 @@
 /*
+
  * Copyright 2016-2017 Daniel Siviter
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,38 +27,37 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import cito.sockjs.nio.WriteStream;
 
 /**
- * Handles XHR Streaming ({@code <server>/session/xhr_streaming}) connections.
+ * Handles EventSource ({@code <server>/session/eventsource}) connections.
  * 
  * @author Daniel Siviter
- * @since v1.0 [3 Jan 2017]
+ * @since v1.0 [25 Feb 2017]
  */
-public class XhrStreamingHandler extends AbstractSessionHandler {
+public class EventSourceHandler extends AbstractSessionHandler {
 	private static final long serialVersionUID = -527374807374550532L;
 
-	private static final String CONTENT_TYPE_VALUE = "application/javascript;charset=UTF-8";
-	private static final String PRELUDE = StringUtils.leftPad("\n", 2049, "h");
+	private static final String CONTENT_TYPE_VALUE = "text/event-stream;charset=UTF-8";
+	private static final String PRELUDE = "\r\n";
 
 	/**
 	 * 
 	 * @param ctx
 	 */
-	public XhrStreamingHandler(Servlet servlet) {
-		super(servlet, CONTENT_TYPE_VALUE, true, "POST");
+	public EventSourceHandler(Servlet servlet) {
+		super(servlet, CONTENT_TYPE_VALUE, true, "GET");
 	}
 
 	@Override
 	protected void handle(HttpAsyncContext async, ServletSession session, boolean initial)
-	throws ServletException, IOException
+			throws ServletException, IOException
 	{
 		final HttpServletResponse res = async.getResponse();
 
 		final Pipe pipe = Pipe.open();
-		session.setSender(new XhrStreamingSender(session, initial, pipe.sink()));
+		session.setSender(new EventSourceSender(session, initial, pipe.sink()));
 		res.getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
 	}
 
@@ -67,30 +67,30 @@ public class XhrStreamingHandler extends AbstractSessionHandler {
 	/**
 	 * 
 	 * @author Daniel Siviter
-	 * @since v1.0 [18 Feb 2017]
+	 * @since v1.0 [25 Feb 2017]
 	 */
-	private class XhrStreamingSender implements Sender {
+	private class EventSourceSender implements Sender {
 		private final ServletSession session;
 		private final WritableByteChannel dest;
 		private int bytesSent;
 
-		public XhrStreamingSender(ServletSession session, boolean initial, SinkChannel dest) throws IOException {
+		public EventSourceSender(ServletSession session, boolean initial, SinkChannel dest) throws IOException {
 			this.session = session;
 			this.dest = dest;
 
 			this.dest.write(UTF_8.encode(CharBuffer.wrap(PRELUDE)));
 
 			if (initial) {
-				this.dest.write(UTF_8.encode(CharBuffer.wrap("o\n")));
+				this.dest.write(UTF_8.encode(CharBuffer.wrap("data: o\r\n\r\n")));
 			}
 		}
 
 		@Override
 		public void send(String frame, boolean last) throws IOException {
+			// +15 represents the possible start/end frame
 			frame = StringEscapeUtils.escapeJson(frame);
-			// +6 represents the possible start/end frame
-			final CharBuffer buf = CharBuffer.allocate(frame.length() + 6);
-			buf.append("a[\"").append(frame).append("\"]\n").flip();
+			final CharBuffer buf = CharBuffer.allocate(frame.length() + 15);
+			buf.append("data: a[\"").append(frame).append("\"]\r\n\r\n").flip();
 			final ByteBuffer byteBuf = UTF_8.encode(buf);
 			this.dest.write(byteBuf);
 			this.bytesSent += byteBuf.limit();

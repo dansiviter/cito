@@ -23,6 +23,7 @@ import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
@@ -266,29 +267,11 @@ public abstract class AbstractHandler implements Serializable {
 
 	/**
 	 * 
-	 * @param str
-	 * @return
-	 */
-	protected static ByteBuffer toByteBuffer(byte[] bytes) {
-		return ByteBuffer.wrap(bytes);
-	}
-	
-	/**
-	 * 
-	 * @param str
-	 * @return
-	 */
-	protected static ByteBuffer toByteBuffer(String value) {
-		return toByteBuffer(value.getBytes(StandardCharsets.UTF_8));
-	}
-
-	/**
-	 * 
 	 * @param code
 	 * @param message
 	 * @return
 	 */
-	protected static ByteBuffer closeFrame(int code, String message) {
-		return toByteBuffer("c[" + code + ",\"" + message + "\"]");
+	protected static CharBuffer closeFrame(int code, String message) {
+		return CharBuffer.wrap("c[" + code + ",\"" + message + "\"]");
 	}
 }

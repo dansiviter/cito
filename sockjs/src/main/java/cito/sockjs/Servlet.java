@@ -52,6 +52,7 @@ public class Servlet extends GenericServlet {
 		this.handers.put("xhr", new XhrHandler(this).init());
 		this.handers.put("xhr_send", new XhrSendHandler(this).init());
 		this.handers.put("xhr_streaming", new XhrStreamingHandler(this).init());
+		this.handers.put("eventsource", new EventSourceHandler(this).init());
 	}
 
 	@Override

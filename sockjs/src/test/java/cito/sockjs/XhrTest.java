@@ -34,15 +34,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * Unit test for {@link XhrHandler} and {@link XhrSendHandler}.
+ * Unit test for {@link XhrHandler}, {@link XhrSendHandler} and {@link XhrStreamingHandler}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [29 Dec 2016]
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-74">SockJS 0.3.3 XHR Polling</a>
+ * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-85">SockJS 0.3.3 XHR Streaming</a>
  */
 public class XhrTest extends AbstractTest {
 	private static final String XHR = "xhr";
@@ -108,10 +108,10 @@ public class XhrTest extends AbstractTest {
 	 */
 	@Test
 	@RunAsClient
-	@Ignore
 	public void transport_streaming() throws IOException {
 		final String uuid = uuid();
-		Response res = target("000", uuid, XHR_STREAMING).request().post(Entity.json(null));
+		final Response res = target("000", uuid, XHR_STREAMING).request().post(Entity.json(null));
+
 		assertEquals(Status.OK, res.getStatusInfo());
 		assertEquals("application/javascript;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
 		verifyCors(res, null);
@@ -119,43 +119,52 @@ public class XhrTest extends AbstractTest {
 		verifyNotCached(res);
 
 		// The transport must first send 2KiB of h bytes as prelude.
-		final InputStream entity = res.readEntity(InputStream.class);
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(entity))) {
+		final InputStream is = res.readEntity(InputStream.class);
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
 			assertEquals(StringUtils.leftPad("", 2048, "h"), reader.readLine());
 			assertEquals("o", reader.readLine());
 
 			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 
 			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
 			verifyEmptyEntity(res0);
-
-			assertEquals("a[\"x\"]\n", reader.readLine());
 			res0.close();
+
+			assertEquals("a[\"x\"]", reader.readLine());
 		}
+		res.close();
 	}
 
+	/**
+	 * Single streaming request will buffer all data until closed. In order to remove (garbage collect) old messages
+	 * from the browser memory we should close the connection every now and then. By default we should close a
+	 * streaming request every 128KiB messages was send. The test server should have this limit decreased to 4096B.
+	 */
 	@Test
 	@RunAsClient
-	public void response_limit() {
-		// Single streaming request will buffer all data until closed. In order to remove (garbage collect) old messages from the browser memory we should close the connection every now and then. By default we should close a streaming request every 128KiB messages was send. The test server should have this limit decreased to 4096B.
+	public void response_limit() throws IOException {
+		final String uuid = uuid();
+		final Response res = target("000", uuid, XHR_STREAMING).request().post(Entity.json(null));
 
-		//		url = base_url + '/000/' + str(uuid.uuid4())
-		//		r = POST_async(url + '/xhr_streaming')
-		//		self.assertEqual(r.status, 200)
-		//		self.assertTrue(r.read()) # prelude
-		//		self.assertEqual(r.read(), 'o\n')
+		final InputStream is = res.readEntity(InputStream.class);
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+			assertEquals(StringUtils.leftPad("", 2048, "h"), reader.readLine());
+			assertEquals("o", reader.readLine());
 
-		//Test server should gc streaming session after 4096 bytes were sent (including framing).
+			// Test server should gc streaming session after 4096 bytes were sent (including framing).
 
-		//		msg = '"' + ('x' * 128) + '"'
-		//		for i in range(31):
-		//			r1 = POST(url + '/xhr_send', body='[' + msg + ']')
-		//			self.assertEqual(r1.status, 204)
-		//			self.assertEqual(r.read(), 'a[' + msg + ']\n')
-		// The connection should be closed after enough data was delivered.
-
-		//			self.assertFalse(r.read())
+			final String msg = StringUtils.leftPad("", 128, "x");
+			for (int i = 0; i < 31; i++) {
+				final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"" + msg + "\"]")); 
+				assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
+				verifyEmptyEntity(res0);
+				res0.close();
+				assertEquals("Iteration " + i, "a[\"" + msg + "\"]", reader.readLine());
+			}
+			// The connection should be closed after enough data was delivered.
+			assertNull(reader.readLine());
+			res.close();
+		}
 	}
-
 
 
 	/**

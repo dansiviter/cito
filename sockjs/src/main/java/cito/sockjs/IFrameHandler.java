@@ -6,9 +6,12 @@ import static cito.sockjs.Headers.EXPIRES;
 import static cito.sockjs.Headers.E_TAG;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -17,6 +20,8 @@ import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import cito.sockjs.nio.WriteStream;
 
 /**
  * 
@@ -39,8 +44,8 @@ public class IFrameHandler extends AbstractHandler {
 
 	@Override
 	public IFrameHandler init() throws ServletException {
-		try (InputStream is = getClass().getResourceAsStream("iframe.html")) {
-			final BufferedReader buffer = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+		try (Reader reader = new InputStreamReader(getClass().getResourceAsStream("iframe.html"), StandardCharsets.UTF_8)) {
+			final BufferedReader buffer = new BufferedReader(reader);
 			this.template = buffer.lines().collect(Collectors.joining("\n"));
 			this.template = this.template.replace("${sockjs.url}", this.servlet.ctx.getConfig().sockJsUri());
 			this.eTag = EntityTag.from(md5(this.template));
@@ -72,7 +77,10 @@ public class IFrameHandler extends AbstractHandler {
 		res.setHeader(CACHE_CONTROL, "public, max-age=31536000"); // 1 year
 		res.setHeader(E_TAG, this.eTag.toString());
 		res.setDateHeader(EXPIRES, ZonedDateTime.now(ZoneOffset.UTC.normalized()).plusYears(1).toEpochSecond());
-		res.getWriter().print(this.template);
-		async.complete();
+		final ReadableByteChannel iFrameChannel = Channels.newChannel(new ByteArrayInputStream(this.template.getBytes(UTF_8)));
+		res.getOutputStream().setWriteListener(new WriteStream(async, iFrameChannel, () -> {
+			async.complete();
+			iFrameChannel.close();
+		}));
 	}
 }

@@ -24,6 +24,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.StringJoiner;
@@ -41,8 +43,11 @@ import javax.ws.rs.core.Response.Status;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.engines.URLConnectionEngine;
+import org.jboss.resteasy.client.jaxrs.internal.ClientInvocation;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.mockito.internal.matchers.GreaterThan;
 import org.wildfly.swarm.spi.api.JARArchive;
@@ -50,6 +55,7 @@ import org.wildfly.swarm.spi.api.JARArchive;
 import cito.sockjs.jaxrs.JsonMessageBodyReader;
 
 /**
+ * Abstract SockJS test.
  * 
  * @author Daniel Siviter
  * @since v1.0 [29 Dec 2016]
@@ -67,9 +73,10 @@ public abstract class AbstractTest {
 	 */
 	protected Client createClient() {
 		return new ResteasyClientBuilder()
-				.socketTimeout(1, TimeUnit.MINUTES)
+				.socketTimeout(30, TimeUnit.SECONDS)
 				.connectionPoolSize(2)
 				.register(JsonMessageBodyReader.class)
+				.httpEngine(new TestUrlConnectionEngine())
 				.build();
 	}
 
@@ -109,6 +116,11 @@ public abstract class AbstractTest {
 
 
 	// --- Static Methods ---
+
+	@BeforeClass
+	public static void beforeClass() {
+		System.setProperty("sun.net.http.allowRestrictedHeaders", Boolean.TRUE.toString());
+	}
 
 	/**
 	 * We are going to test several 404/not found pages. We don't define a body or a content type.
@@ -189,6 +201,22 @@ public abstract class AbstractTest {
 	}
 
 	/**
+	 * Most of the XHR/Ajax based transports do work CORS if proper headers are set.
+	 *
+	 * @param conn
+	 * @param origin the origin to test or {@code null}.
+	 */
+	protected static void verifyCors(HttpURLConnection conn, String origin) {
+		if (origin != null) {
+			assertEquals(origin, conn.getHeaderField("access-control-allow-origin"));
+		} else {
+			assertEquals("*", conn.getHeaderField("access-control-allow-origin"));
+		}
+		// In order to get cookies (JSESSIONID mostly) flying, we need to set allow-credentials header to true.
+		assertEquals("true", conn.getHeaderField("access-control-allow-credentials"));
+	}
+
+	/**
 	 * Sometimes, due to transports limitations we need to request private data using GET method. In such case it's very
 	 * important to disallow any caching.
 	 * 
@@ -198,6 +226,18 @@ public abstract class AbstractTest {
 		assertEquals("no-store, no-cache, must-revalidate, max-age=0", res.getHeaderString(HttpHeaders.CACHE_CONTROL));
 		assertNull(res.getHeaderString(HttpHeaders.EXPIRES));
 		assertNull(res.getHeaderString(HttpHeaders.LAST_MODIFIED));
+	}
+
+	/**
+	 * Sometimes, due to transports limitations we need to request private data using GET method. In such case it's very
+	 * important to disallow any caching.
+	 * 
+	 * @param conn
+	 */
+	protected static void verifyNotCached(HttpURLConnection conn) {
+		assertEquals("no-store, no-cache, must-revalidate, max-age=0", conn.getHeaderField(HttpHeaders.CACHE_CONTROL));
+		assertNull(conn.getHeaderField(HttpHeaders.EXPIRES));
+		assertNull(conn.getHeaderField(HttpHeaders.LAST_MODIFIED));
 	}
 
 	/**
@@ -218,19 +258,17 @@ public abstract class AbstractTest {
 	}
 
 	/**
-	 * 
-	 * @return
+	 * @return an archive that represents Cito SockJS.
 	 */
 	protected static JARArchive createJar() {
 		return create(JARArchive.class)
 				.addAsServiceProvider(ServletContainerInitializer.class, Initialiser.class)
 				.addPackages(true, "cito/sockjs")
-				.addAsResource("cito/sockjs", "/cito/sockjs/iframe.html");
+				.addAsResource("cito/sockjs/iframe.html");
 	}
 
 	/**
-	 * 
-	 * @return
+	 * @return test web archive.
 	 */
 	public static WebArchive createWebArchive() {
 		return create(WebArchive.class)
@@ -262,6 +300,21 @@ public abstract class AbstractTest {
 		@Override
 		public int maxStreamBytes() {
 			return 4_096;
+		}
+	}
+
+	/**
+	 * A simple engine to permit configuration of {@link HttpURLConnection}.
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [25 Feb 2017]
+	 */
+	public static class TestUrlConnectionEngine extends URLConnectionEngine {
+		@Override
+		protected HttpURLConnection createConnection(ClientInvocation request) throws IOException {
+			final HttpURLConnection conn = super.createConnection(request);
+			conn.setReadTimeout(30 * 1000);
+			return conn;
 		}
 	}
 }

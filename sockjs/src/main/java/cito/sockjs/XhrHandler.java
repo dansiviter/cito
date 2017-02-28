@@ -16,30 +16,25 @@
 package cito.sockjs;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
+import java.nio.CharBuffer;
 import java.nio.channels.Pipe;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.StandardCharsets;
 
-import javax.json.Json;
-import javax.json.stream.JsonGenerator;
 import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import cito.sockjs.nio.WriteStream;
 
 /**
+ * Handles XHR Polling ({@code <server>/session/xhr}) connections.
  * 
  * @author Daniel Siviter
  * @since v1.0 [3 Jan 2017]
  */
 public class XhrHandler extends AbstractSessionHandler {
 	private static final long serialVersionUID = -527374807374550532L;
-	private static final byte[] SEPARATOR = "\n".getBytes(StandardCharsets.UTF_8);
-	private static final String CONTENT_TYPE_VALUE = "application/javascript; charset=UTF-8";
+	private static final String CONTENT_TYPE_VALUE = "application/javascript;charset=UTF-8";
 
 	/**
 	 * 
@@ -53,28 +48,18 @@ public class XhrHandler extends AbstractSessionHandler {
 	protected void handle(HttpAsyncContext async, ServletSession session, boolean initial)
 	throws ServletException, IOException
 	{
-		if (initial) {
-			final ServletOutputStream out = async.getResponse().getOutputStream();
-			out.write(OPEN_FRAME);
-			out.write(SEPARATOR);
-			async.complete();
-			return;
-		}
-
 		final Pipe pipe = Pipe.open();
 		final WritableByteChannel dest = pipe.sink();
-		try (JsonGenerator generator = Json.createGenerator(Channels.newOutputStream(dest))) {
-			dest.write(ByteBuffer.wrap(ARRAY_FRAME));
-			generator.writeStartArray();
-			try (Sender sender = new XhrSender(session, generator)) {
+		async.getResponse().getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
+
+		if (initial) {
+			dest.write(UTF_8.encode(CharBuffer.wrap("o\n")));
+			dest.close();
+		} else {
+			try (Sender sender = new XhrSender(session, dest)) {
 				session.setSender(sender);
 			}
-			generator.writeEnd();
-			generator.flush();
-			dest.write(ByteBuffer.wrap(SEPARATOR));
 		}
-
-		async.getResponse().getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
 	}
 
 
@@ -87,21 +72,31 @@ public class XhrHandler extends AbstractSessionHandler {
 	 */
 	private class XhrSender implements Sender {
 		private final ServletSession session;
-		private final JsonGenerator generator;
+		private final WritableByteChannel dest;
+		private boolean first = true;
 
-		public XhrSender(ServletSession session, JsonGenerator generator) {
+		public XhrSender(ServletSession session, WritableByteChannel dest) {
 			this.session = session;
-			this.generator = generator;
+			this.dest = dest;
 		}
 
 		@Override
 		public void send(String frame, boolean last) throws IOException {
-			this.generator.write(StringEscapeUtils.escapeJson(frame));
+			final CharBuffer buf = CharBuffer.allocate(frame.length() + 6);
+			if (this.first) {
+				buf.append("a[\"");
+				this.first = !this.first;
+			}
+			buf.append(StringEscapeUtils.escapeJson(frame));
+			buf.append(last ? "\"]\n" : "\",\"");
+			buf.flip();
+			this.dest.write(UTF_8.encode(buf));
 		}
 
 		@Override
 		public void close() throws IOException {
 			this.session.setSender(null);
+			this.dest.close();
 		}
 	}
 }

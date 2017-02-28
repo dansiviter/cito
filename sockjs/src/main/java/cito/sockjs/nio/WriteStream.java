@@ -35,16 +35,35 @@ import cito.sockjs.HttpAsyncContext;
 public class WriteStream implements WriteListener {
 	private final ByteBuffer buffer = ByteBuffer.allocate(1024);
 
-	protected final ReadableByteChannel src;
-	protected final WritableByteChannel dest;
-	protected final HttpAsyncContext async;
-	protected final ServletOutputStream out;
+	private final ReadableByteChannel src;
+	private final WritableByteChannel dest;
+	private final HttpAsyncContext async;
+	private final ServletOutputStream out;
+	private final Complete complete;
 
+	/**
+	 * 
+	 * @param async
+	 * @param src
+	 * @throws IOException
+	 */
 	public WriteStream(HttpAsyncContext async, ReadableByteChannel src) throws IOException {
+		this(async, src, () -> async.complete());
+	}
+
+	/**
+	 * 
+	 * @param async
+	 * @param src
+	 * @param complete
+	 * @throws IOException
+	 */
+	public WriteStream(HttpAsyncContext async, ReadableByteChannel src, Complete complete) throws IOException {
 		this.async = async;
 		this.src = src;
 		this.out = async.getResponse().getOutputStream();
 		this.dest = newChannel(this.out);
+		this.complete = complete;
 	}
 
 	@Override
@@ -53,18 +72,23 @@ public class WriteStream implements WriteListener {
 		while (this.out.isReady()) {
 			final int len = this.src.read(this.buffer);
 			if (len < 0) {
-				this.async.complete();
+				this.complete.onComplete();
 				return;
 			}
 			this.buffer.flip();
 			this.dest.write(this.buffer);
 			this.buffer.compact();
+			this.out.flush();
 		}
 	}
 
 	@Override
 	public void onError(Throwable t) {
 		this.async.getRequest().getServletContext().log("Unable to write entity!", t);
-		this.async.complete();
+		try {
+			this.complete.onComplete();
+		} catch (IOException e) {
+			this.async.getRequest().getServletContext().log("Unable to complete!", e);
+		}
 	}
 }

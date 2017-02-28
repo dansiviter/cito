@@ -33,15 +33,16 @@ import org.apache.commons.lang3.StringEscapeUtils;
 
 import cito.sockjs.nio.ReadStream;
 
-
 /**
+ * Handles XHR Send ({@code <server>/session/xhr_send}) connections.
+ * 
  * @author Daniel Siviter
  * @since v1.0 [11 Feb 2017]
  */
 public class XhrSendHandler extends AbstractSessionHandler {
 	private static final long serialVersionUID = 8893825977852213991L;
 
-	private static final String CONTENT_TYPE_VALUE = "text/plain; charset=UTF-8";
+	private static final String CONTENT_TYPE_VALUE = "text/plain;charset=UTF-8";
 
 	/**
 	 * @param servlet
