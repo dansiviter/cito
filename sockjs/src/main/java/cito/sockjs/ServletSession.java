@@ -190,7 +190,7 @@ public class ServletSession extends SessionAdapter {
 			return;
 		}
 		String frame;
-		while ((frame = this.frameQueue.poll()) != null) {
+		while ((frame = this.frameQueue.poll()) != null && this.sender != null) {
 			this.log.info("Flushing frame. [sessionId={},frame={}]", getId(), frame);
 			this.sender.send(frame, this.frameQueue.isEmpty());
 		}

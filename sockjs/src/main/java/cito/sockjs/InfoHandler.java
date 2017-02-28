@@ -22,8 +22,6 @@ import java.util.Random;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,32 +43,15 @@ public class InfoHandler extends AbstractHandler {
 	 * @param servlet
 	 */
 	public InfoHandler(Servlet servlet) {
-		super(servlet);
+		super(servlet, "application/json;charset=UTF-8", "GET");
 	}
 
 	@Override
-	public void service(HttpAsyncContext asyncCtx) throws ServletException, IOException {
-		final HttpServletRequest req = asyncCtx.getRequest();
-		final HttpServletResponse res = asyncCtx.getResponse();
-
-		if ("OPTIONS".equals(req.getMethod())) {
-			options(asyncCtx, "OPTIONS", "GET");
-			return;
-		}
-		if (!"GET".equals(req.getMethod())) {
-			sendErrorNonBlock(asyncCtx, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-			return;
-		}
-
-		setCors(req, res);
-		setCacheControl(res);
-		res.setContentType("application/json;charset=UTF-8");
-		res.setStatus(HttpServletResponse.SC_OK);
-
-		try (JsonGenerator generator = Json.createGenerator(res.getWriter())) {
+	protected void handle(HttpAsyncContext async) throws ServletException, IOException {
+		try (JsonGenerator generator = Json.createGenerator(async.getResponse().getWriter())) { // FIXME blocking
 			createJson(generator, generateEntropy(), true, this.servlet.ctx.isWebSocketSupported(), "*:*");
 		}
-		asyncCtx.complete();
+		async.complete();
 	}
 
 	/**

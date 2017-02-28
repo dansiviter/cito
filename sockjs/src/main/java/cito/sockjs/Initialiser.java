@@ -88,6 +88,7 @@ public class Initialiser implements ServletContainerInitializer {
 		LOG.info("Initialising SockJS on path: '{}'", path);
 
 		final Context sockJsCtx = new Context(initialiser);
+		servletCtx.setAttribute(Context.class.getName(), servletCtx);
 		addServlet(servletCtx, "sockjs-greeting",		new GreetingHandler(),				String.format("/%s", path));
 		addServlet(servletCtx, "sockjs",				new cito.sockjs.Servlet(sockJsCtx),	String.format("/%s/*", path));
 
@@ -137,10 +138,10 @@ public class Initialiser implements ServletContainerInitializer {
 	 */
 	public static ServerEndpointConfig.Builder createConfig(Config customiser, String path) {
 		return ServerEndpointConfig.Builder
-				.create(customiser.endpointClass(), path)
+				.create(WebSocketEndpoint.class, path)
 				.decoders(customiser.decoders())
 				.encoders(customiser.encoders())
-				.configurator(customiser.serverEndpointConfigurator())
+				.configurator(new WebSocketConfigurer(customiser.serverEndpointConfigurator()))
 				.extensions(customiser.extensions())
 				.subprotocols(customiser.subprotocols());
 	}

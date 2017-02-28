@@ -5,10 +5,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>io.cito</groupId>
-		<artifactId>cito-root</artifactId>
+		<artifactId>root</artifactId>
 		<version>0.1.0-SNAPSHOT</version>
 	</parent>
-	<artifactId>cito-bom</artifactId>
+	<artifactId>bom</artifactId>
 	<name>Cit&#x00D5; Bill of Materials</name>
 	<packaging>pom</packaging>
 	
@@ -18,22 +18,22 @@
 		<dependencies>
 			<dependency>
 				<groupId>${project.groupId}</groupId>
-				<artifactId>cito-core</artifactId>
+				<artifactId>core</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>${project.groupId}</groupId>
-				<artifactId>cito-artemis</artifactId>
+				<artifactId>artemis</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>${project.groupId}</groupId>
-				<artifactId>cito-websocket</artifactId>
+				<artifactId>websocket</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>${project.groupId}</groupId>
-				<artifactId>cito-sockjs</artifactId>
+				<artifactId>sockjs</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 		</dependencies>

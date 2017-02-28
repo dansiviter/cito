@@ -16,7 +16,6 @@
 package cito.sockjs;
 
 import static cito.sockjs.Util.servletContext;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +23,9 @@ import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -37,6 +39,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.websocket.MessageHandler;
 import javax.ws.rs.core.HttpHeaders;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import cito.sockjs.ServletSession.MessageHandlerWrapper;
 
 /**
@@ -46,10 +50,12 @@ import cito.sockjs.ServletSession.MessageHandlerWrapper;
 public abstract class AbstractHandler implements Serializable {
 	private static final long serialVersionUID = 3863326798644998080L;
 
+	protected static final Charset UTF_8 = StandardCharsets.UTF_8;
+
 	protected static final byte[] OPEN_FRAME = "o".getBytes(UTF_8);
 	protected static final byte[] HEARDTBEAT_FRAME = "h".getBytes(UTF_8);
 	protected static final byte[] ARRAY_FRAME = "a".getBytes(UTF_8);
-	protected static final byte[] CLOSE_FRAME = "c".getBytes(UTF_8);
+//	protected static final byte[] CLOSE_FRAME = "c".getBytes(UTF_8);
 
 	protected static final String CORS_ORIGIN = "Access-Control-Allow-Origin";
 	protected static final String CORS_CREDENTIALS = "Access-Control-Allow-Credentials";
@@ -57,13 +63,19 @@ public abstract class AbstractHandler implements Serializable {
 	protected static final String CORS_ALLOW_HEADERS = "Access-Control-Allow-Headers";
 
 	protected final Servlet servlet;
+	protected final String mediaType;
+	protected final String[] methods;
 
 	/**
 	 * 
 	 * @param servlet
+	 * @param mediaType
+	 * @param methods
 	 */
-	public AbstractHandler(Servlet servlet) {
+	public AbstractHandler(Servlet servlet, String mediaType, String... methods) {
 		this.servlet = servlet;
+		this.mediaType = mediaType;
+		this.methods = methods;
 	}
 
 	/**
@@ -81,7 +93,32 @@ public abstract class AbstractHandler implements Serializable {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	public abstract void service(HttpAsyncContext asyncCtx) throws ServletException, IOException;
+	public void service(HttpAsyncContext async) throws ServletException, IOException {
+		final String method = async.getRequest().getMethod();
+		if ("OPTIONS".equals(method)) {
+			options(async, ArrayUtils.add(this.methods, "OPTIONS"));
+			return;
+		}
+		if (!ArrayUtils.contains(this.methods, method)) {
+			sendErrorNonBlock(async, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+			return;
+		}
+
+		async.getResponse().setContentType(this.mediaType);
+		setCors(async.getRequest(), async.getResponse());
+		setCacheControl(async);
+
+		handle(async);
+	}
+
+	/**
+	 * 
+	 * @param async
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	protected abstract void handle(HttpAsyncContext async)
+			throws ServletException, IOException;
 
 	/**
 	 * 
@@ -123,41 +160,6 @@ public abstract class AbstractHandler implements Serializable {
 		if (reader != null) {
 			reader.close();
 		}
-	}
-
-
-	/// --- Static Methods ---
-
-	/**
-	 * 
-	 * @param req
-	 * @param res
-	 */
-	protected static void setCors(HttpServletRequest req, HttpServletResponse res) {
-		final String origin = req.getHeader("Origin");
-		res.setHeader(CORS_ORIGIN, origin == null ? "*" : origin);
-		res.setHeader(CORS_CREDENTIALS, Boolean.TRUE.toString());
-
-		final String headers = req.getHeader(CORS_REQUEST_HEADERS);
-		if (headers != null && !headers.isEmpty()) {
-			res.setHeader(CORS_ALLOW_HEADERS, headers);
-		}
-	}
-
-	/**
-	 * 
-	 * @param res
-	 */
-	protected static void setCacheControl(HttpServletResponse res) {
-		res.setHeader(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0");
-	}
-
-	/**
-	 * 
-	 * @param asyncCtx
-	 */
-	protected static void setCacheControl(HttpAsyncContext asyncCtx) {
-		setCacheControl(asyncCtx.getResponse());
 	}
 
 	/**
@@ -226,5 +228,50 @@ public abstract class AbstractHandler implements Serializable {
 			servletContext(async).log("Unable to write error!", e);
 			async.complete();
 		}
+	}
+
+
+	/// --- Static Methods ---
+
+	/**
+	 * 
+	 * @param req
+	 * @param res
+	 */
+	protected static void setCors(HttpServletRequest req, HttpServletResponse res) {
+		final String origin = req.getHeader("Origin");
+		res.setHeader(CORS_ORIGIN, origin == null ? "*" : origin);
+		res.setHeader(CORS_CREDENTIALS, Boolean.TRUE.toString());
+
+		final String headers = req.getHeader(CORS_REQUEST_HEADERS);
+		if (headers != null && !headers.isEmpty()) {
+			res.setHeader(CORS_ALLOW_HEADERS, headers);
+		}
+	}
+
+	/**
+	 * 
+	 * @param res
+	 */
+	protected static void setCacheControl(HttpServletResponse res) {
+		res.setHeader(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0");
+	}
+
+	/**
+	 * 
+	 * @param asyncCtx
+	 */
+	protected static void setCacheControl(HttpAsyncContext asyncCtx) {
+		setCacheControl(asyncCtx.getResponse());
+	}
+
+	/**
+	 * 
+	 * @param code
+	 * @param message
+	 * @return
+	 */
+	protected static CharBuffer closeFrame(int code, String message) {
+		return CharBuffer.wrap("c[" + code + ",\"" + message + "\"]");
 	}
 }

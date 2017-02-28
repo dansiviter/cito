@@ -35,6 +35,7 @@ import org.junit.Test;
  * @since v1.0 [29 Oct 2016]
  */
 @Ignore
+@Deprecated // getting python working was too much of a pain!
 public class SockJsProtocol033 {
 	@Test
 	public void pythonTest() throws ScriptException, IOException {

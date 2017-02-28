@@ -16,31 +16,37 @@
 package cito.sockjs;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.Pipe;
+import java.nio.channels.Pipe.SinkChannel;
 import java.nio.channels.WritableByteChannel;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import cito.sockjs.nio.WriteStream;
 
 /**
- * Handles XHR Polling ({@code <server>/session/xhr}) connections.
+ * Handles XHR Streaming ({@code <server>/session/xhr_streaming}) connections.
  * 
  * @author Daniel Siviter
  * @since v1.0 [3 Jan 2017]
  */
-public class XhrHandler extends AbstractSessionHandler {
+public class XhrStreamingHandler extends AbstractSessionHandler {
 	private static final long serialVersionUID = -527374807374550532L;
+
 	private static final String CONTENT_TYPE_VALUE = "application/javascript;charset=UTF-8";
+	private static final String PRELUDE = StringUtils.leftPad("\n", 2049, "h");
 
 	/**
 	 * 
 	 * @param ctx
 	 */
-	public XhrHandler(Servlet servlet) {
+	public XhrStreamingHandler(Servlet servlet) {
 		super(servlet, CONTENT_TYPE_VALUE, true, "POST");
 	}
 
@@ -48,18 +54,11 @@ public class XhrHandler extends AbstractSessionHandler {
 	protected void handle(HttpAsyncContext async, ServletSession session, boolean initial)
 	throws ServletException, IOException
 	{
-		final Pipe pipe = Pipe.open();
-		final WritableByteChannel dest = pipe.sink();
-		async.getResponse().getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
+		final HttpServletResponse res = async.getResponse();
 
-		if (initial) {
-			dest.write(UTF_8.encode(CharBuffer.wrap("o\n")));
-			dest.close();
-		} else {
-			try (Sender sender = new XhrSender(session, dest)) {
-				session.setSender(sender);
-			}
-		}
+		final Pipe pipe = Pipe.open();
+		session.setSender(new XhrStreamingSender(session, initial, pipe.sink()));
+		res.getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
 	}
 
 
@@ -70,27 +69,36 @@ public class XhrHandler extends AbstractSessionHandler {
 	 * @author Daniel Siviter
 	 * @since v1.0 [18 Feb 2017]
 	 */
-	private class XhrSender implements Sender {
+	private class XhrStreamingSender implements Sender {
 		private final ServletSession session;
 		private final WritableByteChannel dest;
-		private boolean first = true;
+		private int bytesSent;
 
-		public XhrSender(ServletSession session, WritableByteChannel dest) {
+		public XhrStreamingSender(ServletSession session, boolean initial, SinkChannel dest) throws IOException {
 			this.session = session;
 			this.dest = dest;
+
+			this.dest.write(UTF_8.encode(CharBuffer.wrap(PRELUDE)));
+
+			if (initial) {
+				this.dest.write(UTF_8.encode(CharBuffer.wrap("o\n")));
+			}
 		}
 
 		@Override
 		public void send(String frame, boolean last) throws IOException {
+			frame = StringEscapeUtils.escapeJson(frame);
+			// +6 represents the possible start/end frame
 			final CharBuffer buf = CharBuffer.allocate(frame.length() + 6);
-			if (this.first) {
-				buf.append("a[\"");
-				this.first = !this.first;
+			buf.append("a[\"").append(frame).append("\"]\n").flip();
+			final ByteBuffer byteBuf = UTF_8.encode(buf);
+			this.dest.write(byteBuf);
+			this.bytesSent += byteBuf.limit();
+			final boolean limitReached = this.bytesSent >= servlet.ctx.getConfig().maxStreamBytes();
+			if (limitReached) {
+				servlet.log("Limit to streaming bytes reached. Closing sender.");
+				close();
 			}
-			buf.append(StringEscapeUtils.escapeJson(frame));
-			buf.append(last ? "\"]\n" : "\",\"");
-			buf.flip();
-			this.dest.write(UTF_8.encode(buf));
 		}
 
 		@Override

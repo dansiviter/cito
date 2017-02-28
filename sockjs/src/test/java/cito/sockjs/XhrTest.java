@@ -18,6 +18,11 @@ package cito.sockjs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
@@ -25,21 +30,24 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 
 /**
- * Unit test for {@link XhrHandler} and {@link XhrSendHandler}.
+ * Unit test for {@link XhrHandler}, {@link XhrSendHandler} and {@link XhrStreamingHandler}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [29 Dec 2016]
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-74">SockJS 0.3.3 XHR Polling</a>
+ * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-85">SockJS 0.3.3 XHR Streaming</a>
  */
 public class XhrTest extends AbstractTest {
 	private static final String XHR = "xhr";
 	private static final String XHR_SEND  = XHR + "_send";
+	private static final String XHR_STREAMING  = XHR + "_streaming";
 
 	/**
 	 * The transport must support CORS requests, and answer correctly to OPTIONS requests.
@@ -47,21 +55,27 @@ public class XhrTest extends AbstractTest {
 	@Test
 	@RunAsClient
 	public void options_xhr() {
-		verifyOptions("abc/abc/" + XHR, HttpMethod.OPTIONS, HttpMethod.POST);
+		verifyOptions("abc/abc/" + XHR, HttpMethod.POST, HttpMethod.OPTIONS);
 	}
 
 	@Test
 	@RunAsClient
 	public void options_xhrSend() {
-		verifyOptions("abc/abc/" + XHR_SEND, HttpMethod.OPTIONS, HttpMethod.POST);
+		verifyOptions("abc/abc/" + XHR_SEND, HttpMethod.POST, HttpMethod.OPTIONS);
+	}
+
+	@Test
+	@RunAsClient
+	public void options_xhrStreaming() {
+		verifyOptions("abc/abc/" + XHR_STREAMING, HttpMethod.POST, HttpMethod.OPTIONS);
 	}
 
 	/**
-	 * Test the transport itself.
+	 * Test the polling transport.
 	 */
 	@Test
 	@RunAsClient
-	public void transport() {
+	public void transport_polling() {
 		final String uuid = uuid();
 		Response res = target("000", uuid, XHR).request().post(Entity.json(null));
 		assertEquals(Status.OK, res.getStatusInfo());
@@ -87,6 +101,71 @@ public class XhrTest extends AbstractTest {
 		assertEquals(Status.OK, res.getStatusInfo());
 		assertEquals("a[\"x\"]\n", res.readEntity(String.class));
 	}
+
+	/**
+	 * Test the streaming transport.
+	 * @throws IOException 
+	 */
+	@Test
+	@RunAsClient
+	public void transport_streaming() throws IOException {
+		final String uuid = uuid();
+		final Response res = target("000", uuid, XHR_STREAMING).request().post(Entity.json(null));
+
+		assertEquals(Status.OK, res.getStatusInfo());
+		assertEquals("application/javascript;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
+		verifyCors(res, null);
+		// iOS 6 caches POSTs. Make sure we send no-cache header.
+		verifyNotCached(res);
+
+		// The transport must first send 2KiB of h bytes as prelude.
+		final InputStream is = res.readEntity(InputStream.class);
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+			assertEquals(StringUtils.leftPad("", 2048, "h"), reader.readLine());
+			assertEquals("o", reader.readLine());
+
+			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 
+			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
+			verifyEmptyEntity(res0);
+			res0.close();
+
+			assertEquals("a[\"x\"]", reader.readLine());
+		}
+		res.close();
+	}
+
+	/**
+	 * Single streaming request will buffer all data until closed. In order to remove (garbage collect) old messages
+	 * from the browser memory we should close the connection every now and then. By default we should close a
+	 * streaming request every 128KiB messages was send. The test server should have this limit decreased to 4096B.
+	 */
+	@Test
+	@RunAsClient
+	public void response_limit() throws IOException {
+		final String uuid = uuid();
+		final Response res = target("000", uuid, XHR_STREAMING).request().post(Entity.json(null));
+
+		final InputStream is = res.readEntity(InputStream.class);
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+			assertEquals(StringUtils.leftPad("", 2048, "h"), reader.readLine());
+			assertEquals("o", reader.readLine());
+
+			// Test server should gc streaming session after 4096 bytes were sent (including framing).
+
+			final String msg = StringUtils.leftPad("", 128, "x");
+			for (int i = 0; i < 31; i++) {
+				final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"" + msg + "\"]")); 
+				assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
+				verifyEmptyEntity(res0);
+				res0.close();
+				assertEquals("Iteration " + i, "a[\"" + msg + "\"]", reader.readLine());
+			}
+			// The connection should be closed after enough data was delivered.
+			assertNull(reader.readLine());
+			res.close();
+		}
+	}
+
 
 	/**
 	 * Publishing messages to a non-existing session must result in a 404 error.
@@ -136,13 +215,13 @@ public class XhrTest extends AbstractTest {
 		Response res = target("000", uuid, XHR).request().post(Entity.json(null));
 		assertEquals(Status.OK, res.getStatusInfo());
 		assertEquals("o\n", res.readEntity(String.class));
-	
+
 		final String[] cTypes = {
 				"text/plain",
-//				"T", // FIXME unable to parse this ATM so cannot test
+				//				"T", // FIXME unable to parse this ATM so cannot test
 				"application/json", 
 				"application/xml",
-//				"", // FIXME
+				//				"", // FIXME
 				"application/json; charset=utf-8",
 				"text/xml; charset=utf-8",
 				"text/xml"
@@ -183,6 +262,9 @@ public class XhrTest extends AbstractTest {
 		verifyCors(r, null);
 		assertNull(r.getHeaderString("Access-Control-Allow-Headers"));
 	}
+
+
+	// --- Static Methods ---
 
 	@Deployment
 	public static WebArchive createDeployment() {

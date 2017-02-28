@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.ServletContainerInitializer;
 import javax.servlet.ServletException;
 import javax.websocket.Decoder;
 import javax.websocket.Encoder;
@@ -29,23 +30,39 @@ import javax.websocket.server.ServerEndpointConfig;
 
 /**
  * The entrypoint into initialising a SockJS runtime. Simply create an concrete version of this class and place it
- * within the classpath. The {@link Initialiser} class will be given this by the Servlet container.
+ * within the classpath:
+ * 
+ * <pre>
+ * public static class TestConfig implements Config {
+ *   &#064;Override
+ *   public String path() {
+ *     return "my-endpoint";
+ *   }
+ * 
+ *   &#064;Override
+ *   public Class<? extends Endpoint> endpointClass() {
+ *     return MyEndpoint.class;
+ *   }
+ * }
+ * 
+ * <pre>
+ * The {@link Initialiser} class will be given this by the Servlet container using the
+ * {@link ServletContainerInitializer} mechanism.
  * 
  * @author Daniel Siviter
  * @since v1.0 [4 Jan 2017]
  * @see Initialiser
  */
 public interface Config extends EndpointConfig {
-	/**
-	 * 
-	 * @return
+	/** 
+	 * @return the class to use for the service. This must have a no-args contructor.
 	 */
-	Class<? > endpointClass();
+	Class<? extends Endpoint> endpointClass();
 
 	/**
-	 * 	
-	 * @return
+	 * @return an instance of the endpoint.
 	 * @throws ServletException
+	 * @see #endpointClass()
 	 */
 	@SuppressWarnings("unchecked")
 	default <E extends Endpoint> E createEndpoint() throws ServletException {
@@ -57,30 +74,26 @@ public interface Config extends EndpointConfig {
 	}
 
 	/**
-	 * 
-	 * @return
+	 * @return the path of the service above the context root.
 	 */
 	String path();
 
 	/**
-	 * 
-	 * @return
+	 * @return the permitted subprotocols. Not used!
 	 */
 	default List<String> subprotocols() {
 		return Collections.emptyList();
 	}
 
 	/**
-	 * 
-	 * @return
+	 * @return the WebSocket extensions. Not used!
 	 */
 	default List<Extension> extensions() {
 		return Collections.emptyList();
 	}
 
 	/**
-	 * 
-	 * @return
+	 * @return the encoder implementation classes, an empty list if none.
 	 */
 	default List<Class<? extends Encoder>> encoders() {
 		return Collections.emptyList();
@@ -92,8 +105,7 @@ public interface Config extends EndpointConfig {
 	}
 
 	/**
-	 * 
-	 * @return
+	 * @return the decoder implementation classes, an empty list if none.
 	 */
 	default List<Class<? extends Decoder>> decoders() {
 		return Collections.emptyList();
@@ -102,6 +114,14 @@ public interface Config extends EndpointConfig {
 	@Override
 	default List<Class<? extends Decoder>> getDecoders() {
 		return decoders();
+	}
+
+	/**
+	 * @return the maximum number of bytes before a stream connection (other that WebSocket) has to be recycled. Default
+	 * is 128KB.
+	 */
+	default int maxStreamBytes() {
+		return 131_072;
 	}
 
 	/**

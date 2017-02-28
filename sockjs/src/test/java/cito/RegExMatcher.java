@@ -19,11 +19,14 @@ import java.util.regex.Pattern;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+import org.hamcrest.Matcher;
 
 /**
+ * A {@link Matcher} for performing Regular Expression matching.
  * 
  * @author Daniel Siviter
  * @since v1.0 [3 Jan 2017]
+ * @see Pattern
  */
 public class RegExMatcher extends BaseMatcher<CharSequence> {
 	private final Pattern regEx;

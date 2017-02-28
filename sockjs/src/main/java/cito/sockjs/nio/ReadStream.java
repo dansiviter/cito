@@ -35,10 +35,10 @@ import cito.sockjs.HttpAsyncContext;
 public class ReadStream implements ReadListener {
 	private final ByteBuffer buffer = ByteBuffer.allocate(1024);
 
-	protected final ReadableByteChannel src;
-	protected final WritableByteChannel dest;
-	protected final HttpAsyncContext async;
-	protected final ServletInputStream in;
+	private final ReadableByteChannel src;
+	private final WritableByteChannel dest;
+	private final HttpAsyncContext async;
+	private final ServletInputStream in;
 	private final Complete complete;
 
 	public ReadStream(HttpAsyncContext async, WritableByteChannel dest, Complete complete) throws IOException {
@@ -68,18 +68,5 @@ public class ReadStream implements ReadListener {
 	public void onError(final Throwable t) { 
 		this.async.getRequest().getServletContext().log("Unable to read entity!", t);
 		this.async.complete();
-	}
-
-
-	// --- Inner Classes ---
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [18 Feb 2017]
-	 */
-	@FunctionalInterface
-	public static interface Complete {
-		void onComplete() throws IOException;
 	}
 }

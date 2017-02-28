@@ -39,6 +39,23 @@ import org.junit.Test;
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-15">SockJS 0.3.3 iFrame</a>
  */
 public class IFrameTest extends AbstractTest{
+	private static final String I_FRAME = "<!DOCTYPE html>\n" +
+			"<html>\n" +
+			"<head>\n" +
+			"  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\n" +
+			"  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
+			"  <script>\n" +
+			"    document.domain = document.domain;\n" +
+			"    _sockjs_onload = function(){SockJS.bootstrap_iframe();};\n" +
+			"  </script>\n" +
+			"  <script src=\"//cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.1.2/sockjs.min.js\"></script>\n" +
+			"</head>\n" +
+			"<body>\n" +
+			"  <h2>Don't panic!</h2>\n" +
+			"  <p>This is a SockJS hidden iframe. It's used for cross domain magic.</p>\n" +
+			"</body>\n" +
+			"</html>";
+
 	/**
 	 * SockJS server must provide this html page.
 	 */
@@ -49,7 +66,7 @@ public class IFrameTest extends AbstractTest{
 	}
 
 	/**
-	 * To properly utilize caching, the same content must be served for request which try to version the iframe. The
+	 * To properly utilise caching, the same content must be served for request which try to version the iframe. The
 	 * server may want to give slightly different answer for every SockJS client revision.
 	 */
 	@Test
@@ -114,7 +131,7 @@ public class IFrameTest extends AbstractTest{
 	 * Body must be exactly as specified, with the exception of sockjs_url, which should be configurable.
 	 * Sockjs_url must be a valid url and should utilize caching.
 	 */
-	public void verify(String suffix, String query) {
+	private void verify(String suffix, String query) {
 		final Response res = target().path(suffix).request().get();
 		assertEquals(suffix, Status.OK, res.getStatusInfo());
 		assertEquals("text/html;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
@@ -124,13 +141,8 @@ public class IFrameTest extends AbstractTest{
 
 		assertNotNull(res.getEntityTag());
 		assertNull(res.getHeaderString(HttpHeaders.LAST_MODIFIED));
+		assertEquals(I_FRAME, res.readEntity(String.class));
 
-//        match = self.iframe_body.match(r.body.strip())
-//        self.assertTrue(match)
-
-//        sockjs_url = match.group('sockjs_url')
-//        self.assertTrue(sockjs_url.startswith('/') or
-//                        sockjs_url.startswith('http'))
 		verifyNoCookie(res);
 		res.close();
 	}
@@ -148,7 +160,6 @@ public class IFrameTest extends AbstractTest{
 		final EntityTag eTag1 = res.getEntityTag();
 		res.close();
 		assertEquals(eTag0, eTag1);
-		
 		res = target().path("iframe.html").request().header(HttpHeaders.IF_NONE_MATCH, eTag0.getValue()).get();
 		assertEquals(Status.NOT_MODIFIED, res.getStatusInfo());
 		verifyEmptyEntity(res);

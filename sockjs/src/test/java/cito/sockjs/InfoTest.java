@@ -38,6 +38,7 @@ import org.junit.Test;
  * 
  * @author Daniel Siviter
  * @since v1.0 [29 Dec 2016]
+ * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-26">SockJS 0.3.3 Info</a>
  */
 public class InfoTest extends AbstractTest {
 	/**
@@ -87,7 +88,7 @@ public class InfoTest extends AbstractTest {
 	@Test
 	@RunAsClient
 	public void test_options() {
-		verifyOptions("info", "OPTIONS", "GET");
+		verifyOptions("info", "GET", "OPTIONS");
 	}
 
 	/**

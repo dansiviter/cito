@@ -31,6 +31,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 /**
+ * Unit test for {@link Util}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [3 Jan 2017]
