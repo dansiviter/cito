@@ -15,6 +15,9 @@
  */
 package cito.sockjs;
 
+import static cito.sockjs.XhrHandler.XHR;
+import static cito.sockjs.XhrSendHandler.XHR_SEND;
+import static cito.sockjs.XhrStreamingHandler.XHR_STREAMING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -45,10 +48,6 @@ import org.junit.Test;
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-85">SockJS 0.3.3 XHR Streaming</a>
  */
 public class XhrTest extends AbstractTest {
-	private static final String XHR = "xhr";
-	private static final String XHR_SEND  = XHR + "_send";
-	private static final String XHR_STREAMING  = XHR + "_streaming";
-
 	/**
 	 * The transport must support CORS requests, and answer correctly to OPTIONS requests.
 	 */
@@ -85,8 +84,8 @@ public class XhrTest extends AbstractTest {
 		// iOS 6 caches POSTs. Make sure we send no-cache header.
 		verifyNotCached(res);
 
-		// Xhr transShrinkports receive json-encoded array of messages.
-		res = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 
+		// Xhr transports receive json-encoded array of messages.
+		res = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]"));
 		assertEquals(Status.NO_CONTENT, res.getStatusInfo());
 		verifyEmptyEntity(res);
 

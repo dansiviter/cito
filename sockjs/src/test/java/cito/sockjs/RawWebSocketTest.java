@@ -1,4 +1,5 @@
 /*
+
  * Copyright 2016-2017 Daniel Siviter
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,23 +17,36 @@
 package cito.sockjs;
 
 import java.io.IOException;
-import java.util.Queue;
+
+import org.jboss.arquillian.container.test.api.RunAsClient;
+import org.junit.Test;
 
 /**
  * @author Daniel Siviter
- * @since v1.0 [14 Feb 2017]
+ * @since v1.0 [1 Mar 2017]
  */
-public interface Sender extends AutoCloseable {
+public class RawWebSocketTest {
 	/**
-	 * 
-	 * @param frame the frame to send.
-	 * @throws IOException
+	 * Test the streaming transport.
 	 */
-	void send(Queue<String> frames) throws IOException;
-
+	@Test
+	@RunAsClient
+	public void transport() throws IOException {
+//        ws = WebSocket8Client(base_url + '/websocket')
+//        ws.send(u'Hello world!\uffff')
+//        self.assertEqual(ws.recv(), u'Hello world!\uffff')
+//        ws.close()
+	}
+	
 	/**
-	 * Overridden to limit exception.
+	 * Test the closing of transport.
 	 */
-	@Override
-	void close() throws IOException;
+	@Test
+	@RunAsClient
+	public void close() throws IOException {
+//        ws = WebSocket8Client(close_base_url + '/websocket')
+//        with self.assertRaises(ws.ConnectionClosedException):
+//            ws.recv()
+//        ws.close()
+	}
 }

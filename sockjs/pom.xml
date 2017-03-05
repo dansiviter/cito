@@ -8,7 +8,7 @@
 	</parent>
 	<artifactId>cito-sockjs</artifactId>
 	<name>Cit&#x00D5; SockJS</name>
-	<description>SockJS implementation of Cit&#x00D5; to promote interoperability with browsers</description>
+	<description>SockJS implementation of Cit&#x00D5; to promote interoperability with browsers, graceful fallback and HTTP proxy passthrough.</description>
 
 	<dependencies>
 		<dependency>
@@ -30,6 +30,12 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 			<version>3.5</version>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.5</version>
 		</dependency>
 
 
@@ -57,22 +63,11 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.wildfly</groupId>
-			<artifactId>wildfly-undertow</artifactId>
-			<version>10.1.0.Final</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-client</artifactId>
-			<version>3.0.18.Final</version>
 			<scope>test</scope>
 		</dependency>
-
-
 	</dependencies>
-
 
 	<build>
 		<plugins>

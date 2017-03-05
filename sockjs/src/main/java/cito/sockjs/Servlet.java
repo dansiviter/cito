@@ -15,9 +15,21 @@
  */
 package cito.sockjs;
 
+import static cito.sockjs.EventSourceHandler.EVENTSOURCE;
+import static cito.sockjs.GreetingHandler.GREETING;
+import static cito.sockjs.HtmlFileHandler.HTMLFILE;
+import static cito.sockjs.IFrameHandler.IFRAME;
+import static cito.sockjs.InfoHandler.INFO;
+import static cito.sockjs.JsonPHandler.JSONP;
+import static cito.sockjs.JsonPSendHandler.JSONP_SEND;
+import static cito.sockjs.XhrHandler.XHR;
+import static cito.sockjs.XhrSendHandler.XHR_SEND;
+import static cito.sockjs.XhrStreamingHandler.XHR_STREAMING;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.AsyncContext;
@@ -38,21 +50,49 @@ public class Servlet extends GenericServlet {
 	private static final long serialVersionUID = 917110139775886906L;
 
 	private final Map<String, AbstractHandler> handers = new HashMap<>();
+	private final Map<String, ServletSession> sessions = new ConcurrentHashMap<>();
+	private final Config config;
 
-	protected final Context ctx;
+	private boolean webSocketSupported;
 
-	protected Servlet(Context ctx) {
-		this.ctx = ctx;
+	protected Servlet(Config config) {
+		this.config = config;
 	}
 
 	@Override
 	public void init() throws ServletException {
-		this.handers.put("iframe", new IFrameHandler(this).init());
-		this.handers.put("info", new InfoHandler(this).init());
-		this.handers.put("xhr", new XhrHandler(this).init());
-		this.handers.put("xhr_send", new XhrSendHandler(this).init());
-		this.handers.put("xhr_streaming", new XhrStreamingHandler(this).init());
-		this.handers.put("eventsource", new EventSourceHandler(this).init());
+		this.handers.put(GREETING, new GreetingHandler(this).init());
+		this.handers.put(IFRAME, new IFrameHandler(this).init());
+		this.handers.put(INFO, new InfoHandler(this).init());
+		this.handers.put(XHR, new XhrHandler(this).init());
+		this.handers.put(XHR_SEND, new XhrSendHandler(this).init());
+		this.handers.put(XHR_STREAMING, new XhrStreamingHandler(this).init());
+		this.handers.put(EVENTSOURCE, new EventSourceHandler(this).init());
+		this.handers.put(HTMLFILE, new HtmlFileHandler(this).init());
+		this.handers.put(JSONP, new JsonPHandler(this).init());
+		this.handers.put(JSONP_SEND, new JsonPSendHandler(this).init());
+	}
+
+	/**
+	 * @return the config
+	 */
+	public Config getConfig() {
+		return config;
+	}
+
+	/**
+	 * @return the webSocketSupported
+	 */
+	public boolean isWebSocketSupported() {
+		return webSocketSupported;
+	}
+
+	/**
+	 * 
+	 * @param supported
+	 */
+	void setWebSocketSupported(boolean supported) {
+		this.webSocketSupported = supported;
 	}
 
 	@Override
@@ -71,25 +111,26 @@ public class Servlet extends GenericServlet {
 	 * @throws IOException
 	 */
 	private void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-		final String fullPath = req.getRequestURI() + (req.getQueryString() != null ? "?" + req.getQueryString() : "");
-		log("SockJS request recieved. [path=" + fullPath + ",method=" + req.getMethod() + "]");
-
-		final String path = req.getRequestURI().substring(this.ctx.getConfig().path().length() + 2);
-		final String[] segments = path.split("/");
+		log("SockJS request recieved. [name=" + this.config.name() + ",path=" + req.getRequestURI() + ",method=" + req.getMethod() + "]");
 
 		String type = null;
-		if (segments.length == 1) {
-			type = segments[0];
-			if (type.startsWith("iframe")) {
-				type = "iframe"; // special case, avoids a regex or similar
+		if (req.getPathTranslated() == null) {
+			type = GREETING;
+		} else {
+			final String[] segments = req.getPathInfo().substring(1).split("/"); // strip leading '/'
+			if (segments.length == 1) {
+				type = segments[0].toLowerCase();
+				if (type.startsWith(IFRAME)) {
+					type = IFRAME; // special case, avoids a regex or similar
+				}
+			} else if (segments.length == 3) {
+				type = segments[2];
 			}
-		} else if (segments.length == 3) {
-			type = segments[2];
 		}
 
 		final AbstractHandler handler = this.handers.get(type);
 		if (handler == null) {
-			log("Invalid path sent to SockJS! [path=" + fullPath + ",method=" + req.getMethod() + "]");
+			log("Invalid path sent to SockJS! [name=" + this.config.name() + ",path=" + req.getRequestURI() + ",method=" + req.getMethod() + "]");
 			res.sendError(HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}
@@ -106,8 +147,10 @@ public class Servlet extends GenericServlet {
 	 * @throws ServletException
 	 */
 	protected ServletSession getSession(HttpServletRequest req) throws ServletException {
-		final String sessionId = Util.session(this.ctx.getConfig(), req);
-		return  this.ctx.getSession(sessionId);
+		final String sessionId = Util.session(this.config, req);
+		final ServletSession session = this.sessions.get(sessionId);
+//		this.executor.submit(this::cleanupSessions);
+		return session;
 	}
 
 	/**
@@ -118,9 +161,19 @@ public class Servlet extends GenericServlet {
 	 */
 	protected ServletSession createSession(HttpServletRequest req) throws ServletException {
 		final ServletSession session = new ServletSession(this, req);
-		this.ctx.register(session);
-		session.getEndpoint().onOpen(session, this.ctx.getConfig());
+		if (this.sessions.putIfAbsent(session.getId(), session) != null) {
+			throw new ServletException("Session already exists! [" + Util.session(this.config, req) + "]");
+		}
+		session.getEndpoint().onOpen(session, this.config);
 		return session;
+	}
+
+	/**
+	 * @param id
+	 */
+	public void unregister(String id) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	/**
@@ -129,22 +182,22 @@ public class Servlet extends GenericServlet {
 	 * @param asyncCtx
 	 */
 	private void onRequest(AbstractHandler handler, AsyncContext asyncCtx) {
-		final HttpAsyncContext httpAsyncContext = new HttpAsyncContext(asyncCtx);
+		final HttpAsyncContext async = new HttpAsyncContext(asyncCtx);
 		try {
-			handler.service(httpAsyncContext);
+			handler.service(async);
 		} catch (ServletException | IOException | RuntimeException e) {
-			onError(e, asyncCtx);
+			onError(e, async);
 		}
 	}
 
 	/**
 	 * 
 	 * @param t
-	 * @param ctx
+	 * @param async
 	 */
-	private void onError(Throwable t, AsyncContext asyncCtx) {
+	private void onError(Throwable t, HttpAsyncContext async) {
 		log("Error while servicing request!", t);
-		((HttpServletResponse) asyncCtx.getResponse()).setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-		asyncCtx.complete();
+		async.getResponse().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		async.complete();
 	}
 }

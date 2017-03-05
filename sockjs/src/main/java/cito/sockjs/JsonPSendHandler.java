@@ -1,4 +1,5 @@
 /*
+
  * Copyright 2016-2017 Daniel Siviter
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,23 +17,31 @@
 package cito.sockjs;
 
 import java.io.IOException;
-import java.util.Queue;
+
+import javax.servlet.ServletException;
 
 /**
  * @author Daniel Siviter
- * @since v1.0 [14 Feb 2017]
+ * @since v1.0 [1 Mar 2017]
  */
-public interface Sender extends AutoCloseable {
-	/**
-	 * 
-	 * @param frame the frame to send.
-	 * @throws IOException
-	 */
-	void send(Queue<String> frames) throws IOException;
+public class JsonPSendHandler extends AbstractSessionHandler {
+	private static final long serialVersionUID = 6883526585964051391L;
+
+	static final String JSONP_SEND = "jsonp_send";
 
 	/**
-	 * Overridden to limit exception.
+	 * 
+	 * @param servlet
 	 */
+	public JsonPSendHandler(Servlet servlet) {
+		super(servlet, "text/plain;charset=UTF-8", false, "POST");
+	}
+
 	@Override
-	void close() throws IOException;
+	protected void handle(HttpAsyncContext async, ServletSession session, boolean initial)
+			throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

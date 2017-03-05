@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.CharBuffer;
 import java.nio.channels.Pipe;
 import java.nio.channels.WritableByteChannel;
+import java.util.Queue;
 
 import javax.servlet.ServletException;
 
@@ -27,13 +28,15 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import cito.sockjs.nio.WriteStream;
 
 /**
- * Handles XHR Polling ({@code <server>/session/xhr}) connections.
+ * Handles XHR Polling ({@code /<server>/session/xhr}) connections.
  * 
  * @author Daniel Siviter
  * @since v1.0 [3 Jan 2017]
  */
 public class XhrHandler extends AbstractSessionHandler {
 	private static final long serialVersionUID = -527374807374550532L;
+
+	static final String XHR = "xhr";
 	private static final String CONTENT_TYPE_VALUE = "application/javascript;charset=UTF-8";
 
 	/**
@@ -57,7 +60,10 @@ public class XhrHandler extends AbstractSessionHandler {
 			dest.close();
 		} else {
 			try (Sender sender = new XhrSender(session, dest)) {
-				session.setSender(sender);
+				if (!session.setSender(sender)) {
+					this.servlet.log("Connection still open! [" + session.getId() + "]");
+					dest.write(UTF_8.encode(closeFrame(2010, "Another connection still open", "\n")));
+				}
 			}
 		}
 	}
@@ -73,7 +79,6 @@ public class XhrHandler extends AbstractSessionHandler {
 	private class XhrSender implements Sender {
 		private final ServletSession session;
 		private final WritableByteChannel dest;
-		private boolean first = true;
 
 		public XhrSender(ServletSession session, WritableByteChannel dest) {
 			this.session = session;
@@ -81,16 +86,22 @@ public class XhrHandler extends AbstractSessionHandler {
 		}
 
 		@Override
-		public void send(String frame, boolean last) throws IOException {
-			final CharBuffer buf = CharBuffer.allocate(frame.length() + 6);
-			if (this.first) {
-				buf.append("a[\"");
-				this.first = !this.first;
+		public void send(Queue<String> frames) throws IOException {
+			if (frames.isEmpty()) {
+				this.dest.write(UTF_8.encode("a[]\n"));
+				return;
 			}
-			buf.append(StringEscapeUtils.escapeJson(frame));
-			buf.append(last ? "\"]\n" : "\",\"");
-			buf.flip();
-			this.dest.write(UTF_8.encode(buf));
+
+			this.dest.write(UTF_8.encode("a[\""));
+			while (!frames.isEmpty()) {
+				final String frame = frames.poll();
+				servlet.log("Flushing frame. [sessionId=" + this.session.getId() + ",frame=" + frame + "]");
+				this.dest.write(UTF_8.encode(StringEscapeUtils.escapeJson(frame)));
+				if (!frames.isEmpty()) {
+					this.dest.write(UTF_8.encode("\",\""));
+				}
+			}
+			this.dest.write(UTF_8.encode("\"]\n"));
 		}
 
 		@Override

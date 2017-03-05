@@ -27,6 +27,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRegistration;
 import javax.servlet.annotation.HandlesTypes;
 import javax.websocket.DeploymentException;
+import javax.websocket.Endpoint;
 import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpointConfig;
 
@@ -79,24 +80,26 @@ public class Initialiser implements ServletContainerInitializer {
 
 	/**
 	 * 
-	 * @param initialiser
+	 * @param config
 	 * @param servletCtx
 	 * @throws ServletException
 	 */
-	private static void initialise(Config initialiser, ServletContext servletCtx) throws ServletException {
-		final String path = initialiser.path();
-		LOG.info("Initialising SockJS on path: '{}'", path);
+	private static void initialise(Config config, ServletContext servletCtx) throws ServletException {
+		final String name = config.name();
+		final String path = config.path();
+		LOG.info("Initialising SockJS. [name={},path={}]", name, path);
 
-		final Context sockJsCtx = new Context(initialiser);
-		servletCtx.setAttribute(Context.class.getName(), servletCtx);
-		addServlet(servletCtx, "sockjs-greeting",		new GreetingHandler(),				String.format("/%s", path));
-		addServlet(servletCtx, "sockjs",				new cito.sockjs.Servlet(sockJsCtx),	String.format("/%s/*", path));
+		final cito.sockjs.Servlet servlet = new cito.sockjs.Servlet(config);
+		servletCtx.setAttribute(Servlet.class.getName(), servlet);
+		addServlet(servletCtx, "sockjs-" + name, servlet, String.format("/%s/*", path));
 
 		final ServerContainer serverContainer = (ServerContainer) servletCtx.getAttribute(ServerContainer.class.getName());
 		try {
-			serverContainer.addEndpoint(createConfig(initialiser, String.format("/%s/websocket", path)).build());
-			serverContainer.addEndpoint(createConfig(initialiser, String.format("/%s/{server}/{session}/websocket", path)).build());
-			sockJsCtx.setWebSocketSupported(true);
+			serverContainer.addEndpoint(createConfig(
+					config, config.endpointClass(),		String.format("/%s/websocket", path)).build());
+			serverContainer.addEndpoint(createConfig(
+					config, WebSocketEndpoint.class, 	String.format("/%s/{server}/{session}/websocket", path)).build());
+			servlet.setWebSocketSupported(true);
 		} catch (DeploymentException e) {
 			LOG.warn("Unable to deploy WebSockets!", e);
 		}
@@ -136,9 +139,9 @@ public class Initialiser implements ServletContainerInitializer {
 	 * @param path
 	 * @return
 	 */
-	public static ServerEndpointConfig.Builder createConfig(Config customiser, String path) {
+	public static ServerEndpointConfig.Builder createConfig(Config customiser, Class<? extends Endpoint> endpointClass, String path) {
 		return ServerEndpointConfig.Builder
-				.create(WebSocketEndpoint.class, path)
+				.create(endpointClass, path)
 				.decoders(customiser.decoders())
 				.encoders(customiser.encoders())
 				.configurator(new WebSocketConfigurer(customiser.serverEndpointConfigurator()))

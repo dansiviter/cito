@@ -15,6 +15,8 @@
  */
 package cito.sockjs;
 
+import static cito.sockjs.EventSourceHandler.EVENTSOURCE;
+import static cito.sockjs.XhrSendHandler.XHR_SEND;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -35,6 +37,7 @@ import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 
+
 /**
  * Unit test for {@link EventSourceHandler}.
  * 
@@ -43,13 +46,11 @@ import org.junit.Test;
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-94">SockJS 0.3.3 EventSource</a>
  */
 public class EventSourceTest extends AbstractTest {
-	private static final String XHR_SEND  = "xhr_send";
-	private static final String EVENT_SOURCE = "eventsource";
 
 	@Test
 	@RunAsClient
 	public void options_eventSource() {
-		verifyOptions("abc/abc/" + EVENT_SOURCE, HttpMethod.GET, HttpMethod.OPTIONS);
+		verifyOptions("abc/abc/" + EVENTSOURCE, HttpMethod.GET, HttpMethod.OPTIONS);
 	}
 
 	/**
@@ -59,7 +60,7 @@ public class EventSourceTest extends AbstractTest {
 	@RunAsClient
 	public void transport() throws IOException {
 		final String uuid = uuid();
-		final Response res = target("000", uuid, EVENT_SOURCE).request().get();
+		final Response res = target("000", uuid, EVENTSOURCE).request().get();
 
 		assertEquals(Status.OK, res.getStatusInfo());
 		assertEquals("text/event-stream;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
@@ -103,7 +104,7 @@ public class EventSourceTest extends AbstractTest {
 	@RunAsClient
 	public void response_limit() throws IOException {
 		final String uuid = uuid();
-		final Response res = target("000", uuid, EVENT_SOURCE).request().get();
+		final Response res = target("000", uuid, EVENTSOURCE).request().get();
 
 		final InputStream is = res.readEntity(InputStream.class);
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {

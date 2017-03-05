@@ -31,15 +31,15 @@ import javax.websocket.Session;
  */
 public class WebSocketEndpoint extends Endpoint {
 	private ServletContext servletCtx;
-	private Context ctx;
+	private Servlet servlet;
 	private Endpoint delegate;
 
 	@Override
 	public void onOpen(Session session, EndpointConfig endpointConfig) {
 		this.servletCtx = (ServletContext) endpointConfig.getUserProperties().get(ServletContext.class.getSimpleName());
-		this.ctx = (Context) this.servletCtx.getAttribute(Context.class.getName());
+		this.servlet = (Servlet) this.servletCtx.getAttribute(Servlet.class.getName());
 		try {
-			this.delegate = this.ctx.getConfig().createEndpoint();
+			this.delegate = this.servlet.getConfig().createEndpoint();
 		} catch (ServletException e) {
 			this.servletCtx.log("Unable to create delegate!", e);
 			try {

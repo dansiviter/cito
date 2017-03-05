@@ -34,7 +34,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import cito.sockjs.nio.ReadStream;
 
 /**
- * Handles XHR Send ({@code <server>/session/xhr_send}) connections.
+ * Handles XHR Send ({@code /<server>/session/xhr_send}) connections.
  * 
  * @author Daniel Siviter
  * @since v1.0 [11 Feb 2017]
@@ -42,6 +42,7 @@ import cito.sockjs.nio.ReadStream;
 public class XhrSendHandler extends AbstractSessionHandler {
 	private static final long serialVersionUID = 8893825977852213991L;
 
+	static final String XHR_SEND = "xhr_send";
 	private static final String CONTENT_TYPE_VALUE = "text/plain;charset=UTF-8";
 
 	/**
@@ -70,7 +71,7 @@ public class XhrSendHandler extends AbstractSessionHandler {
 		
 		final Pipe pipe = Pipe.open();
 		async.start(() -> start(session, async, pipe.source()));
-		req.getInputStream().setReadListener(new ReadStream(async, pipe.sink(), () -> pipe.sink().close()));
+		req.getInputStream().setReadListener(new ReadStream(async, pipe.sink(), t -> pipe.sink().close()));
 	}
 
 	/**
@@ -100,6 +101,7 @@ public class XhrSendHandler extends AbstractSessionHandler {
 			async.complete();
 		} catch (IOException | JsonException e) {
 			final String message = e instanceof JsonException ? "Broken JSON encoding." : "Error processing data!";
+			this.servlet.log(message, e);
 			sendErrorNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, message);
 		}
 	}

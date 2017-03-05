@@ -15,6 +15,8 @@
  */
 package cito.sockjs;
 
+import static cito.sockjs.InfoHandler.INFO;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -50,7 +52,7 @@ public class InfoTest extends AbstractTest {
 	@Test
 	@RunAsClient
 	public void test_basic() {
-		final Response res = target().path("info").request().get();
+		final Response res = target().path(INFO).request().get();
 		assertEquals(Status.OK, res.getStatusInfo());
 		assertEquals("application/json;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
 		verifyNoCookie(res);
@@ -72,11 +74,11 @@ public class InfoTest extends AbstractTest {
 	@Test
 	@RunAsClient
 	public void test_entropy() {
-		Response res = target().path("info").request(MediaType.APPLICATION_JSON_TYPE).get();
+		Response res = target().path(INFO).request(MediaType.APPLICATION_JSON_TYPE).get();
 		JsonObject json = res.readEntity(JsonObject.class);
 		final long entropy0 = json.getJsonNumber("entropy").longValue();
 
-		res = target().path("info").request().get();
+		res = target().path(INFO).request().get();
 		json = res.readEntity(JsonObject.class);
 		final long entropy1 = json.getJsonNumber("entropy").longValue();
 		assertNotEquals(entropy0, entropy1);

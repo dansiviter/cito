@@ -271,7 +271,10 @@ public abstract class AbstractHandler implements Serializable {
 	 * @param message
 	 * @return
 	 */
-	protected static CharBuffer closeFrame(int code, String message) {
-		return CharBuffer.wrap("c[" + code + ",\"" + message + "\"]");
+	protected static CharBuffer closeFrame(int code, String message, String separator) {
+		final String codeStr = Integer.toString(code);
+		final CharBuffer buf = CharBuffer.allocate(codeStr.length() + message.length() + separator.length() + 6);
+		buf.append("c[").append(codeStr).append(",\"").append(message).append("\"]").flip();
+		return buf;
 	}
 }

@@ -29,6 +29,8 @@ import javax.servlet.ServletInputStream;
 import cito.sockjs.HttpAsyncContext;
 
 /**
+ * 
+ * 
  * @author Daniel Siviter
  * @since v1.0 [18 Feb 2017]
  */
@@ -61,12 +63,15 @@ public class ReadStream implements ReadListener {
 
 	@Override
 	public void onAllDataRead() throws IOException {
-		this.complete.onComplete();
+		this.complete.onComplete(null);
 	}
 
 	@Override
 	public void onError(final Throwable t) { 
-		this.async.getRequest().getServletContext().log("Unable to read entity!", t);
-		this.async.complete();
+		try {
+			this.complete.onComplete(t);
+		} catch (IOException e) {
+			this.async.getRequest().getServletContext().log("Unable to complete!", e);
+		}
 	}
 }

@@ -15,12 +15,21 @@
  */
 package cito.sockjs;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.io.IOUtils;
 
 /**
  * 
@@ -49,7 +58,7 @@ public enum Util { ;
 	 * @return
 	 */
 	public static String session(Servlet servlet, HttpServletRequest req) {
-		return uriTokens(servlet.ctx.getConfig(), req)[1];
+		return uriTokens(servlet.getConfig(), req)[1];
 	}
 
 	/**
@@ -118,5 +127,32 @@ public enum Util { ;
 	 */
 	public static ServletContext servletContext(HttpAsyncContext async) {
 		return async.getRequest().getServletContext();
+	}
+
+	/**
+	 * 
+	 * @param cls
+	 * @param name
+	 * @return
+	 * @throws IOException
+	 */
+	public static byte[] resource(Class<?> cls, String name) throws IOException {
+		try (InputStream in = cls.getResourceAsStream(name)) {
+			return IOUtils.toByteArray(in);
+		}
+	}
+
+	/**
+	 * 
+	 * @param cls
+	 * @param name
+	 * @return
+	 * @throws IOException
+	 */
+	public static String resourceToString(Class<?> cls, String name) throws IOException {
+		try (Reader reader = new InputStreamReader(cls.getResourceAsStream(name), StandardCharsets.UTF_8)) {
+			final BufferedReader buffer = new BufferedReader(reader);
+			return buffer.lines().collect(Collectors.joining("\n"));
+		}
 	}
 }

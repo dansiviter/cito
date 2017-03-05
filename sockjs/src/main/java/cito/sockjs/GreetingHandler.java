@@ -15,30 +15,41 @@
  */
 package cito.sockjs;
 
-import static cito.sockjs.Headers.CONTENT_TYPE;
-
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.ServletException;
+
+import cito.sockjs.nio.WriteStream;
 
 /**
- * 
  * @author Daniel Siviter
- * @since v1.0 [29 Dec 2016]
+ * @since v1.0 [2 Mar 2017]
  */
-public class GreetingHandler extends HttpServlet {
-	private static final long serialVersionUID = -3437734574704352295L;
+public class GreetingHandler extends AbstractHandler {
+	private static final long serialVersionUID = -6439964384579190044L;
+	private static final byte[] PAYLOAD = "Welcome to SockJS!\n".getBytes(UTF_8);
+	static final String GREETING = "greeting";
+
+	/**
+	 * 
+	 * @param servlet
+	 */
+	public GreetingHandler(Servlet servlet) {
+		super(servlet, "text/plain;charset=UTF-8", "GET");
+	}
 
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-		if (req.getPathInfo() != null) {
-			resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			return;
-		}
-		resp.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
-		resp.setStatus(HttpServletResponse.SC_OK);
-		resp.getWriter().print("Welcome to SockJS!\n");
+	protected void handle(HttpAsyncContext async) throws ServletException, IOException {
+		final ReadableByteChannel iFrameChannel = Channels.newChannel(new ByteArrayInputStream(PAYLOAD));
+		async.getResponse().getOutputStream().setWriteListener(new WriteStream(async, iFrameChannel, t -> {
+			iFrameChannel.close();
+			if (t != null) {
+				async.getRequest().getServletContext().log("Unable to write entity!", t);
+			}
+			async.complete();
+		}));
 	}
 }

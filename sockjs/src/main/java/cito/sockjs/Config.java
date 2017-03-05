@@ -54,6 +54,15 @@ import javax.websocket.server.ServerEndpointConfig;
  * @see Initialiser
  */
 public interface Config extends EndpointConfig {
+	/**
+	 * @return the name of this SockJS deployment. This must be unique if deploying multiple instances within the same
+	 * servlet container.
+	 */
+	default String name() {
+		return getClass().getSimpleName();
+	}
+
+	
 	/** 
 	 * @return the class to use for the service. This must have a no-args contructor.
 	 */

@@ -19,11 +19,18 @@ package cito.sockjs.nio;
 import java.io.IOException;
 
 /**
+ * Defines a handler for completion scenarios of Read or Write.
  * 
  * @author Daniel Siviter
  * @since v1.0 [18 Feb 2017]
  */
 @FunctionalInterface
 public interface Complete {
-	void onComplete() throws IOException;
+	/**
+	 * Called when reading or writing is complete if successful or failure.
+	 * 
+	 * @param t if {@code null} then completed successfully.
+	 * @throws IOException
+	 */
+	void onComplete(Throwable t) throws IOException;
 }

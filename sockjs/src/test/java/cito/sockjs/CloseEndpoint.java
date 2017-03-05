@@ -16,23 +16,28 @@
 package cito.sockjs;
 
 import java.io.IOException;
-import java.util.Queue;
+
+import javax.websocket.Endpoint;
+import javax.websocket.EndpointConfig;
+import javax.websocket.Session;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
+ * 
  * @author Daniel Siviter
- * @since v1.0 [14 Feb 2017]
+ * @since v1.0 [4 Jan 2017]
  */
-public interface Sender extends AutoCloseable {
-	/**
-	 * 
-	 * @param frame the frame to send.
-	 * @throws IOException
-	 */
-	void send(Queue<String> frames) throws IOException;
+public class CloseEndpoint extends Endpoint {
+	private static final Logger LOG = LoggerFactory.getLogger(CloseEndpoint.class);
 
-	/**
-	 * Overridden to limit exception.
-	 */
 	@Override
-	void close() throws IOException;
+	public void onOpen(Session session, EndpointConfig config) {
+		try {
+			session.close();
+		} catch (IOException e) {
+			LOG.error("Unable to close!", e);
+		}
+	}
 }

@@ -22,6 +22,7 @@ import java.nio.CharBuffer;
 import java.nio.channels.Pipe;
 import java.nio.channels.Pipe.SinkChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.Queue;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -39,6 +40,7 @@ import cito.sockjs.nio.WriteStream;
 public class EventSourceHandler extends AbstractSessionHandler {
 	private static final long serialVersionUID = -527374807374550532L;
 
+	static final String EVENTSOURCE = "eventsource";
 	private static final String CONTENT_TYPE_VALUE = "text/event-stream;charset=UTF-8";
 	private static final String PRELUDE = "\r\n";
 
@@ -86,18 +88,23 @@ public class EventSourceHandler extends AbstractSessionHandler {
 		}
 
 		@Override
-		public void send(String frame, boolean last) throws IOException {
-			// +15 represents the possible start/end frame
-			frame = StringEscapeUtils.escapeJson(frame);
-			final CharBuffer buf = CharBuffer.allocate(frame.length() + 15);
-			buf.append("data: a[\"").append(frame).append("\"]\r\n\r\n").flip();
-			final ByteBuffer byteBuf = UTF_8.encode(buf);
-			this.dest.write(byteBuf);
-			this.bytesSent += byteBuf.limit();
-			final boolean limitReached = this.bytesSent >= servlet.ctx.getConfig().maxStreamBytes();
-			if (limitReached) {
-				servlet.log("Limit to streaming bytes reached. Closing sender.");
-				close();
+		public void send(Queue<String> frames) throws IOException {
+			while (!frames.isEmpty()) {
+				String frame = frames.poll();
+				servlet.log("Flushing frame. [sessionId=" + this.session.getId() + ",frame=" + frame + "]");
+				frame = StringEscapeUtils.escapeJson(frame);
+				// +15 represents the possible start/end frame
+				final CharBuffer buf = CharBuffer.allocate(frame.length() + 15);
+				buf.append("data: a[\"").append(frame).append("\"]\r\n\r\n").flip();
+				final ByteBuffer byteBuf = UTF_8.encode(buf);
+				this.dest.write(byteBuf);
+				this.bytesSent += byteBuf.limit();
+				final boolean limitReached = this.bytesSent >= servlet.getConfig().maxStreamBytes();
+				if (limitReached) {
+					servlet.log("Limit to streaming bytes reached. Closing sender.");
+					close();
+					return;
+				}
 			}
 		}
 

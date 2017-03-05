@@ -21,6 +21,7 @@ import java.nio.CharBuffer;
 import java.nio.channels.Pipe;
 import java.nio.channels.Pipe.SinkChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.Queue;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -31,7 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 import cito.sockjs.nio.WriteStream;
 
 /**
- * Handles XHR Streaming ({@code <server>/session/xhr_streaming}) connections.
+ * Handles XHR Streaming ({@code /<server>/session/xhr_streaming}) connections.
  * 
  * @author Daniel Siviter
  * @since v1.0 [3 Jan 2017]
@@ -39,6 +40,7 @@ import cito.sockjs.nio.WriteStream;
 public class XhrStreamingHandler extends AbstractSessionHandler {
 	private static final long serialVersionUID = -527374807374550532L;
 
+	static final String XHR_STREAMING = "xhr_streaming";
 	private static final String CONTENT_TYPE_VALUE = "application/javascript;charset=UTF-8";
 	private static final String PRELUDE = StringUtils.leftPad("\n", 2049, "h");
 
@@ -86,18 +88,22 @@ public class XhrStreamingHandler extends AbstractSessionHandler {
 		}
 
 		@Override
-		public void send(String frame, boolean last) throws IOException {
-			frame = StringEscapeUtils.escapeJson(frame);
-			// +6 represents the possible start/end frame
-			final CharBuffer buf = CharBuffer.allocate(frame.length() + 6);
-			buf.append("a[\"").append(frame).append("\"]\n").flip();
-			final ByteBuffer byteBuf = UTF_8.encode(buf);
-			this.dest.write(byteBuf);
-			this.bytesSent += byteBuf.limit();
-			final boolean limitReached = this.bytesSent >= servlet.ctx.getConfig().maxStreamBytes();
-			if (limitReached) {
-				servlet.log("Limit to streaming bytes reached. Closing sender.");
-				close();
+		public void send(Queue<String> frames) throws IOException {
+			while (!frames.isEmpty()) {
+				String frame = frames.poll();
+				servlet.log("Flushing frame. [sessionId=" + this.session.getId() + ",frame=" + frame + "]");
+				frame = StringEscapeUtils.escapeJson(frame);
+				final CharBuffer buf = CharBuffer.allocate(frame.length() + 6);
+				buf.append("a[\"").append(frame).append("\"]\n").flip();
+				final ByteBuffer byteBuf = UTF_8.encode(buf);
+				this.dest.write(byteBuf);
+				this.bytesSent += byteBuf.limit();
+				final boolean limitReached = this.bytesSent >= servlet.getConfig().maxStreamBytes();
+				if (limitReached) {
+					servlet.log("Limit to streaming bytes reached. Closing sender.");
+					close();
+					return;
+				}
 			}
 		}
 

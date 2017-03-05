@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
  */
 public class InfoHandler extends AbstractHandler {
 	private static final long serialVersionUID = 4503408709378376273L;
+	static final String INFO = "info";
 
 	protected static final Logger LOG = LoggerFactory.getLogger(InfoHandler.class);
 
@@ -49,7 +50,7 @@ public class InfoHandler extends AbstractHandler {
 	@Override
 	protected void handle(HttpAsyncContext async) throws ServletException, IOException {
 		try (JsonGenerator generator = Json.createGenerator(async.getResponse().getWriter())) { // FIXME blocking
-			createJson(generator, generateEntropy(), true, this.servlet.ctx.isWebSocketSupported(), "*:*");
+			createJson(generator, generateEntropy(), true, this.servlet.isWebSocketSupported(), "*:*");
 		}
 		async.complete();
 	}

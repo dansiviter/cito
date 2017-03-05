@@ -17,6 +17,8 @@ package cito.sockjs;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -34,9 +36,6 @@ import javax.websocket.MessageHandler.Partial;
 import javax.websocket.MessageHandler.Whole;
 import javax.websocket.RemoteEndpoint.Basic;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * 
  * @author Daniel Siviter
@@ -48,15 +47,15 @@ public class ServletSession extends SessionAdapter {
 	private final Set<MessageHandlerWrapper> messageHandlers = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	private final LinkedTransferQueue<String> frameQueue = new LinkedTransferQueue<>();
 
-	private final Logger log;
+	private final Servlet servlet;
 	private final HttpServletRequest instigatingReq;
 	private final Endpoint endpoint;
 	private final Map<String, String> pathParams;
 
 	private Basic basic;
-	private boolean open = true;
-	//	private LocalDateTime lastflush;
-	private Sender sender;
+	private LocalDateTime closed;
+	private LocalDateTime lastSend;
+	private volatile Sender sender;
 
 	/**
 	 * 
@@ -64,15 +63,13 @@ public class ServletSession extends SessionAdapter {
 	 * @param instigatingReq
 	 * @throws ServletException
 	 */
-	public ServletSession(
-			Servlet servlet,
-			HttpServletRequest instigatingReq)
-					throws ServletException
+	public ServletSession(Servlet servlet, HttpServletRequest instigatingReq)
+	throws ServletException
 	{
-		this.log = LoggerFactory.getLogger(getClass());
+		this.servlet = servlet;
 		this.instigatingReq = instigatingReq;
-		this.endpoint = servlet.ctx.getConfig().createEndpoint();
-		this.pathParams = Util.pathParams(servlet.ctx.getConfig(), instigatingReq);
+		this.endpoint = servlet.getConfig().createEndpoint();
+		this.pathParams = Util.pathParams(servlet.getConfig(), instigatingReq);
 	}
 
 	/**
@@ -96,7 +93,7 @@ public class ServletSession extends SessionAdapter {
 
 	@Override
 	public boolean isOpen() {
-		return this.open;
+		return this.closed == null;
 	}
 
 	@Override
@@ -163,8 +160,16 @@ public class ServletSession extends SessionAdapter {
 
 	@Override
 	public void close(CloseReason closeReason) throws IOException {
-		this.log.info("Closing... [{}]", closeReason);
-		this.open = false;
+		this.servlet.log("Closing... [" + closeReason + "]", new Exception());
+		this.closed = LocalDateTime.now();
+		this.servlet.unregister(this.getId());
+	}
+
+	/**
+	 * @return the closed
+	 */
+	public LocalDateTime closedTime() {
+		return closed;
 	}
 
 	/**
@@ -172,28 +177,47 @@ public class ServletSession extends SessionAdapter {
 	 * @param sender
 	 * @throws IOException 
 	 */
-	synchronized void setSender(Sender sender) throws IOException {
-		if (this.sender != null && sender != null) {
-			throw new IllegalStateException("Sender already set!");
+	boolean setSender(Sender sender) throws IOException {
+		checkStillValid();
+		synchronized (this) {
+			if (this.sender != null && sender != null) {
+				return false; // Sender already set!
+			}
+			this.sender = sender;
 		}
-
-		this.sender = sender;
-		flush();
+		if (sender != null) {
+			flush();
+		}
+		return true;
 	}
 
 	/**
 	 * @throws IOException 
 	 */
-	private synchronized void flush() throws IOException {
+	private void flush() throws IOException {
+		checkStillValid();
 		if (this.sender == null) {
-			this.log.info("No sender. Ignoring flush. [sessionId={}]", getId());
+			this.servlet.log("No sender. Ignoring flush. [sessionId=" + getId() + "]");
 			return;
 		}
-		String frame;
-		while ((frame = this.frameQueue.poll()) != null && this.sender != null) {
-			this.log.info("Flushing frame. [sessionId={},frame={}]", getId(), frame);
-			this.sender.send(frame, this.frameQueue.isEmpty());
+		this.sender.send(this.frameQueue);
+		this.lastSend = LocalDateTime.now();
+	}
+
+	/**
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	private boolean checkStillValid() throws IOException {
+		if (!isOpen()) {
+			return false;
 		}
+		if (this.lastSend != null && this.lastSend.plus(5, ChronoUnit.SECONDS).isBefore(LocalDateTime.now())) {
+			close();
+			return false;
+		}
+		return true;
 	}
 
 	@Override
@@ -247,14 +271,14 @@ public class ServletSession extends SessionAdapter {
 
 		@Override
 		public void sendText(String msg) throws IOException {
-			log.info("Sending message. [sessionId={},msg={}]", getId(), msg);
+			servlet.log("Sending message. [sessionId=" + getId() + ",msg=" + msg + "]");
 			frameQueue.add(msg);
 			flush();
 		}
 
 		@Override
 		public void sendText(String msg, boolean last) throws IOException {
-			log.info("Sending message. [sessionId={},msg={},last={}]", getId(), msg, last);
+			servlet.log("Sending message. [sessionId=" + getId() + ",msg=" + msg + ",last=" + last + "]");
 			synchronized (this.buf) {
 				this.buf.append(msg);
 				if (last) {

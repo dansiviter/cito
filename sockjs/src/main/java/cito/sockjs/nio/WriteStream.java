@@ -42,13 +42,19 @@ public class WriteStream implements WriteListener {
 	private final Complete complete;
 
 	/**
+	 * Default completion handler will log if there is an error and complete the async. context.
 	 * 
 	 * @param async
 	 * @param src
 	 * @throws IOException
 	 */
 	public WriteStream(HttpAsyncContext async, ReadableByteChannel src) throws IOException {
-		this(async, src, () -> async.complete());
+		this(async, src, t -> {
+			if (t != null) {
+				async.getRequest().getServletContext().log("Unable to write entity!", t);
+			}
+			async.complete();
+		});
 	}
 
 	/**
@@ -72,7 +78,7 @@ public class WriteStream implements WriteListener {
 		while (this.out.isReady()) {
 			final int len = this.src.read(this.buffer);
 			if (len < 0) {
-				this.complete.onComplete();
+				this.complete.onComplete(null);
 				return;
 			}
 			this.buffer.flip();
@@ -84,9 +90,8 @@ public class WriteStream implements WriteListener {
 
 	@Override
 	public void onError(Throwable t) {
-		this.async.getRequest().getServletContext().log("Unable to write entity!", t);
 		try {
-			this.complete.onComplete();
+			this.complete.onComplete(t);
 		} catch (IOException e) {
 			this.async.getRequest().getServletContext().log("Unable to complete!", e);
 		}

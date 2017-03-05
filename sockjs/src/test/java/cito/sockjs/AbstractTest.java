@@ -90,10 +90,31 @@ public abstract class AbstractTest {
 
 	/**
 	 * 
+	 * @param type
+	 * @return
+	 */
+	protected WebTarget target(EndpointType type) {
+		return client().target(this.deploymenUri).path(type.name().toLowerCase());
+	}
+
+	/**
+	 * 
 	 * @return
 	 */
 	protected WebTarget target() {
-		return client().target(this.deploymenUri).path("test");
+		return target(EndpointType.ECHO);
+	}
+
+	/**
+	 * 
+	 * @param type
+	 * @param server
+	 * @param session
+	 * @param handler
+	 * @return
+	 */
+	protected WebTarget target(EndpointType type, String server, String session, String handler) {
+		return target(type).path(server).path(session).path(handler);
 	}
 
 	/**
@@ -264,7 +285,8 @@ public abstract class AbstractTest {
 		return create(JARArchive.class)
 				.addAsServiceProvider(ServletContainerInitializer.class, Initialiser.class)
 				.addPackages(true, "cito/sockjs")
-				.addAsResource("cito/sockjs/iframe.html");
+				.addAsResource("cito/sockjs/iframe.html")
+				.addAsResource("cito/sockjs/htmlfile.html");
 	}
 
 	/**
@@ -274,11 +296,24 @@ public abstract class AbstractTest {
 		return create(WebArchive.class)
 				.addAsLibrary(createJar())
 				.addAsLibrary(create(JARArchive.class).addPackages(true, "org/apache/commons/lang3"))
-				.addClass(TestConfig.class);
+				.addAsLibrary(create(JARArchive.class).addPackages(true, "org/apache/commons/io"))
+				.addAsLibrary(create(JARArchive.class).addPackages(true, "javax/json", "org/glassfish/json"))
+				.addClass(TestConfig.class)
+				.addClass(TestCloseConfig.class);
 	}
 
 
 	// --- Inner Classes ---
+
+	/**
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [2 Mar 2017]
+	 */
+	protected enum EndpointType {
+		ECHO,
+		CLOSE
+	}
 
 	/**
 	 * Loaded by {@link Initialiser}.
@@ -289,7 +324,7 @@ public abstract class AbstractTest {
 	public static class TestConfig implements Config {
 		@Override
 		public String path() {
-			return "test";
+			return "echo";
 		}
 
 		@Override
@@ -300,6 +335,24 @@ public abstract class AbstractTest {
 		@Override
 		public int maxStreamBytes() {
 			return 4_096;
+		}
+	}
+
+	/**
+	 * Loaded by {@link Initialiser}.
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [4 Jan 2017]
+	 */
+	public static class TestCloseConfig implements Config {
+		@Override
+		public String path() {
+			return "close";
+		}
+
+		@Override
+		public Class<? extends Endpoint> endpointClass() {
+			return CloseEndpoint.class;
 		}
 	}
 

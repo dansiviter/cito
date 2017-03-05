@@ -71,5 +71,3 @@ public abstract class AbstractSessionHandler extends AbstractHandler {
 	protected abstract void handle(HttpAsyncContext async, ServletSession session, boolean initial)
 			throws ServletException, IOException;
 }
-
-

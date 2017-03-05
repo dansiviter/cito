@@ -24,13 +24,11 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
-import org.wildfly.swarm.undertow.WARArchive;
 
 /**
- * Unit test for {@link GreetingHandler}.
+ * Unit test for {@link GreetingServlet}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [29 Dec 2016]
@@ -70,7 +68,6 @@ public class GreetingTest extends AbstractTest {
 		for (String path : paths) {
 			target = target.path(path);
 		}
-		System.out.println(target.getUri());
 		final Response res = target.request().get();
 		assertEquals(404, res.getStatus());
 		res.close();
