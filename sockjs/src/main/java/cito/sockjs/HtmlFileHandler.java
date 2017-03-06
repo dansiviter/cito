@@ -16,13 +16,22 @@
  */
 package cito.sockjs;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.Pipe;
+import java.nio.channels.Pipe.SinkChannel;
+import java.nio.channels.WritableByteChannel;
+import java.util.Queue;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import cito.sockjs.nio.WriteStream;
 
@@ -35,7 +44,7 @@ public class HtmlFileHandler extends AbstractSessionHandler {
 
 	static final String HTMLFILE = "htmlfile";
 
-	private byte[] template;
+	private String prelude;
 
 	/**
 	 * 
@@ -48,7 +57,9 @@ public class HtmlFileHandler extends AbstractSessionHandler {
 	@Override
 	public HtmlFileHandler init() throws ServletException {
 		try {
-			this.template = Util.resource(getClass(), "htmlfile.html");
+			this.prelude = Util.resourceToString(getClass(), "htmlfile.html");
+			this.prelude = StringUtils.rightPad(this.prelude, 1_024);
+			this.prelude += "\r\n";
 		} catch (IOException e) {
 			throw new ServletException("Unable to load template!", e);
 		}
@@ -57,18 +68,88 @@ public class HtmlFileHandler extends AbstractSessionHandler {
 
 	@Override
 	protected void handle(HttpAsyncContext async, ServletSession session, boolean initial)
-	throws ServletException, IOException
+			throws ServletException, IOException
 	{
 		final HttpServletResponse res = async.getResponse();
 
-		final ReadableByteChannel htmlFileChannel = Channels.newChannel(new ByteArrayInputStream(this.template));
-		res.getOutputStream().setWriteListener(new WriteStream(async, htmlFileChannel, t -> {
-			async.complete();
-			htmlFileChannel.close();
+		final Pipe pipe = Pipe.open();
+		session.setSender(new HtmlFileSender(session, pipe.sink()));
 
-			if (t != null) {
-				async.getRequest().getServletContext().log("Unable to read entity!", t);
+		final String callback = getCallback(async.getRequest());
+		if (callback == null || callback.isEmpty()) {
+			this.servlet.log("Callback expected.");
+			sendErrorNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "\"callback\" parameter required");
+			return;
+		}
+
+		res.getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
+		final String prelude = String.format(this.prelude, callback);
+		pipe.sink().write(UTF_8.encode(CharBuffer.wrap(prelude)));
+		if (initial) {
+			pipe.sink().write(UTF_8.encode(CharBuffer.wrap("<script>\np(\"o\");\n</script>\r\n")));
+		}
+	}
+
+
+	// --- Static Methods ---
+
+	/**
+	 * 
+	 * @param request
+	 * @return
+	 */
+	private static String getCallback(HttpServletRequest request) {
+		String value = request.getParameter("c");
+		try {
+			return StringUtils.isEmpty(value) ? null : URLDecoder.decode(value, "UTF8");
+		} catch (UnsupportedEncodingException e) {
+			throw new IllegalStateException(e); // UTF-8 should always be supported!
+		}
+	}
+
+
+	// --- Inner Classes ---
+
+	/**
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [25 Feb 2017]
+	 */
+	private class HtmlFileSender implements Sender {
+		private final ServletSession session;
+		private final WritableByteChannel dest;
+		private int bytesSent;
+
+		public HtmlFileSender(ServletSession session, SinkChannel dest) {
+			this.session = session;
+			this.dest = dest;
+		}
+
+		@Override
+		public void send(Queue<String> frames) throws IOException {
+			while (!frames.isEmpty()) {
+				String frame = frames.poll();
+				servlet.log("Flushing frame. [sessionId=" + this.session.getId() + ",frame=" + frame + "]");
+				frame = StringEscapeUtils.escapeJson(frame);
+				// +34 represents the possible start/end frame
+				final CharBuffer buf = CharBuffer.allocate(frame.length() + 34);
+				buf.append("<script>\np(\"a[\\\"").append(frame).append("\\\"]\");\n</script>\r\n").flip();
+				final ByteBuffer byteBuf = UTF_8.encode(buf);
+				this.dest.write(byteBuf);
+				this.bytesSent += byteBuf.limit();
+				final boolean limitReached = this.bytesSent >= servlet.getConfig().maxStreamBytes();
+				if (limitReached) {
+					servlet.log("Limit to streaming bytes reached. Closing sender.");
+					close();
+					return;
+				}
 			}
-		}));
+		}
+
+		@Override
+		public void close() throws IOException {
+			this.session.setSender(null);
+			this.dest.close();
+		}
 	}
 }

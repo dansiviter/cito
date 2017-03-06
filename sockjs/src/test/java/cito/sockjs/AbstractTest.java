@@ -24,9 +24,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -300,6 +304,15 @@ public abstract class AbstractTest {
 				.addAsLibrary(create(JARArchive.class).addPackages(true, "javax/json", "org/glassfish/json"))
 				.addClass(TestConfig.class)
 				.addClass(TestCloseConfig.class);
+	}
+
+	/**
+	 * 
+	 * @param is
+	 * @return
+	 */
+	protected static BufferedReader toReader(InputStream is) {
+		return new BufferedReader(new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)));
 	}
 
 

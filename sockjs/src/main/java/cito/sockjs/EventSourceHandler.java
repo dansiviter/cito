@@ -59,8 +59,13 @@ public class EventSourceHandler extends AbstractSessionHandler {
 		final HttpServletResponse res = async.getResponse();
 
 		final Pipe pipe = Pipe.open();
-		session.setSender(new EventSourceSender(session, initial, pipe.sink()));
+		session.setSender(new EventSourceSender(session, pipe.sink()));
 		res.getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
+
+		pipe.sink().write(UTF_8.encode(CharBuffer.wrap(PRELUDE)));
+		if (initial) {
+			pipe.sink().write(UTF_8.encode(CharBuffer.wrap("data: o\r\n\r\n")));
+		}
 	}
 
 
@@ -76,15 +81,9 @@ public class EventSourceHandler extends AbstractSessionHandler {
 		private final WritableByteChannel dest;
 		private int bytesSent;
 
-		public EventSourceSender(ServletSession session, boolean initial, SinkChannel dest) throws IOException {
+		public EventSourceSender(ServletSession session, SinkChannel dest) throws IOException {
 			this.session = session;
 			this.dest = dest;
-
-			this.dest.write(UTF_8.encode(CharBuffer.wrap(PRELUDE)));
-
-			if (initial) {
-				this.dest.write(UTF_8.encode(CharBuffer.wrap("data: o\r\n\r\n")));
-			}
 		}
 
 		@Override

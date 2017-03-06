@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.Entity;
@@ -118,8 +119,7 @@ public class XhrTest extends AbstractTest {
 		verifyNotCached(res);
 
 		// The transport must first send 2KiB of h bytes as prelude.
-		final InputStream is = res.readEntity(InputStream.class);
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+		try (BufferedReader reader = toReader(res.readEntity(InputStream.class))) {
 			assertEquals(StringUtils.leftPad("", 2048, "h"), reader.readLine());
 			assertEquals("o", reader.readLine());
 
@@ -145,7 +145,7 @@ public class XhrTest extends AbstractTest {
 		final Response res = target("000", uuid, XHR_STREAMING).request().post(Entity.json(null));
 
 		final InputStream is = res.readEntity(InputStream.class);
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
 			assertEquals(StringUtils.leftPad("", 2048, "h"), reader.readLine());
 			assertEquals("o", reader.readLine());
 

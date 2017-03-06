@@ -24,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.Entity;
@@ -68,8 +69,7 @@ public class EventSourceTest extends AbstractTest {
 		verifyNotCached(res);
 
 		// The transport must first send a new line prelude, due to a bug in Opera.
-		final InputStream is = res.readEntity(InputStream.class);
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+		try (BufferedReader reader = toReader(res.readEntity(InputStream.class))) {
 			assertEquals("", reader.readLine());
 			assertEquals("data: o", reader.readLine());
 			assertEquals("", reader.readLine());

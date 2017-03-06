@@ -6,7 +6,7 @@
 
 	<container qualifier="jboss" default="true">
 		<configuration>
-			<!-- <property name="javaVmArguments">-agentlib:jdwp=transport=dt_socket,address=9090,server=y,suspend=y -Dswarm.logging=DEBUG</property> -->
+			<!-- <property name="javaVmArguments">-agentlib:jdwp=transport=dt_socket,address=9090,server=y,suspend=y</property> -->
 			<!-- <property name="javaVmArguments">-Dswarm.logging=INFO</property> -->
 		</configuration>
 	</container>
