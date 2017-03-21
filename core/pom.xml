@@ -36,9 +36,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>io.reactivex.rxjava2</groupId>
-			<artifactId>rxjava</artifactId>
-			<version>2.0.4</version>
+			<groupId>net.sourceforge.streamsupport</groupId>
+			<artifactId>streamsupport-flow</artifactId>
+			<version>1.5.3</version>
 		</dependency>
 
 		<!-- TODO remove into separate library -->

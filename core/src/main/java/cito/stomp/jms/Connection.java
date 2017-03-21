@@ -55,7 +55,7 @@ public class Connection extends AbstractConnection {
 
 	@Inject
 	private Factory factory;
-	@Inject
+	@Inject // XXX use ManagedScheduledExecutorService?
 	private ScheduledExecutorService scheduler;
 
 	private HeartBeatMonitor heartBeatMonitor;
@@ -78,7 +78,9 @@ public class Connection extends AbstractConnection {
 	@Override
 	public void sendToClient(Frame frame) {
 		this.heartBeatMonitor.resetSend();
-		this.log.info("Sending message to client. [sessionId={},command={}]", this.sessionId, frame.getCommand());
+		final Command command = frame.getCommand();
+		this.log.info("Sending message to client. [sessionId={},command={}]",
+				this.sessionId, command != null ? command : "HEARTBEAT");
 		this.relay.send(new MessageEvent(this.sessionId, frame));
 	}
 

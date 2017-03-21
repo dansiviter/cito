@@ -53,8 +53,7 @@ public class ServletSession extends SessionAdapter {
 	private final Map<String, String> pathParams;
 
 	private Basic basic;
-	private LocalDateTime closed;
-	private LocalDateTime lastSend;
+	private LocalDateTime active, closed;
 	private volatile Sender sender;
 
 	/**
@@ -70,6 +69,7 @@ public class ServletSession extends SessionAdapter {
 		this.instigatingReq = instigatingReq;
 		this.endpoint = servlet.getConfig().createEndpoint();
 		this.pathParams = Util.pathParams(servlet.getConfig(), instigatingReq);
+		this.active = LocalDateTime.now();
 	}
 
 	/**
@@ -160,9 +160,17 @@ public class ServletSession extends SessionAdapter {
 
 	@Override
 	public void close(CloseReason closeReason) throws IOException {
-		this.servlet.log("Closing... [" + closeReason + "]", new Exception());
-		this.closed = LocalDateTime.now();
-		this.servlet.unregister(this.getId());
+		this.servlet.log("Closing session. [id=" + getId() + ",reason=" + closeReason + "]");
+		this.servlet.unregister(this);
+		this.closed = this.active = LocalDateTime.now();
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public LocalDateTime activeTime() {
+		return this.active;
 	}
 
 	/**
@@ -178,7 +186,9 @@ public class ServletSession extends SessionAdapter {
 	 * @throws IOException 
 	 */
 	boolean setSender(Sender sender) throws IOException {
-		checkStillValid();
+		if (checkStillValid()) {
+			
+		}
 		synchronized (this) {
 			if (this.sender != null && sender != null) {
 				return false; // Sender already set!
@@ -201,7 +211,7 @@ public class ServletSession extends SessionAdapter {
 			return;
 		}
 		this.sender.send(this.frameQueue);
-		this.lastSend = LocalDateTime.now();
+		this.active = LocalDateTime.now();
 	}
 
 	/**
@@ -213,7 +223,7 @@ public class ServletSession extends SessionAdapter {
 		if (!isOpen()) {
 			return false;
 		}
-		if (this.lastSend != null && this.lastSend.plus(5, ChronoUnit.SECONDS).isBefore(LocalDateTime.now())) {
+		if (this.active != null && this.active.plus(5, ChronoUnit.SECONDS).isBefore(LocalDateTime.now())) {
 			close();
 			return false;
 		}

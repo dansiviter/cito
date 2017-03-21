@@ -34,6 +34,7 @@ import cito.annotation.Qualifiers;
 import cito.event.ClientMessageEventProducer;
 import cito.event.MessageEvent;
 import cito.stomp.Frame;
+import cito.stomp.jms.Relay;
 
 /**
  * 
@@ -47,6 +48,8 @@ public abstract class AbstractServer extends Endpoint {
 	private BeanManager beanManager;
 	@Inject
 	private SessionRegistry registry;
+	@Inject
+	private Relay relay;
 	@Inject @FromClient
 	private Event<MessageEvent> messageEvent;
 	@Inject
@@ -88,6 +91,7 @@ public abstract class AbstractServer extends Endpoint {
 		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
 			final MessageEvent event = new MessageEvent(session.getId(), frame);
 			try (QuietClosable closable = ClientMessageEventProducer.set(event)) {
+				this.relay.fromClient(event); // due to no @Observe @Priority we need to ensure the relay gets this first
 				this.messageEvent.select(fromClient()).fire(event);
 			}
 		}

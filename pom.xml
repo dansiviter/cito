@@ -99,7 +99,7 @@
 			<dependency>
 				<groupId>org.wildfly.swarm</groupId>
 				<artifactId>bom-all</artifactId>
-				<version>2017.3.2</version>
+				<version>2017.3.3</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

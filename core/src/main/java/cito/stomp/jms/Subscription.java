@@ -57,16 +57,19 @@ public class Subscription implements MessageListener {
 		this.id = id;
 		this.destination = session.toDestination(frame.getFirstHeader(Headers.DESTINATION));
 
+		final String sessionId = this.session.getConnection().getSessionId();
 		// only consume messages that are for everyone OR only for me
 		String selector = frame.getFirstHeader(Headers.SELECTOR);
 		if (selector == null) {
-			selector = String.format(SELECTOR, this.session.getConnection().getSessionId());
+			selector = String.format(SELECTOR, sessionId);
 		} else {
-			selector = String.format(COMPLEX_SELECTOR, this.session.getConnection().getSessionId(), selector);
+			selector = String.format(COMPLEX_SELECTOR, sessionId, selector);
 		}
 
 		this.consumer = session.createConsumer(this.destination, selector);
 		this.consumer.setMessageListener(this);
+
+		LOG.debug("Created subscription. [sessionId={},id={},destination={},selector={}]", sessionId, id, this.destination, selector);
 	}
 
 	/**

@@ -39,9 +39,8 @@ public class JsonPHandler extends AbstractSessionHandler {
 
 	@Override
 	protected void handle(HttpAsyncContext async, ServletSession session, boolean initial)
-			throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		
+	throws ServletException, IOException
+	{
+		throw new UnsupportedOperationException("TODO");
 	}
-
 }

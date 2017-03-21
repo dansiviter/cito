@@ -80,6 +80,8 @@ public class SystemConnection extends AbstractConnection {
 			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + getSessionId() + " OR null,actual=" + msg.sessionId() + "]");
 		}
 
+		this.log.debug("Message event. [sessionId={}]", sessionId);
+
 		try {
 			getSession().sendToBroker(msg.frame());
 		} catch (JMSException e) {

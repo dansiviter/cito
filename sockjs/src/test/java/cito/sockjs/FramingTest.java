@@ -18,7 +18,9 @@ package cito.sockjs;
 import static cito.sockjs.XhrHandler.XHR;
 import static cito.sockjs.XhrSendHandler.XHR_SEND;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import javax.ws.rs.client.Entity;
@@ -28,7 +30,6 @@ import javax.ws.rs.core.Response.Status;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -38,14 +39,20 @@ import org.junit.Test;
  * @since v1.0 [3 Jan 2017]
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-42">SockJS 0.3.3 Framing</a>
  */
-@Ignore
 public class FramingTest extends AbstractTest {
 	/**
-	 * When server receives a request with unknown session_id it must recognize that as request for a new session. When server opens a new sesion it must immediately send an frame containing a letter o.
+	 * When server receives a request with unknown session_id it must recognize that as request for a new session. When
+	 * server opens a new session it must immediately send an frame containing a letter o.
+	 * </p>
+	 * Note: this test may periodically fail as we're relying on a multicore processor an non-blocking IO being
+	 * reliable. This isn't ideal as tests should be determinate!
+	 * 
+	 * @throws ExecutionException 
+	 * @throws InterruptedException 
 	 */
 	@Test
 	@RunAsClient
-	public void simpleSession() {
+	public void simpleSession() throws InterruptedException, ExecutionException {
 		final String uuid = uuid();
 		Response res = target("000", uuid, XHR).request().post(Entity.json(null));
 
@@ -77,26 +84,43 @@ public class FramingTest extends AbstractTest {
 
 		// The server must not allow two receiving connections to wait on a single session. In such case the server must
 		// send a close frame to the new connection.
-		for (int i = 0; i < 20; i++) {
+		for (int i = 0; i < 10; i++) {
 			res = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"xxxxxx\"]"));
 			assertEquals(Status.NO_CONTENT, res.getStatusInfo());
 		}
 
-		Future<Response> asyncFuture = target("000", uuid, XHR).request().async().post(Entity.json(null));
+		// Due to the time it takes for an async request to be scheduled it might actually be the one that returns the
+		// 'another connection still open' error. Therefore we need to check both.
+		final Future<Response> asyncFuture = target("000", uuid, XHR).request().async().post(Entity.json(null));
+
 		res = target("000", uuid, XHR).request().post(Entity.json(null));
 		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("c[2010,\"Another connection still open\"]\n", res.readEntity(String.class));
+		final String resPayload = res.readEntity(String.class);
+
+		final Response asyncRes = asyncFuture.get();
+		assertEquals(Status.OK, asyncRes.getStatusInfo());
+		final String asyncResPayload = asyncRes.readEntity(String.class);
+
+		final String expectedError = "c[2010,\"Another connection still open\"]\n";
+		if (!expectedError.equals(resPayload) && !expectedError.equals(asyncResPayload)) {
+			fail("Neither response had '" + expectedError + "'! [blocking=" + resPayload + ",async=" + asyncResPayload + "]");
+		}
+
+		final String expected = "a[\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\"]\n";
+		if (!expected.equals(resPayload) && !expected.equals(asyncResPayload)) {
+			fail("Neither response had '" + expected + "'! [blocking=" + resPayload + ",async=" + asyncResPayload + "]");
+		}
 
 		asyncFuture.cancel(true);
-
 	}
 
 	/**
 	 * The server may terminate the connection, passing error code and message.
+	 * @throws InterruptedException 
 	 */
 	@Test
 	@RunAsClient
-	public void closeSession() {
+	public void closeSession() throws InterruptedException {
 		final String uuid = uuid();
 		Response r = target(EndpointType.CLOSE, "000", uuid, XHR).request().post(Entity.json(null));
 		assertEquals(Status.OK, r.getStatusInfo());
@@ -107,9 +131,15 @@ public class FramingTest extends AbstractTest {
 		assertEquals("c[3000,\"Go away!\"]\n", r.readEntity(String.class));
 
 		// Until the timeout occurs, the server must constantly serve the close message.
+		for (int i = 0; i <= 4; i++) {
+			r = target(EndpointType.CLOSE, "000", uuid, XHR).request().post(Entity.json(null));
+			assertEquals("Iteration " + i, Status.OK, r.getStatusInfo());
+			assertEquals("Iteration " + i, "c[3000,\"Go away!\"]\n", r.readEntity(String.class));
+			Thread.sleep(1_000);
+		}
 		r = target(EndpointType.CLOSE, "000", uuid, XHR).request().post(Entity.json(null));
 		assertEquals(Status.OK, r.getStatusInfo());
-		assertEquals("c[3000,\"Go away!\"]\n", r.readEntity(String.class));
+		assertEquals("o\n", r.readEntity(String.class));
 	}
 
 

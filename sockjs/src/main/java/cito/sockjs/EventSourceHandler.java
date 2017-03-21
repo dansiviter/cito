@@ -65,7 +65,11 @@ public class EventSourceHandler extends AbstractSessionHandler {
 		pipe.sink().write(UTF_8.encode(CharBuffer.wrap(PRELUDE)));
 		if (initial) {
 			pipe.sink().write(UTF_8.encode(CharBuffer.wrap("data: o\r\n\r\n")));
-		}
+		} else if (!session.isOpen()) {
+			this.servlet.log("Session closed! [" + session.getId() + "]");
+			pipe.sink().write(UTF_8.encode(closeFrame(3000, "Go away!", "\n")));
+			pipe.sink().close();
+		} 
 	}
 
 

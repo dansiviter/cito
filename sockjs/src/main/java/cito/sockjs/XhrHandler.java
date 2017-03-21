@@ -52,17 +52,20 @@ public class XhrHandler extends AbstractSessionHandler {
 	throws ServletException, IOException
 	{
 		final Pipe pipe = Pipe.open();
-		final WritableByteChannel dest = pipe.sink();
 		async.getResponse().getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
 
 		if (initial) {
-			dest.write(UTF_8.encode(CharBuffer.wrap("o\n")));
-			dest.close();
+			pipe.sink().write(UTF_8.encode(CharBuffer.wrap("o\n")));
+			pipe.sink().close();
+		} else if (!session.isOpen()) {
+			this.servlet.log("Session closed! [" + session.getId() + "]");
+			pipe.sink().write(UTF_8.encode(closeFrame(3000, "Go away!", "\n")));
+			pipe.sink().close();
 		} else {
-			try (Sender sender = new XhrSender(session, dest)) {
+			try (Sender sender = new XhrSender(session, pipe.sink())) {
 				if (!session.setSender(sender)) {
 					this.servlet.log("Connection still open! [" + session.getId() + "]");
-					dest.write(UTF_8.encode(closeFrame(2010, "Another connection still open", "\n")));
+					pipe.sink().write(UTF_8.encode(closeFrame(2010, "Another connection still open", "\n")));
 				}
 			}
 		}

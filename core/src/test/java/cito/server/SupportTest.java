@@ -51,10 +51,10 @@ import org.slf4j.Logger;
 import cito.event.MessageEvent;
 import cito.ext.Serialiser;
 import cito.server.SessionRegistry;
-import cito.server.Support;
+import cito.server.MessagingSupport;
 
 /**
- * Unit test for {@link Support}.
+ * Unit test for {@link MessagingSupport}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [25 Jul 2016]
@@ -221,5 +221,5 @@ public class SupportTest {
 	 * @author Daniel Siviter
 	 * @since v1.0 [31 Oct 2016]
 	 */
-	private static class Concrete extends Support { }
+	private static class Concrete extends MessagingSupport { }
 }

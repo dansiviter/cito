@@ -34,12 +34,12 @@ import cito.event.MessageEvent;
  * @since v1.0 [23 Nov 2016]
  */
 @ApplicationScoped
-public class PathParamProvider {
+public class PathParamProducer {
 	private static final Map<String, PathParser> PARSERS = new WeakHashMap<>();
 	private static final ThreadLocal<PathParser> HOLDER = new ThreadLocal<>();
 
 	@Produces @Dependent
-	public static PathParser get() {
+	public static PathParser pathParser() {
 		return HOLDER.get();
 	}
 
@@ -57,7 +57,7 @@ public class PathParamProvider {
 	 * @param e
 	 */
 	public static QuietClosable set(PathParser e) {
-		final PathParser old = get();
+		final PathParser old = pathParser();
 		if (old != null) {
 			throw new IllegalStateException("Already set!");
 		}

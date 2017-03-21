@@ -62,17 +62,6 @@ public class SessionTest {
 	}
 
 	@Test
-	public void getProducer() throws JMSException {
-		when(this.delegate.createProducer(null)).thenReturn(this.producer);
-
-		this.session.getProducer();
-
-		verify(this.delegate).createProducer(null);
-
-		this.session.getProducer();
-	}
-
-	@Test
 	public void send_frame() throws JMSException {
 		ReflectionUtil.set(this.session, "producer", this.producer);
 		final Frame frame = mock(Frame.class);

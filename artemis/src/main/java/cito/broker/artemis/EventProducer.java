@@ -50,7 +50,7 @@ import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.slf4j.Logger;
 
 import cito.Glob;
-import cito.PathParamProvider;
+import cito.PathParamProducer;
 import cito.QuietClosable;
 import cito.ReflectionUtil;
 import cito.annotation.OnAdded;
@@ -170,7 +170,7 @@ public class EventProducer implements MessageListener {
 				if (!Glob.from(value).matches(destination)) {
 					continue;
 				}
-				try (QuietClosable closable = PathParamProvider.set(value)) {
+				try (QuietClosable closable = PathParamProducer.set(value)) {
 					om.notify(evt);
 				}
 			}

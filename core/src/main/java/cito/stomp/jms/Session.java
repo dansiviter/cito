@@ -59,6 +59,19 @@ public class Session {
 
 	/**
 	 * 
+	 * @param consumer
+	 * @return
+	 * @throws JMSException
+	 */
+	private synchronized void withProducer(ProducerFunction consumer) throws JMSException {
+		if (this.producer == null) {
+			this.producer = this.delegate.createProducer(null);
+		}
+		consumer.apply(this.producer);
+	}
+
+	/**
+	 * 
 	 * @return
 	 * @throws JMSException
 	 */
@@ -76,18 +89,6 @@ public class Session {
 
 	public Destination toDestination(String destination) throws JMSException {
 		return withSession(s -> this.factory.toDestination(s, destination));
-	}
-
-	/**
-	 * 
-	 * @return
-	 * @throws JMSException
-	 */
-	public MessageProducer getProducer() throws JMSException {
-		if (this.producer == null) {
-			this.producer = withSession(s -> s.createProducer(null));
-		}
-		return this.producer;
 	}
 
 	/**
@@ -110,7 +111,7 @@ public class Session {
 		String destinationName = frame.destination();
 		final Message message = withSession(s -> this.factory.toMessage(s, frame));
 		final Destination destination = withSession(s -> this.factory.toDestination(s, destinationName));
-		getProducer().send(destination, message);
+		withProducer(p -> p.send(destination, message));
 	}
 
 	/**
@@ -155,5 +156,23 @@ public class Session {
 		 * @return the function result
 		 */
 		R apply(javax.jms.Session s) throws JMSException;
+	}
+
+	/**
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [3 Feb 2017]
+	 * @param <R>
+	 */
+	@FunctionalInterface
+	private interface ProducerFunction {
+
+		/**
+		 * Applies this function to the given argument.
+		 *
+		 * @param p the producer
+		 * @return the function result
+		 */
+		void apply(javax.jms.MessageProducer p) throws JMSException;
 	}
 }

@@ -26,7 +26,6 @@ import java.util.Map;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Event;
-import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 
@@ -48,7 +47,8 @@ import cito.stomp.Frame;
  * @author Daniel Siviter
  * @since v1.0 [27 Jul 2016]
  */
-public abstract class Support {
+@Dependent
+public class MessagingSupport {
 	@Inject
 	private Logger log;
 	@Inject
@@ -221,29 +221,5 @@ public abstract class Support {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-
-	// --- Static Methods ---
-
-	/**
-	 * @return an instance of Support for {@link Inject} use-case.
-	 */
-	@Produces @Dependent
-	public static MessagingSupport support() {
-		return new MessagingSupport();
-	}
-
-
-	// --- Inner Classes ---
-
-	/**
-	 * Concrete version for injection.
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [9 Nov 2016]
-	 */
-	public static class MessagingSupport extends Support { 
-		MessagingSupport() { }
 	}
 }

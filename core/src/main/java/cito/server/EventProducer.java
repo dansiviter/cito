@@ -18,7 +18,6 @@ package cito.server;
 import static cito.Util.getAnnotations;
 
 import java.lang.annotation.Annotation;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -30,7 +29,7 @@ import javax.enterprise.inject.spi.ObserverMethod;
 import javax.inject.Inject;
 
 import cito.Glob;
-import cito.PathParamProvider;
+import cito.PathParamProducer;
 import cito.QuietClosable;
 import cito.ReflectionUtil;
 import cito.annotation.OnConnected;
@@ -100,21 +99,6 @@ public class EventProducer {
 	/**
 	 * 
 	 * @param annotation
-	 * @param annocations
-	 * @return
-	 */
-	private static <A extends Annotation> boolean matches(Class<A> annotation, Collection<? extends Annotation> annotations, String destination) {
-		for (A a : getAnnotations(annotation, annotations)) {
-			if (Glob.from(ReflectionUtil.invoke(a, "value")).matches(destination)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * 
-	 * @param annotation
 	 * @param observerMethods
 	 * @param destination
 	 * @param evt
@@ -126,7 +110,7 @@ public class EventProducer {
 				if (!Glob.from(value).matches(destination)) {
 					continue;
 				}
-				try (QuietClosable closable = PathParamProvider.set(value)) {
+				try (QuietClosable closable = PathParamProducer.set(value)) {
 					om.notify(evt);
 				}
 			}

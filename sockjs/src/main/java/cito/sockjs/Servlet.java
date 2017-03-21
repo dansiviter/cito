@@ -27,9 +27,13 @@ import static cito.sockjs.XhrSendHandler.XHR_SEND;
 import static cito.sockjs.XhrStreamingHandler.XHR_STREAMING;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.AsyncContext;
@@ -51,6 +55,8 @@ public class Servlet extends GenericServlet {
 
 	private final Map<String, AbstractHandler> handers = new HashMap<>();
 	private final Map<String, ServletSession> sessions = new ConcurrentHashMap<>();
+	// XXX Should I use ManagedScheduledExecutorService?
+	private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 	private final Config config;
 
 	private boolean webSocketSupported;
@@ -149,7 +155,7 @@ public class Servlet extends GenericServlet {
 	protected ServletSession getSession(HttpServletRequest req) throws ServletException {
 		final String sessionId = Util.session(this.config, req);
 		final ServletSession session = this.sessions.get(sessionId);
-//		this.executor.submit(this::cleanupSessions);
+		this.scheduler.scheduleWithFixedDelay(this::cleanupSessions, 5, 5, TimeUnit.SECONDS);
 		return session;
 	}
 
@@ -169,11 +175,22 @@ public class Servlet extends GenericServlet {
 	}
 
 	/**
-	 * @param id
+	 * 
+	 * @param session
 	 */
-	public void unregister(String id) {
-		// TODO Auto-generated method stub
-		
+	public void unregister(ServletSession session) {
+		final String id = session.getId();
+		// if super old, remove straight away
+		if (session.activeTime().isBefore(LocalDateTime.now().minus(5, ChronoUnit.SECONDS))) {
+			log("Removing session straight away. [id=" + id + "]");
+			this.sessions.remove(id);
+			return;
+		}
+
+		this.scheduler.schedule(() -> {
+			log("Removing session after delay. [id=" + id + "]");
+			this.sessions.remove(id);
+		}, 5, TimeUnit.SECONDS); 
 	}
 
 	/**
@@ -199,5 +216,23 @@ public class Servlet extends GenericServlet {
 		log("Error while servicing request!", t);
 		async.getResponse().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		async.complete();
+	}
+
+	/**
+	 * 
+	 */
+	private void cleanupSessions() {
+		log("Cleaning up inactive sessions!");
+
+		this.sessions.forEach((k, v) -> {
+			final String id = v.getId();
+			if (v.activeTime().isBefore(LocalDateTime.now().plus(5, ChronoUnit.SECONDS))) {
+				try {
+					v.close();
+				} catch (IOException e) {
+					log("Error closing session! [" + id + "]", e);
+				}
+			}
+		});
 	}
 }

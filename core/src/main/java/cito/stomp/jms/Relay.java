@@ -31,7 +31,6 @@ import javax.websocket.Session;
 import org.slf4j.Logger;
 
 import cito.annotation.FromBroker;
-import cito.annotation.FromClient;
 import cito.annotation.FromServer;
 import cito.annotation.OnClose;
 import cito.event.MessageEvent;
@@ -68,26 +67,34 @@ public class Relay {
 
 	/**
 	 * 
-	 * @param msg
+	 * @param evt
 	 */
-	public void clientMessage(@Observes @FromClient MessageEvent msg) {
-		final String sessionId = msg.sessionId() != null ? msg.sessionId() : SystemConnection.SESSION_ID;
+	public void fromClient(MessageEvent evt) {
+		this.log.debug("Message from client. [sessionId={},command={}]", evt.sessionId(), evt.frame().getCommand());
 
-		final boolean permitted = this.securityRegistry.isPermitted(msg.frame(), this.securityCtx.get());
+		final boolean permitted = this.securityRegistry.isPermitted(evt.frame(), this.securityCtx.get());
 		if (!permitted) {
-			this.errorHandler.onError(this, sessionId, msg.frame(), "Not permitted!", null);
+			this.errorHandler.onError(this, evt.sessionId(), evt.frame(), "Not permitted!", null);
 			return;
 		}
-		on(msg);
+		on(evt);
 	}
 
 	/**
 	 * 
 	 * @param evt
 	 */
-	public void on(@Observes @FromServer MessageEvent evt) {
-		final String sessionId = evt.sessionId() != null ? evt.sessionId() : SystemConnection.SESSION_ID;
+	public void fromServer(@Observes @FromServer MessageEvent evt) {
+		this.log.debug("Message event from server. [sessionId={},command={}]", evt.sessionId(), evt.frame().getCommand());
+		on(evt);
+	}
 
+	/**
+	 * 
+	 * @param evt
+	 */
+	private void on(MessageEvent evt) {
+		final String sessionId = evt.sessionId() != null ? evt.sessionId() : SystemConnection.SESSION_ID;
 		try {
 			AbstractConnection conn = evt.sessionId() != null ? this.connections.get(sessionId) : this.systemConn;
 

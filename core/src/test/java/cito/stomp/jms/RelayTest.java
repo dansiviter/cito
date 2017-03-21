@@ -16,6 +16,7 @@
 package cito.stomp.jms;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -85,39 +86,52 @@ public class RelayTest {
 	public void before() {
 		when(this.connectionInstance.get()).thenReturn(this.connection);
 		when(this.securityCtxProvider.get()).thenReturn(this.securityCtx);
+		when(this.securityRegistry.isPermitted(any(Frame.class), eq(this.securityCtx))).thenReturn(true);
 	}
 
 	@Test
-	public void message_CONNECT() throws JMSException {
-		final MessageEvent msg = new MessageEvent("sessionId", Frame.builder(Command.CONNECT).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build());
-		this.relay.on(msg);
+	public void fromClient_CONNECT() throws JMSException {
+		final Frame frame = Frame.builder(Command.CONNECT).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build();
+		final MessageEvent msg = new MessageEvent("sessionId", frame);
+		this.relay.fromClient(msg);
 
+		verify(this.log).debug("Message from client. [sessionId={},command={}]", "sessionId", Command.CONNECT);
+		verify(this.securityCtxProvider).get();
+		verify(this.securityRegistry).isPermitted(frame, this.securityCtx);
 		verify(this.log).info("CONNECT/STOMP recieved. Opening connection to broker. [sessionId={}]", "sessionId");
 		verify(this.connectionInstance).get();
 		verify(this.connection).connect(msg);
 	}
 
 	@Test
-	public void message_STOMP() throws JMSException {
-		final MessageEvent msg = new MessageEvent("sessionId", Frame.builder(Command.STOMP).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build());
-		this.relay.on(msg);
+	public void fromClient_STOMP() throws JMSException {
+		final Frame frame = Frame.builder(Command.STOMP).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build();
+		final MessageEvent msg = new MessageEvent("sessionId", frame);
+		this.relay.fromClient(msg);
 
+		verify(this.log).debug("Message from client. [sessionId={},command={}]", "sessionId", Command.STOMP);
+		verify(this.securityCtxProvider).get();
+		verify(this.securityRegistry).isPermitted(frame, this.securityCtx);
 		verify(this.log).info("CONNECT/STOMP recieved. Opening connection to broker. [sessionId={}]", "sessionId");
 		verify(this.connectionInstance).get();
 		verify(this.connection).connect(msg);
 	}
 
 	@Test
-	public void message_DISCONNECT() throws IOException {
+	public void fromClient_DISCONNECT() throws IOException {
 		final Session session = mock(Session.class);
-		
+
 		ReflectionUtil.<Map<String, Connection>>get(this.relay, "connections").put("sessionId", this.connection);
 		when(this.sessionRegistry.getSession("sessionId")).thenReturn(Optional.of(session));
 		when(session.isOpen()).thenReturn(true);
 
-		final MessageEvent msg = new MessageEvent("sessionId", Frame.disconnect().build());
-		this.relay.on(msg);
+		final Frame frame = Frame.disconnect().build();
+		final MessageEvent msg = new MessageEvent("sessionId", frame);
+		this.relay.fromClient(msg);
 
+		verify(this.log).debug("Message from client. [sessionId={},command={}]", "sessionId", Command.DISCONNECT);
+		verify(this.securityCtxProvider).get();
+		verify(this.securityRegistry).isPermitted(frame, this.securityCtx);
 		verify(this.log).info("DISCONNECT recieved. Closing connection to broker. [sessionId={}]", "sessionId");
 		verify(this.log).info("Destroying JMS connection. [{}]", "sessionId");
 		verify(this.connectionInstance).destroy(this.connection);
