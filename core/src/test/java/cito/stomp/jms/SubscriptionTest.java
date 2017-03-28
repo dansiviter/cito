@@ -49,8 +49,6 @@ public class SubscriptionTest {
 	@Mock
 	private Session session;
 	@Mock
-	private Factory factory;
-	@Mock
 	private Destination destination;
 	@Mock
 	private AbstractConnection connection;
@@ -66,7 +64,7 @@ public class SubscriptionTest {
 		when(this.session.toDestination(eq("/foo"))).thenReturn(this.destination);
 		when(this.session.getConnection()).thenReturn(connection);
 		when(this.session.createConsumer(eq(this.destination), anyString())).thenReturn(this.messageConsumer);
-		this.subscription = new Subscription(this.session, "id", frame, this.factory);
+		this.subscription = new Subscription(this.session, "id", frame);
 	}
 
 	@Test
@@ -94,6 +92,6 @@ public class SubscriptionTest {
 		verify(this.connection).getSessionId();
 		verify(this.session).createConsumer(eq(this.destination), anyString());
 		verify(this.messageConsumer).setMessageListener(this.subscription);
-		verifyNoMoreInteractions(this.session, this.factory, this.destination, this.connection, messageConsumer);
+		verifyNoMoreInteractions(this.session, this.destination, this.connection, messageConsumer);
 	}
 }

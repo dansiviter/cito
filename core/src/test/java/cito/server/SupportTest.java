@@ -48,7 +48,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
-import cito.event.MessageEvent;
+import cito.event.Message;
 import cito.ext.Serialiser;
 import cito.server.SessionRegistry;
 import cito.server.MessagingSupport;
@@ -64,7 +64,7 @@ public class SupportTest {
 	@Mock
 	private Logger log;
 	@Mock
-	private Event<MessageEvent> msgEvent;
+	private Event<Message> msgEvent;
 	@Mock
 	private SessionRegistry registry;
 	@Mock
@@ -84,9 +84,9 @@ public class SupportTest {
 	public void broadcast_destination_payload() throws IOException {
 		this.support.broadcast("destination", new Object(), Collections.emptyMap());
 
-		final ArgumentCaptor<MessageEvent> eventCaptor = ArgumentCaptor.forClass(MessageEvent.class);
+		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
-		final MessageEvent msgEvent = eventCaptor.getValue();
+		final Message msgEvent = eventCaptor.getValue();
 		assertNull(msgEvent.sessionId());
 		assertNull(msgEvent.frame().session());
 		assertEquals("destination", msgEvent.frame().destination());
@@ -100,9 +100,9 @@ public class SupportTest {
 	public void broadcast_destination_mediaType_payload() throws IOException {
 		this.support.broadcast("destination", MediaType.TEXT_PLAIN_TYPE, new Object(), Collections.emptyMap());
 
-		final ArgumentCaptor<MessageEvent> eventCaptor = ArgumentCaptor.forClass(MessageEvent.class);
+		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
-		final MessageEvent msgEvent = eventCaptor.getValue();
+		final Message msgEvent = eventCaptor.getValue();
 		assertNull(msgEvent.sessionId());
 		assertNull(msgEvent.frame().session());
 		assertEquals("destination", msgEvent.frame().destination());
@@ -123,14 +123,14 @@ public class SupportTest {
 
 		this.support.broadcastTo(principal, "destination", new Object(), Collections.emptyMap());
 
-		final ArgumentCaptor<MessageEvent> eventCaptor = ArgumentCaptor.forClass(MessageEvent.class);
+		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent, times(2)).fire(eventCaptor.capture());
 
-		final MessageEvent msgEvent0 = eventCaptor.getAllValues().get(0);
+		final Message msgEvent0 = eventCaptor.getAllValues().get(0);
 		assertEquals("session0", msgEvent0.frame().session());
 		assertEquals("destination", msgEvent0.frame().destination());
 		assertEquals("application/json", msgEvent0.frame().contentType().toString());
-		final MessageEvent msgEvent1 = eventCaptor.getAllValues().get(1);
+		final Message msgEvent1 = eventCaptor.getAllValues().get(1);
 		assertEquals("session1", msgEvent1.frame().session());
 		assertEquals("destination", msgEvent1.frame().destination());
 		assertEquals("application/json", msgEvent1.frame().contentType().toString());
@@ -154,14 +154,14 @@ public class SupportTest {
 
 		this.support.broadcastTo(principal, "destination", MediaType.TEXT_PLAIN_TYPE, new Object(), Collections.emptyMap());
 
-		final ArgumentCaptor<MessageEvent> eventCaptor = ArgumentCaptor.forClass(MessageEvent.class);
+		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent, times(2)).fire(eventCaptor.capture());
 
-		final MessageEvent msgEvent0 = eventCaptor.getAllValues().get(0);
+		final Message msgEvent0 = eventCaptor.getAllValues().get(0);
 		assertEquals("session0", msgEvent0.frame().session());
 		assertEquals("destination", msgEvent0.frame().destination());
 		assertEquals("text/plain", msgEvent0.frame().contentType().toString());
-		final MessageEvent msgEvent1 = eventCaptor.getAllValues().get(1);
+		final Message msgEvent1 = eventCaptor.getAllValues().get(1);
 		assertEquals("session1", msgEvent1.frame().session());
 		assertEquals("destination", msgEvent1.frame().destination());
 		assertEquals("text/plain", msgEvent1.frame().contentType().toString());
@@ -179,9 +179,9 @@ public class SupportTest {
 	public void sendTo_destination_payload() throws IOException {
 		this.support.sendTo("sessionId", "destination", new Object(), Collections.emptyMap());
 
-		final ArgumentCaptor<MessageEvent> eventCaptor = ArgumentCaptor.forClass(MessageEvent.class);
+		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
-		final MessageEvent msgEvent = eventCaptor.getValue();
+		final Message msgEvent = eventCaptor.getValue();
 		assertNull(msgEvent.sessionId());
 		assertEquals("sessionId", msgEvent.frame().session());
 		assertEquals("destination", msgEvent.frame().destination());
@@ -195,9 +195,9 @@ public class SupportTest {
 	public void sendTo_destination_mediaType_payload() throws IOException {
 		this.support.sendTo("sessionId", "destination", MediaType.TEXT_PLAIN_TYPE, new Object(), Collections.emptyMap());
 
-		final ArgumentCaptor<MessageEvent> eventCaptor = ArgumentCaptor.forClass(MessageEvent.class);
+		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
-		final MessageEvent msgEvent = eventCaptor.getValue();
+		final Message msgEvent = eventCaptor.getValue();
 		assertNull(msgEvent.sessionId());
 		assertEquals("sessionId", msgEvent.frame().session());
 		assertEquals("destination", msgEvent.frame().destination());

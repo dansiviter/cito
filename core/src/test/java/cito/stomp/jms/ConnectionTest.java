@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -28,17 +29,21 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
+import javax.enterprise.event.Event;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
 import javax.jms.JMSException;
-import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -46,9 +51,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
-import cito.event.MessageEvent;
+import cito.event.Message;
 import cito.stomp.Command;
 import cito.stomp.Frame;
+import cito.stomp.Headers;
 import cito.stomp.HeartBeatMonitor;
 
 /**
@@ -59,6 +65,9 @@ import cito.stomp.HeartBeatMonitor;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ConnectionTest {
+	@Rule
+	public ExpectedException thrown = ExpectedException.none();
+
 	@Mock
 	private Logger log;
 	@Mock
@@ -71,6 +80,8 @@ public class ConnectionTest {
 	private Factory factory;
 	@Mock
 	private ScheduledExecutorService scheduler;
+	@Mock
+	private Event<Message> brokerMessageEvent;
 
 	@InjectMocks
 	private Connection connection;
@@ -78,10 +89,6 @@ public class ConnectionTest {
 	@Before
 	public void before() {
 		ReflectionUtil.set(this.connection, "sessionId", "ABC123");
-	}
-
-	@Test
-	public void init() {
 		this.connection.init();
 	}
 
@@ -97,7 +104,7 @@ public class ConnectionTest {
 		verify(heartBeatMonitor).resetSend();
 		verify(frame).getCommand();
 		verify(this.log).info("Sending message to client. [sessionId={},command={}]", "ABC123", Command.MESSAGE);
-		verify(this.relay).send(any(MessageEvent.class));
+		verify(this.brokerMessageEvent).fire(any(Message.class));
 		verifyNoMoreInteractions(heartBeatMonitor, frame);
 	}
 
@@ -106,7 +113,7 @@ public class ConnectionTest {
 		ReflectionUtil.set(this.connection, "sessionId", null); // every other test needs it set!
 		final HeartBeatMonitor heartBeatMonitor = mock(HeartBeatMonitor.class);
 		ReflectionUtil.set(this.connection, "heartBeatMonitor", heartBeatMonitor);
-		final MessageEvent messageEvent = new MessageEvent("ABC123", Frame.connect("myhost.com", "1.0").build());
+		final Message messageEvent = new Message("ABC123", Frame.connect("myhost.com", "1.0").build());
 		final javax.jms.Connection jmsConnection = mock(javax.jms.Connection.class);
 		when(this.connectionFactory.createConnection()).thenReturn(jmsConnection);
 
@@ -119,20 +126,21 @@ public class ConnectionTest {
 		verify(jmsConnection).setClientID("ABC123");
 		verify(jmsConnection).start();
 		verify(this.log).info("Sending message to client. [sessionId={},command={}]", "ABC123", Command.CONNECTED);
-		verify(this.relay).send(any(MessageEvent.class));
+		verify(this.brokerMessageEvent).fire(any(Message.class));
 		verifyNoMoreInteractions(heartBeatMonitor, jmsConnection);
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void on_wrongSession() {
-		final MessageEvent messageEvent = new MessageEvent("Another", Frame.HEART_BEAT);
+		this.thrown.expect(IllegalArgumentException.class);
+		this.thrown.expectMessage("Session identifier mismatch! [expected=ABC123,actual=Another]");
 
-		this.connection.on(messageEvent);
+		this.connection.on(new Message("Another", Frame.HEART_BEAT));
 	}
 
 	@Test
 	public void on_CONNECT() {
-		final MessageEvent messageEvent = new MessageEvent("ABC123", Frame.connect("myhost.com", "1.0").build());
+		final Message messageEvent = new Message("ABC123", Frame.connect("myhost.com", "1.0").build());
 
 		IllegalArgumentException expected = null;
 		try {
@@ -141,13 +149,12 @@ public class ConnectionTest {
 		} catch (IllegalArgumentException e) {
 			expected = e;
 		}
-		assertNotNull(expected);
 		assertEquals("CONNECT not supported! [ABC123]", expected.getMessage());
 	}
 
 	@Test
 	public void on_DISCONNECT() {
-		final MessageEvent messageEvent = new MessageEvent("ABC123", Frame.disconnect().build());
+		final Message messageEvent = new Message("ABC123", Frame.disconnect().build());
 
 		IllegalArgumentException expected = null;
 		try {
@@ -156,34 +163,222 @@ public class ConnectionTest {
 		} catch (IllegalArgumentException e) {
 			expected = e;                                                                                                                
 		}
-		assertNotNull(expected);
 		assertEquals("DISCONNECT not supported! [ABC123]", expected.getMessage());
 	}
 
-	@Test @Ignore
-	public void on_SEND() { }
+	@Test
+	public void on_SEND() throws JMSException {
+		final Session session = mock(Session.class);
+		ReflectionUtil.set(this.connection, "session", session);
 
-	@Test @Ignore
-	public void on_ACK() {}
+		final Frame frame = Frame.send("/there", null, "{}").build();
+		this.connection.on(new Message("ABC123", frame));
 
-	@Test @Ignore
-	public void on_BEGIN() {}
+		verify(session).sendToBroker(frame);
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.SEND);
+		verifyNoMoreInteractions(session);
+	}
 
-	@Test @Ignore
-	public void on_COMMIT() {}
+	@Test
+	@SuppressWarnings("unchecked")
+	public void on_ACK() throws JMSException {
+		final javax.jms.Message msg = mock(javax.jms.Message.class);
+		ReflectionUtil.get(this.connection, "ackMessages", Map.class).put("1", msg);
 
-	@Test @Ignore
-	public void on_ABORT() {}
+		this.connection.on(new Message("ABC123", Frame.builder(Command.ACK).header(Headers.ID, "1").build()));
 
-	@Test @Ignore
-	public void on_SUBSCRIBE() {}
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ACK);
+		verify(msg).acknowledge();
+		verifyNoMoreInteractions(msg);
+	}
 
-	@Test @Ignore
-	public void on_UNSUBSCRIBE() { }
+	@Test
+	public void on_ACK_noExist() {
+		IllegalStateException expected = null;
+		try {
+			this.connection.on(new Message("ABC123", Frame.builder(Command.ACK).header(Headers.ID, "1").build()));
+		} catch (IllegalStateException e) {
+			expected = e;                                                                                                                
+		}
+		assertEquals("No such message to ACK! [1]", expected.getMessage());
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ACK);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void on_NACK() {
+		final javax.jms.Message msg = mock(javax.jms.Message.class);
+		ReflectionUtil.get(this.connection, "ackMessages", Map.class).put("1", msg);
+
+		this.connection.on(new Message("ABC123", Frame.builder(Command.NACK).header(Headers.ID, "1").build()));
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.NACK);
+		verify(this.log).warn("NACK recieved, but no JMS equivalent! [{}]", "1");
+		verifyNoMoreInteractions(msg);
+	}
+
+	@Test
+	public void on_NACK_noExist() {
+		IllegalStateException expected = null;
+		try {
+			this.connection.on(new Message("ABC123", Frame.builder(Command.NACK).header(Headers.ID, "1").build()));
+		} catch (IllegalStateException e) {
+			expected = e;                                                                                                                
+		}
+		assertNotNull(expected);
+		assertEquals("No such message to NACK! [1]", expected.getMessage());
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.NACK);
+	}
+
+	@Test
+	public void on_BEGIN() throws JMSException {
+		final Session txSession = mock(Session.class);
+		when(this.factory.toSession(this.connection, true, javax.jms.Session.SESSION_TRANSACTED)).thenReturn(txSession);
+
+		this.connection.on(new Message("ABC123", Frame.builder(Command.BEGIN).header(Headers.TRANSACTION, "1").build()));
+
+		assertEquals(txSession, ReflectionUtil.get(this.connection, "txSessions", Map.class).get("1"));
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.BEGIN);
+		verify(this.factory).toSession(this.connection, true, javax.jms.Session.SESSION_TRANSACTED);
+		verifyNoMoreInteractions(txSession);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void on_BEGIN_alreadyExists() {
+		final Session txSession = mock(Session.class);
+		ReflectionUtil.get(this.connection, "txSessions", Map.class).put("1", txSession);
+
+		IllegalStateException expected = null;
+		try {
+			this.connection.on(new Message("ABC123", Frame.builder(Command.BEGIN).header(Headers.TRANSACTION, "1").build()));
+		} catch (IllegalStateException e) {
+			expected = e;
+		}
+		assertEquals("Transaction already started! [1]", expected.getMessage());
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.BEGIN);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void on_COMMIT() throws JMSException {
+		final Session txSession = mock(Session.class);
+		ReflectionUtil.get(this.connection, "txSessions", Map.class).put("1", txSession);
+
+		this.connection.on(new Message("ABC123", Frame.builder(Command.COMMIT).header(Headers.TRANSACTION, "1").build()));
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.COMMIT);
+		verify(txSession).commit();
+		verifyNoMoreInteractions(txSession);
+	}
+
+	@Test
+	public void on_COMMIT_notExists() {
+		IllegalStateException expected = null;
+		try {
+			this.connection.on(new Message("ABC123", Frame.builder(Command.COMMIT).header(Headers.TRANSACTION, "1").build()));
+		} catch (IllegalStateException e) {
+			expected = e;
+		}
+		assertEquals("Transaction session does not exists! [1]", expected.getMessage());
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.COMMIT);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void on_ABORT() throws JMSException {
+		final Session txSession = mock(Session.class);
+		ReflectionUtil.get(this.connection, "txSessions", Map.class).put("1", txSession);
+
+		this.connection.on(new Message("ABC123", Frame.builder(Command.ABORT).header(Headers.TRANSACTION, "1").build()));
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ABORT);
+		verify(txSession).rollback();
+		verifyNoMoreInteractions(txSession);
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ABORT);
+	}
+
+	@Test
+	public void on_ABORT_notExists() {
+		IllegalStateException expected = null;
+		try {
+			this.connection.on(new Message("ABC123", Frame.builder(Command.ABORT).header(Headers.TRANSACTION, "1").build()));
+		} catch (IllegalStateException e) {
+			expected = e;
+		}
+		assertEquals("Transaction session does not exists! [1]", expected.getMessage());
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ABORT);
+	}
+
+	@Test
+	public void on_SUBSCRIBE() throws JMSException {
+		final Session session = mock(Session.class);
+		ReflectionUtil.set(this.connection, "session", session);
+		final Destination destination = mock(Destination.class);
+		when(session.toDestination("/dest")).thenReturn(destination);
+		when(session.getConnection()).thenReturn(this.connection);
+		final MessageConsumer consumer = mock(MessageConsumer.class);
+		when(session.createConsumer(eq(destination), any(String.class))).thenReturn(consumer);
+
+		this.connection.on(new Message("ABC123", Frame.subscribe("1", "/dest").build()));
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.SUBSCRIBE);
+		verify(session).toDestination("/dest");
+		verify(session).getConnection();
+		verify(session).createConsumer(destination, "session IS NULL OR session = 'ABC123'");
+		verify(consumer).setMessageListener(any(MessageListener.class));
+		verifyNoMoreInteractions(session, destination, consumer);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void on_SUBSCRIBE_alreadyExists() {
+		final Subscription subscription = mock(Subscription.class);
+		ReflectionUtil.get(this.connection, "subscriptions", Map.class).put("1", subscription);
+
+		IllegalStateException expected = null;
+		try {
+			this.connection.on(new Message("ABC123", Frame.subscribe("1", "/dest").build()));
+		} catch (IllegalStateException e) {
+			expected = e;
+		}
+		assertEquals("Subscription already exists! [1]", expected.getMessage());
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.SUBSCRIBE);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void on_UNSUBSCRIBE() {
+		final Subscription subscription = mock(Subscription.class);
+		ReflectionUtil.get(this.connection, "subscriptions", Map.class).put("1", subscription);
+
+		this.connection.on(new Message("ABC123", Frame.builder(Command.UNSUBSCRIBE).subscription("1").build()));
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.UNSUBSCRIBE);
+	}
+
+	@Test
+	public void on_UNSUBSCRIBE_noExist() {
+		IllegalStateException expected = null;
+		try {
+			this.connection.on(new Message("ABC123", Frame.builder(Command.UNSUBSCRIBE).subscription("1").build()));
+		} catch (IllegalStateException e) {
+			expected = e;
+		}
+		assertEquals("Subscription does not exist! [1]", expected.getMessage());
+
+		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.UNSUBSCRIBE);
+	}
 
 	@Test
 	public void addAckMessage() throws JMSException {
-		final Message msg = mock(Message.class);
+		final javax.jms.Message msg = mock(javax.jms.Message.class);
 		when(msg.getJMSMessageID()).thenReturn("foo");
 
 		this.connection.addAckMessage(msg);
@@ -217,6 +412,7 @@ public class ConnectionTest {
 				this.relay,
 				this.connectionFactory,
 				this.factory,
-				this.scheduler);
+				this.scheduler,
+				this.brokerMessageEvent);
 	}
 }

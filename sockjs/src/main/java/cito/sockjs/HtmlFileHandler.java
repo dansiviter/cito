@@ -32,6 +32,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cito.sockjs.nio.WriteStream;
 
@@ -77,7 +79,7 @@ public class HtmlFileHandler extends AbstractSessionHandler {
 
 		final String callback = getCallback(async.getRequest());
 		if (callback == null || callback.isEmpty()) {
-			this.servlet.log("Callback expected.");
+			this.log.warn("Callback expected.");
 			sendErrorNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "\"callback\" parameter required");
 			return;
 		}
@@ -116,6 +118,7 @@ public class HtmlFileHandler extends AbstractSessionHandler {
 	 * @since v1.0 [25 Feb 2017]
 	 */
 	private class HtmlFileSender implements Sender {
+		private final Logger log = LoggerFactory.getLogger(HtmlFileSender.class);
 		private final ServletSession session;
 		private final WritableByteChannel dest;
 		private int bytesSent;
@@ -129,7 +132,7 @@ public class HtmlFileHandler extends AbstractSessionHandler {
 		public void send(Queue<String> frames) throws IOException {
 			while (!frames.isEmpty()) {
 				String frame = frames.poll();
-				servlet.log("Flushing frame. [sessionId=" + this.session.getId() + ",frame=" + frame + "]");
+				this.log.debug("Flushing frame. [sessionId={},frame={}]", this.session.getId(), frame);
 				frame = StringEscapeUtils.escapeJson(frame);
 				// +34 represents the possible start/end frame
 				final CharBuffer buf = CharBuffer.allocate(frame.length() + 34);
@@ -139,7 +142,7 @@ public class HtmlFileHandler extends AbstractSessionHandler {
 				this.bytesSent += byteBuf.limit();
 				final boolean limitReached = this.bytesSent >= servlet.getConfig().maxStreamBytes();
 				if (limitReached) {
-					servlet.log("Limit to streaming bytes reached. Closing sender.");
+					this.log.debug("Limit to streaming bytes reached. Closing sender.");
 					close();
 					return;
 				}

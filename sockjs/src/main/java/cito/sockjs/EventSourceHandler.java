@@ -28,6 +28,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cito.sockjs.nio.WriteStream;
 
@@ -66,7 +68,7 @@ public class EventSourceHandler extends AbstractSessionHandler {
 		if (initial) {
 			pipe.sink().write(UTF_8.encode(CharBuffer.wrap("data: o\r\n\r\n")));
 		} else if (!session.isOpen()) {
-			this.servlet.log("Session closed! [" + session.getId() + "]");
+			this.log.info("Session closed! [{}]", session.getId());
 			pipe.sink().write(UTF_8.encode(closeFrame(3000, "Go away!", "\n")));
 			pipe.sink().close();
 		} 
@@ -81,6 +83,7 @@ public class EventSourceHandler extends AbstractSessionHandler {
 	 * @since v1.0 [25 Feb 2017]
 	 */
 	private class EventSourceSender implements Sender {
+		private final Logger log = LoggerFactory.getLogger(EventSourceSender.class);
 		private final ServletSession session;
 		private final WritableByteChannel dest;
 		private int bytesSent;
@@ -94,7 +97,7 @@ public class EventSourceHandler extends AbstractSessionHandler {
 		public void send(Queue<String> frames) throws IOException {
 			while (!frames.isEmpty()) {
 				String frame = frames.poll();
-				servlet.log("Flushing frame. [sessionId=" + this.session.getId() + ",frame=" + frame + "]");
+				this.log.debug("Flushing frame. [sessionId={},frame={}]", this.session.getId(), frame);
 				frame = StringEscapeUtils.escapeJson(frame);
 				// +15 represents the possible start/end frame
 				final CharBuffer buf = CharBuffer.allocate(frame.length() + 15);
@@ -104,7 +107,7 @@ public class EventSourceHandler extends AbstractSessionHandler {
 				this.bytesSent += byteBuf.limit();
 				final boolean limitReached = this.bytesSent >= servlet.getConfig().maxStreamBytes();
 				if (limitReached) {
-					servlet.log("Limit to streaming bytes reached. Closing sender.");
+					this.log.debug("Limit to streaming bytes reached. Closing sender.");
 					close();
 					return;
 				}

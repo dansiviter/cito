@@ -17,6 +17,7 @@ package cito.stomp.jms;
 
 import java.io.IOException;
 
+import javax.annotation.Nonnull;
 import javax.annotation.PreDestroy;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
@@ -27,7 +28,7 @@ import javax.websocket.CloseReason.CloseCodes;
 
 import org.slf4j.Logger;
 
-import cito.event.MessageEvent;
+import cito.event.Message;
 
 /**
  * 
@@ -50,7 +51,7 @@ public abstract class AbstractConnection implements cito.stomp.Connection {
 	 * 
 	 * @param msg
 	 */
-	public abstract void on(MessageEvent msg);
+	public abstract void on(@Nonnull Message msg);
 
 	/**
 	 * 

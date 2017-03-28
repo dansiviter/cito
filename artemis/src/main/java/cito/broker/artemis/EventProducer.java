@@ -56,12 +56,12 @@ import cito.ReflectionUtil;
 import cito.annotation.OnAdded;
 import cito.annotation.OnRemoved;
 import cito.broker.DestinationEventProducer;
-import cito.event.DestinationEvent;
-import cito.event.DestinationEvent.Type;
+import cito.event.DestinationChanged;
+import cito.event.DestinationChanged.Type;
 import cito.server.Extension;
 
 /**
- * Produces {@link DestinationEvent}s based on the Artemis notification topic. By default this will listen to
+ * Produces {@link DestinationChanged}s based on the Artemis notification topic. By default this will listen to
  * {@code jmx.topic.notifications} which is the one setup for the embedded broker. However, if you're using a remote
  * instance be sure to check what is used on that and set {@code artemis.notificationTopic} property.
  * 
@@ -84,7 +84,7 @@ public class EventProducer implements MessageListener {
 	@Inject
 	private JMSContext ctx;
 	@Inject
-	private Event<cito.event.DestinationEvent> destinationEvent;
+	private Event<cito.event.DestinationChanged> destinationEvent;
 
 	private JMSConsumer consumer;
 
@@ -114,7 +114,7 @@ public class EventProducer implements MessageListener {
 			final Type type = CREATED.contains(notifType) ? Type.ADDED : Type.REMOVED;
 
 			this.log.info("Destination changed. [type={},destination={}]", type, destination);
-			final cito.event.DestinationEvent evt = new cito.event.DestinationEvent(type, destination);
+			final cito.event.DestinationChanged evt = new cito.event.DestinationChanged(type, destination);
 			try (QuietClosable c = DestinationEventProducer.set(evt)) {
 				this.destinationEvent.fire(evt);
 			}
@@ -127,7 +127,7 @@ public class EventProducer implements MessageListener {
 	 * 
 	 * @param msg
 	 */
-	public void message(@Observes DestinationEvent msg) {
+	public void message(@Observes DestinationChanged msg) {
 		final Extension extension = this.manager.getExtension(Extension.class);
 
 		final String destination = msg.getDestination();
@@ -163,8 +163,8 @@ public class EventProducer implements MessageListener {
 	 * @param destination
 	 * @param evt
 	 */
-	private static <A extends Annotation> void notify(Class<A> annotation, Set<ObserverMethod<DestinationEvent>> observerMethods, String destination, DestinationEvent evt) {
-		for (ObserverMethod<DestinationEvent> om : observerMethods) {
+	private static <A extends Annotation> void notify(Class<A> annotation, Set<ObserverMethod<DestinationChanged>> observerMethods, String destination, DestinationChanged evt) {
+		for (ObserverMethod<DestinationChanged> om : observerMethods) {
 			for (A a : getAnnotations(annotation, om.getObservedQualifiers())) {
 				final String value = ReflectionUtil.invoke(a, "value");
 				if (!Glob.from(value).matches(destination)) {

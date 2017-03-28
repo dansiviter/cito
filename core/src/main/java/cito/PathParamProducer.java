@@ -25,8 +25,8 @@ import javax.enterprise.inject.spi.InjectionPoint;
 
 import cito.PathParser.Result;
 import cito.annotation.PathParam;
-import cito.event.DestinationEvent;
-import cito.event.MessageEvent;
+import cito.event.DestinationChanged;
+import cito.event.Message;
 
 /**
  * 
@@ -88,7 +88,7 @@ public class PathParamProducer {
 	 * @return
 	 */
 	@Produces @Dependent @PathParam("nonbinding")
-	public static String pathParam(InjectionPoint ip, PathParser parser, MessageEvent me, DestinationEvent de) {
+	public static String pathParam(InjectionPoint ip, PathParser parser, Message me, DestinationChanged de) {
 		final String destination;
 		if (me != null) {
 			destination = me.frame().destination();

@@ -15,11 +15,14 @@
  */
 package cito.stomp;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nonnull;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 
@@ -50,9 +53,9 @@ public class HeartBeatMonitor {
 	 * @param scheduler the scheduler to perform heartbeat tasks. This class will not be responsible for shutting this
 	 * down.
 	 */
-	public HeartBeatMonitor(Connection conn, ScheduledExecutorService scheduler) {
-		this.conn = conn;
-		this.scheduler = scheduler;
+	public HeartBeatMonitor(@Nonnull Connection conn, @Nonnull ScheduledExecutorService scheduler) {
+		this.conn = requireNonNull(conn);
+		this.scheduler = requireNonNull(scheduler);
 	}
 
 	/**
@@ -101,9 +104,9 @@ public class HeartBeatMonitor {
 	 * 
 	 */
 	public void close() {
-		if (this.sendDelay != null)
+		if (this.send != null)
 			this.send.cancel(false);
-		if (this.readDelay != null)
+		if (this.read != null)
 			this.read.cancel(false);
 	}
 

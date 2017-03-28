@@ -29,10 +29,11 @@ import static cito.stomp.Headers.MESSAGE_ID;
 import static cito.stomp.Headers.RECIEPT_ID;
 import static cito.stomp.Headers.SERVER;
 import static cito.stomp.Headers.SESSION;
-
 import static cito.stomp.Headers.SUBSCRIPTION;
 import static cito.stomp.Headers.TRANSACTION;
 import static cito.stomp.Headers.VERSION;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -41,7 +42,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -49,11 +49,14 @@ import java.util.Map.Entry;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.annotation.Nonnull;
+import javax.annotation.concurrent.Immutable;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import cito.collections.LinkedCaseInsensitiveMap;
+import cito.collections.UnmodifiableMultivaluedMap;
 
 /**
  * Defines a STOMP frame
@@ -61,12 +64,13 @@ import cito.collections.LinkedCaseInsensitiveMap;
  * @author Daniel Siviter
  * @since v1.0 [12 Jul 2016]
  */
+@Immutable
 public class Frame {
 	private static final AtomicLong MESSAGE_ID_COUNTER = new AtomicLong();
 
 	public static final char NULL = '\u0000';
 	static final char LINE_FEED = '\n';
-	public static final Frame HEART_BEAT = new Frame(null, new MultivaluedHashMap<>(0), null);
+	public static final Frame HEART_BEAT = new Frame(Command.HEARTBEAT, new MultivaluedHashMap<>(0), null);
 
 	private final Command command;
 	private final MultivaluedMap<String, String> headers;
@@ -77,7 +81,7 @@ public class Frame {
 	 * @param command
 	 * @param headers
 	 */
-	Frame(Command command, MultivaluedMap<String, String> headers) {
+	Frame(@Nonnull Command command, @Nonnull MultivaluedMap<String, String> headers) {
 		this(command, headers, null);
 	}
 
@@ -87,10 +91,10 @@ public class Frame {
 	 * @param headers
 	 * @param body
 	 */
-	Frame(Command command, MultivaluedMap<String, String> headers, ByteBuffer body) {
-		this.command = command;
-		this.headers = headers;
-		this.body = body;
+	Frame(@Nonnull Command command, @Nonnull MultivaluedMap<String, String> headers, ByteBuffer body) {
+		this.command = requireNonNull(command);
+		this.headers = new UnmodifiableMultivaluedMap<>(requireNonNull(headers));
+		this.body = body != null ? body.asReadOnlyBuffer() : null;
 	}
 
 	/**
@@ -98,7 +102,7 @@ public class Frame {
 	 * @return
 	 */
 	public boolean isHeartBeat() {
-		return this.command == null;
+		return this.command == Command.HEARTBEAT;
 	}
 
 	/**
@@ -231,7 +235,7 @@ public class Frame {
 	 * @param writer
 	 * @throws IOException 
 	 */
-	public void to(Writer writer) throws IOException {
+	public void to(@Nonnull Writer writer) throws IOException {
 		if (isHeartBeat()) {
 			writer.append(LINE_FEED);
 			return;
@@ -248,7 +252,7 @@ public class Frame {
 		writer.append(LINE_FEED);
 
 		if (getBody() != null) {
-			writer.append(new String(getBody().array(), StandardCharsets.UTF_8));
+			writer.append(UTF_8.decode(getBody()));
 		}
 
 		writer.append(NULL);
@@ -277,7 +281,7 @@ public class Frame {
 	 * @param in
 	 * @return
 	 */
-	public static Frame from(String in) {
+	public static Frame from(@Nonnull String in) {
 		try (StringReader reader = new StringReader(in)) {
 			return from(reader);
 		} catch (IOException e) {
@@ -294,7 +298,7 @@ public class Frame {
 	 * @return
 	 * @throws IOException 
 	 */
-	public static Frame from(Reader in) throws IOException {
+	public static Frame from(@Nonnull Reader in) throws IOException {
 		final BufferedReader reader = new BufferedReader(in);
 
 		final String firstLine = reader.readLine();
@@ -324,7 +328,7 @@ public class Frame {
 			buf.append(arr, 0, numCharsRead);
 		}
 		buf.setLength(buf.lastIndexOf(Character.toString(NULL)));
-		final ByteBuffer byteBuf = buf.length() == 0 ? null : ByteBuffer.wrap(buf.toString().getBytes(StandardCharsets.UTF_8));
+		final ByteBuffer byteBuf = buf.length() == 0 ? null : UTF_8.encode(buf.toString());
 		return new Frame(command, headers, byteBuf);
 	}
 
@@ -334,7 +338,7 @@ public class Frame {
 	 * @param acceptVersion
 	 * @return
 	 */
-	public static Builder connect(String host, String... acceptVersion) {
+	public static Builder connect(@Nonnull String host, @Nonnull String... acceptVersion) {
 		return builder(CONNECT).header(HOST, host).header(ACCEPT_VERSION, acceptVersion);
 	}
 
@@ -364,11 +368,11 @@ public class Frame {
 	 * @return
 	 */
 	public static Builder message(
-			String destination,
-			String subscriptionId,
-			String messageId,
+			@Nonnull String destination,
+			@Nonnull String subscriptionId,
+			@Nonnull String messageId,
 			MediaType contentType,
-			String body)
+			@Nonnull String body)
 	{
 		return builder(Command.MESSAGE)
 				.destination(destination)
@@ -384,7 +388,7 @@ public class Frame {
 	 * @param body
 	 * @return
 	 */
-	public static Builder send(String destination, MediaType contentType, ByteBuffer body) {
+	public static Builder send(@Nonnull String destination, MediaType contentType, @Nonnull ByteBuffer body) {
 		final Builder builder = builder(SEND).destination(destination);
 		if (body != null) {
 			builder.body(contentType, body);
@@ -399,7 +403,7 @@ public class Frame {
 	 * @param body
 	 * @return
 	 */
-	public static Builder send(String destination, MediaType contentType, String body) {
+	public static Builder send(@Nonnull String destination, MediaType contentType, @Nonnull String body) {
 		return builder(SEND).destination(destination).body(contentType, body);
 	}
 
@@ -411,7 +415,7 @@ public class Frame {
 	 * @param heartBeat
 	 * @return
 	 */
-	public static Builder connnected(String version, String session, String server) {
+	public static Builder connnected(@Nonnull String version, @Nonnull String session, @Nonnull String server) {
 		final Builder builder = builder(CONNECTED).header(VERSION, version);
 		if (session != null)
 			builder.header(SESSION, session);
@@ -426,7 +430,7 @@ public class Frame {
 	 * @param destination
 	 * @return
 	 */
-	public static Builder subscribe(String id, String destination) {
+	public static Builder subscribe(@Nonnull String id, @Nonnull String destination) {
 		return builder(Command.SUBSCRIBE).subscription(id).destination(destination);
 	}
 
@@ -435,7 +439,7 @@ public class Frame {
 	 * @param receiptId
 	 * @return
 	 */
-	public static Builder receipt(String receiptId) {
+	public static Builder receipt(@Nonnull String receiptId) {
 		return builder(RECIEPT).header(RECIEPT_ID, receiptId);
 	}
 
@@ -444,7 +448,7 @@ public class Frame {
 	 * @param command
 	 * @return
 	 */
-	public static Builder builder(Command command) {
+	public static Builder builder(@Nonnull Command command) {
 		return new Builder(command);
 	}
 
@@ -453,7 +457,7 @@ public class Frame {
 	 * @param frame
 	 * @return
 	 */
-	public static Builder builder(Builder builder) {
+	public static Builder builder(@Nonnull Builder builder) {
 		return new Builder(builder);
 	}
 
@@ -462,7 +466,7 @@ public class Frame {
 	 * @param frame
 	 * @return
 	 */
-	public static Builder builder(Frame frame) {
+	public static Builder builder(@Nonnull Frame frame) {
 		return new Builder(frame);
 	}
 
@@ -485,7 +489,7 @@ public class Frame {
 		 * 
 		 * @param builder
 		 */
-		private Builder(Builder builder) {
+		private Builder(@Nonnull Builder builder) {
 			this(builder.command);
 
 			for (Entry<String, List<String>> e : builder.headers.entrySet()) {
@@ -499,7 +503,7 @@ public class Frame {
 		 * 
 		 * @param frame
 		 */
-		private Builder(Frame frame) {
+		private Builder(@Nonnull Frame frame) {
 			this(frame.getCommand());
 
 			for (Entry<String, List<String>> e : frame.getHeaders().entrySet()) {
@@ -513,7 +517,7 @@ public class Frame {
 		 * 
 		 * @param command
 		 */
-		private Builder(Command command) {
+		private Builder(@Nonnull Command command) {
 			this.command = command;
 		}
 
@@ -523,7 +527,7 @@ public class Frame {
 		 * @param values
 		 * @return
 		 */
-		public Builder header(String key, String... values) {
+		public Builder header(@Nonnull String key, @Nonnull String... values) {
 			if (values == null || values.length == 0)
 				throw new IllegalArgumentException("'values' cannot be null or empty!");
 
@@ -553,7 +557,7 @@ public class Frame {
 		 * @param destination
 		 * @return
 		 */
-		public Builder destination(String destination) {
+		public Builder destination(@Nonnull String destination) {
 			if (!this.command.destination()) {
 				throw new IllegalArgumentException(this.command + " does not accept a destination!");
 			}
@@ -566,7 +570,7 @@ public class Frame {
 		 * @param messageId
 		 * @return
 		 */
-		public Builder messageId(String messageId) {
+		public Builder messageId(@Nonnull String messageId) {
 			header(MESSAGE_ID, messageId);
 			return this;
 		}
@@ -577,7 +581,7 @@ public class Frame {
 		 * @param sessionId
 		 * @return
 		 */
-		public Builder session(String session) {
+		public Builder session(@Nonnull String session) {
 			header(Headers.SESSION, session);
 			return this;
 		}
@@ -588,8 +592,8 @@ public class Frame {
 		 * @return
 		 * @throws IllegalArgumentException if the command type does not accept a body or {@code body} is {@code null}.
 		 */
-		public Builder body(MediaType contentType, String body) {
-			return body(contentType, ByteBuffer.wrap(body.getBytes(StandardCharsets.UTF_8)));
+		public Builder body(MediaType contentType, @Nonnull String body) {
+			return body(contentType, UTF_8.encode(body));
 		}
 
 		/**
@@ -599,7 +603,7 @@ public class Frame {
 		 * @return
 		 * @throws IllegalArgumentException if the command type does not accept a body or {@code body} is {@code null}.
 		 */
-		public Builder body(MediaType contentType, ByteBuffer body) {
+		public Builder body(MediaType contentType, @Nonnull ByteBuffer body) {
 			if (!this.command.body()) {
 				throw new IllegalArgumentException(this.command + " does not accept a body!");
 			}
@@ -615,7 +619,7 @@ public class Frame {
 		 * @param id
 		 * @return
 		 */
-		public Builder subscription(String id) {
+		public Builder subscription(@Nonnull String id) {
 			if (!this.command.subscriptionId()) {
 				throw new IllegalArgumentException(this.command + " does not accept a subscription!");
 			}
@@ -635,7 +639,7 @@ public class Frame {
 		 * @param incoming
 		 * @return
 		 */
-		public Builder heartbeat(int outgoing, int incoming) {
+		public Builder heartbeat(@Nonnull int outgoing, @Nonnull int incoming) {
 			return header(Headers.HEART_BEAT, Integer.toString(outgoing), Integer.toString(incoming));
 		}
 
@@ -720,6 +724,8 @@ public class Frame {
 				break;
 			case UNSUBSCRIBE:
 				assertExists(ID);
+				break;
+			case HEARTBEAT:
 				break;
 			}
 		}

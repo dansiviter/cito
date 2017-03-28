@@ -59,12 +59,12 @@ public class XhrSendHandler extends AbstractSessionHandler {
 		final HttpServletRequest req = async.getRequest();
 
 		if (req.getContentLength() <= 0) {
-			this.servlet.log("Payload expected.");
+			this.log.warn("Payload expected.");
 			sendErrorNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Payload expected.");
 			return;
 		}
 		if (session == null) {
-			this.servlet.log("Session not found! [" + Util.session(this.servlet, async.getRequest()) + "]");
+			this.log.warn("Session not found! [{}]", Util.session(this.servlet, async.getRequest()));
 			sendErrorNonBlock(async, HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}

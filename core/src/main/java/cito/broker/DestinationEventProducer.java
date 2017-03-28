@@ -20,21 +20,21 @@ import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 
 import cito.QuietClosable;
-import cito.event.DestinationEvent;
+import cito.event.DestinationChanged;
 
 /**
- * Acts as both a interface to detect if {@link DestinationEvent}s will be produced by the broker and to hold/produce
- * {@link DestinationEvent} within the CDI runtime.
+ * Acts as both a interface to detect if {@link DestinationChanged}s will be produced by the broker and to hold/produce
+ * {@link DestinationChanged} within the CDI runtime.
  * 
  * @author Daniel Siviter
  * @since v1.0 [25 Jan 2017]
  */
 @ApplicationScoped
 public class DestinationEventProducer {
-	public static final ThreadLocal<DestinationEvent> HOLDER = new ThreadLocal<>();
+	public static final ThreadLocal<DestinationChanged> HOLDER = new ThreadLocal<>();
 
 	@Produces @Dependent
-	public static DestinationEvent get() {
+	public static DestinationChanged get() {
 		return HOLDER.get();
 	}
 
@@ -42,8 +42,8 @@ public class DestinationEventProducer {
 	 * 
 	 * @param e
 	 */
-	public static QuietClosable set(DestinationEvent e) {
-		final DestinationEvent old = get();
+	public static QuietClosable set(DestinationChanged e) {
+		final DestinationChanged old = get();
 		if (old != null) {
 			throw new IllegalStateException("Already set!");
 		}

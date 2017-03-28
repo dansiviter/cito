@@ -36,6 +36,9 @@ import javax.websocket.MessageHandler.Partial;
 import javax.websocket.MessageHandler.Whole;
 import javax.websocket.RemoteEndpoint.Basic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author Daniel Siviter
@@ -47,6 +50,7 @@ public class ServletSession extends SessionAdapter {
 	private final Set<MessageHandlerWrapper> messageHandlers = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	private final LinkedTransferQueue<String> frameQueue = new LinkedTransferQueue<>();
 
+	private final Logger log = LoggerFactory.getLogger(ServletSession.class);
 	private final Servlet servlet;
 	private final HttpServletRequest instigatingReq;
 	private final Endpoint endpoint;
@@ -160,7 +164,7 @@ public class ServletSession extends SessionAdapter {
 
 	@Override
 	public void close(CloseReason closeReason) throws IOException {
-		this.servlet.log("Closing session. [id=" + getId() + ",reason=" + closeReason + "]");
+		this.log.info("Closing session. [id={},reason={}]", getId(), closeReason);
 		this.servlet.unregister(this);
 		this.closed = this.active = LocalDateTime.now();
 	}
@@ -207,7 +211,7 @@ public class ServletSession extends SessionAdapter {
 	private void flush() throws IOException {
 		checkStillValid();
 		if (this.sender == null) {
-			this.servlet.log("No sender. Ignoring flush. [sessionId=" + getId() + "]");
+			this.log.debug("No sender. Ignoring flush. [sessionId={}]", getId());
 			return;
 		}
 		this.sender.send(this.frameQueue);
@@ -270,25 +274,25 @@ public class ServletSession extends SessionAdapter {
 		}
 	}
 
-
 	/**
 	 * 
 	 * @author Daniel Siviter
 	 * @since v1.0 [29 Jul 2016]
 	 */
 	public class DefaultBasic extends AbstractBasic {
-		private StringBuilder buf = new StringBuilder();
+		private final Logger log = LoggerFactory.getLogger(DefaultBasic.class);
+		private final StringBuilder buf = new StringBuilder();
 
 		@Override
 		public void sendText(String msg) throws IOException {
-			servlet.log("Sending message. [sessionId=" + getId() + ",msg=" + msg + "]");
+			this.log.info("Sending message. [sessionId={},msg={}]", getId(), msg);
 			frameQueue.add(msg);
 			flush();
 		}
 
 		@Override
 		public void sendText(String msg, boolean last) throws IOException {
-			servlet.log("Sending message. [sessionId=" + getId() + ",msg=" + msg + ",last=" + last + "]");
+			this.log.info("Sending message. [sessionId={},msg={},last={}]", getId(), msg, last);
 			synchronized (this.buf) {
 				this.buf.append(msg);
 				if (last) {

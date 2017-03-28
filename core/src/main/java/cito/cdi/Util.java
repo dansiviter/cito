@@ -15,6 +15,9 @@
  */
 package cito.cdi;
 
+import static java.util.Objects.*;
+
+import javax.annotation.Nonnull;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.BeanManager;
@@ -38,12 +41,11 @@ public enum Util { ;
 	 * @return instance with injected fields (if possible - or null if the given instance is null)
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static void injectFields(BeanManager beanManager, Object instance) {
-		if (instance == null) {
-			throw new IllegalArgumentException("'instance' cannot be null!");
-		}
-		CreationalContext<?> creationalContext = beanManager.createCreationalContext(null);
+	public static void injectFields(@Nonnull BeanManager beanManager, @Nonnull Object instance) {
+		requireNonNull(beanManager);
+		requireNonNull(instance);
 
+		final CreationalContext<?> creationalContext = beanManager.createCreationalContext(null);
 		final AnnotatedType<?> annotatedType = beanManager.createAnnotatedType(instance.getClass());
 		final InjectionTarget injectionTarget = beanManager.createInjectionTarget(annotatedType);
 		injectionTarget.inject(instance, creationalContext);

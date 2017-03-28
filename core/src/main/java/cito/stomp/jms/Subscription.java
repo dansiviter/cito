@@ -15,8 +15,11 @@
  */
 package cito.stomp.jms;
 
+import static java.util.Objects.*;
+
 import java.io.IOException;
 
+import javax.annotation.Nonnull;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -52,9 +55,9 @@ public class Subscription implements MessageListener {
 	 * @param frame
 	 * @throws JMSException
 	 */
-	public Subscription(Session session, String id, Frame frame, Factory factory) throws JMSException {
-		this.session = session;
-		this.id = id;
+	public Subscription(@Nonnull Session session, @Nonnull String id, @Nonnull Frame frame) throws JMSException {
+		this.session = requireNonNull(session);
+		this.id = requireNonNull(id);
 		this.destination = session.toDestination(frame.getFirstHeader(Headers.DESTINATION));
 
 		final String sessionId = this.session.getConnection().getSessionId();

@@ -15,8 +15,6 @@
  */
 package cito.sockjs;
 
-import static cito.sockjs.Util.servletContext;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -40,6 +38,8 @@ import javax.websocket.MessageHandler;
 import javax.ws.rs.core.HttpHeaders;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cito.sockjs.ServletSession.MessageHandlerWrapper;
 
@@ -62,6 +62,7 @@ public abstract class AbstractHandler implements Serializable {
 	protected static final String CORS_REQUEST_HEADERS = "Access-Control-Request-Headers";
 	protected static final String CORS_ALLOW_HEADERS = "Access-Control-Allow-Headers";
 
+	protected final Logger log;
 	protected final Servlet servlet;
 	protected final String mediaType;
 	protected final String[] methods;
@@ -73,6 +74,7 @@ public abstract class AbstractHandler implements Serializable {
 	 * @param methods
 	 */
 	public AbstractHandler(Servlet servlet, String mediaType, String... methods) {
+		this.log = LoggerFactory.getLogger(getClass());
 		this.servlet = servlet;
 		this.mediaType = mediaType;
 		this.methods = methods;
@@ -148,13 +150,13 @@ public abstract class AbstractHandler implements Serializable {
 				}
 
 				if (h.clazz == ByteBuffer.class || h.clazz == InputStream.class) {
-					this.servlet.log("Binary types not supported! [" + h.getClass() + "]");
+					this.log.warn("Binary types not supported! [{}]", h.getClass());
 					continue;
 				}
 
-				this.servlet.log("Decoder types not supported yet! [" + h.getClass() + "]");
+				this.log.warn("Decoder types not supported yet! [{}]", h.getClass());
 			} else if (h.handler() instanceof MessageHandler.Partial) {
-				this.servlet.log("Partial types not supported yet! [" + h.getClass() + "]");
+				this.log.warn("Partial types not supported yet! [{}]", h.getClass());
 			}
 		}
 		if (reader != null) {
@@ -220,12 +222,12 @@ public abstract class AbstractHandler implements Serializable {
 
 				@Override
 				public void onError(Throwable t) {
-					servletContext(async).log("Unable to write error!", t);
+					log.error("Unable to write error!", t);
 					async.complete();
 				}
 			});
 		} catch (IOException e) {
-			servletContext(async).log("Unable to write error!", e);
+			this.log.error("Unable to write error!", e);
 			async.complete();
 		}
 	}

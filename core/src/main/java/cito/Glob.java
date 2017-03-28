@@ -39,6 +39,8 @@ import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import javax.annotation.Nonnull;
+
 /**
  * A class for POSIX GLOB pattern with brace expansions.
  * 
@@ -51,13 +53,12 @@ public class Glob {
 	private Pattern compiled;
 	private boolean hasWildcard;
 
-
 	/**
 	 * Construct the glob pattern object with a glob pattern string
 	 * 
 	 * @param globPattern the glob pattern string
 	 */
-	public Glob(String globPattern) {
+	public Glob(@Nonnull String globPattern) {
 		set(globPattern);
 	}
 
@@ -86,7 +87,7 @@ public class Glob {
 	 * 
 	 * @param glob  the glob pattern string
 	 */
-	public void set(String glob) {
+	public void set(@Nonnull String glob) {
 		StringBuilder regex = new StringBuilder();
 		int setOpen = 0;
 		int curlyOpen = 0;

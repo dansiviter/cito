@@ -15,6 +15,8 @@
  */
 package cito.stomp.jms;
 
+import static java.nio.charset.StandardCharsets.*;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -132,14 +134,15 @@ public class Factory {
 	 */
 	public Message toMessage(Session session, Frame frame) throws JMSException {
 		final Message msg;
-		byte[] bytes = frame.getBody().array();
 		if (frame.containsHeader(Headers.CONTENT_LENGTH)) {
-			BytesMessage bm = session.createBytesMessage();
+			final ByteBuffer buf = frame.getBody();
+			byte[] bytes = new byte[buf.remaining()];
+			buf.get(bytes);
+			final BytesMessage bm = session.createBytesMessage();
 			bm.writeBytes(bytes);
 			msg = bm;
 		} else {
-			final String body = new String(bytes, StandardCharsets.UTF_8);
-			msg = session.createTextMessage(body);
+			msg = session.createTextMessage(UTF_8.decode(frame.getBody()).toString());
 		}
 		copyHeaders(session, frame, msg);
 		return msg;

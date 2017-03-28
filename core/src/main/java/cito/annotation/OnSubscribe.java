@@ -27,11 +27,11 @@ import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
 import cito.Glob;
-import cito.event.MessageEvent;
+import cito.event.Message;
 import cito.stomp.Command;
 
 /**
- * Observable {@link MessageEvent} for when a user performs a {@link Command#SUBSCRIBE} to a destination.
+ * Observable {@link Message} for when a user performs a {@link Command#SUBSCRIBE} to a destination.
  * 
  * <pre>
  * 	public void on(&#064;Observes &#064;OnSubscribe("/topic/{param}.world}") MessageEvent e) {

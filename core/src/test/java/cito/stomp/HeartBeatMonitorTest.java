@@ -15,21 +15,26 @@
  */
 package cito.stomp;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import cito.stomp.Connection;
-import cito.stomp.HeartBeatMonitor;
+import cito.ReflectionUtil;
 
 /**
  * Unit test for {@link HeartBeatMonitor}.
@@ -37,7 +42,7 @@ import cito.stomp.HeartBeatMonitor;
  * @author Daniel Siviter
  * @since v1.0 [25 Jul 2016]
  */
-@RunWith(MockitoJUnitRunner.class) @Ignore
+@RunWith(MockitoJUnitRunner.class)
 public class HeartBeatMonitorTest {
 	@Mock
 	private Connection conn;
@@ -51,31 +56,75 @@ public class HeartBeatMonitorTest {
 		this.monitor = new HeartBeatMonitor(this.conn, this.scheduler);
 	}
 
-	/**
-	 * 
-	 */
 	@Test
-	public void start() {
+	public void start_noReadWrite() {
 		this.monitor.start(0, 0);
-		fail();
+
+		verify(this.conn).getSessionId();
 	}
 
 	/**
 	 * 
 	 */
 	@Test
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void start() {
+		final ScheduledFuture<?> read = mock(ScheduledFuture.class);
+		when(this.scheduler.schedule(any(Runnable.class), eq(15L), eq(TimeUnit.MILLISECONDS))).thenReturn((ScheduledFuture) read);
+		final ScheduledFuture<?> send = mock(ScheduledFuture.class);
+		when(this.scheduler.schedule(any(Runnable.class), eq(20L), eq(TimeUnit.MILLISECONDS))).thenReturn((ScheduledFuture) send);
+
+		this.monitor.start(10, 20);
+
+		assertEquals(read, ReflectionUtil.get(this.monitor, "read"));
+		assertEquals(send, ReflectionUtil.get(this.monitor, "send"));
+
+		verify(this.conn).getSessionId();
+		verify(this.scheduler).schedule(any(Runnable.class), eq(15L), eq(TimeUnit.MILLISECONDS));
+		verify(this.scheduler).schedule(any(Runnable.class), eq(20L), eq(TimeUnit.MILLISECONDS));
+		verifyNoMoreInteractions(read, send);
+	}
+
+	/**
+	 * 
+	 */
+	@Test
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void resetRead() {
+		final ScheduledFuture<?> read = mock(ScheduledFuture.class);
+		ReflectionUtil.set(this.monitor, "read", read);
+		ReflectionUtil.set(this.monitor, "readDelay", 10L);
+		final ScheduledFuture<?> anotherRead = mock(ScheduledFuture.class);
+		when(this.scheduler.schedule(any(Runnable.class), eq(10L), eq(TimeUnit.MILLISECONDS))).thenReturn((ScheduledFuture) anotherRead);
+
 		this.monitor.resetRead();
-		fail();
+
+		assertEquals(anotherRead, ReflectionUtil.get(this.monitor, "read"));
+
+		verify(read).cancel(false);
+		verify(this.scheduler).schedule(any(Runnable.class), eq(10L), eq(TimeUnit.MILLISECONDS));
+		verifyNoMoreInteractions(read, anotherRead);
 	}
 
 	/**
 	 * 
 	 */
 	@Test
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void resetSend() {
+		final ScheduledFuture<?> send = mock(ScheduledFuture.class);
+		ReflectionUtil.set(this.monitor, "send", send);
+		ReflectionUtil.set(this.monitor, "sendDelay", 10L);
+		final ScheduledFuture<?> anotherSend = mock(ScheduledFuture.class);
+		when(this.scheduler.schedule(any(Runnable.class), eq(10L), eq(TimeUnit.MILLISECONDS))).thenReturn((ScheduledFuture) anotherSend);
+
 		this.monitor.resetSend();
-		fail();
+
+		assertEquals(anotherSend, ReflectionUtil.get(this.monitor, "send"));
+
+		verify(send).cancel(false);
+		verify(this.scheduler).schedule(any(Runnable.class), eq(10L), eq(TimeUnit.MILLISECONDS));
+		verifyNoMoreInteractions(send, anotherSend);
 	}
 
 	/**
@@ -83,8 +132,16 @@ public class HeartBeatMonitorTest {
 	 */
 	@Test
 	public void close() {
+		final ScheduledFuture<?> send = mock(ScheduledFuture.class);
+		ReflectionUtil.set(this.monitor, "send", send);
+		final ScheduledFuture<?> read = mock(ScheduledFuture.class);
+		ReflectionUtil.set(this.monitor, "read", read);
+
 		this.monitor.close();
-		fail();
+
+		verify(send).cancel(false);
+		verify(read).cancel(false);
+		verifyNoMoreInteractions(send, read);
 	}
 
 	@After

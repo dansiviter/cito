@@ -28,11 +28,11 @@ import cito.QuietClosable;
  * @since v1.0 [25 Jan 2017]
  */
 @ApplicationScoped
-public class ClientMessageEventProducer {
-	private static final ThreadLocal<MessageEvent> HOLDER = new ThreadLocal<>();
+public class ClientMessageProducer {
+	private static final ThreadLocal<Message> HOLDER = new ThreadLocal<>();
 
 	@Produces @Dependent
-	public static MessageEvent get() {
+	public static Message get() {
 		return HOLDER.get();
 	}
 
@@ -40,8 +40,8 @@ public class ClientMessageEventProducer {
 	 * 
 	 * @param e
 	 */
-	public static QuietClosable set(MessageEvent e) {
-		final MessageEvent old = get();
+	public static QuietClosable set(Message e) {
+		final Message old = get();
 		if (old != null) {
 			throw new IllegalStateException("Already set!");
 		}

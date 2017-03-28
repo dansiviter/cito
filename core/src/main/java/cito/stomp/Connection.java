@@ -17,6 +17,7 @@ package cito.stomp;
 
 import java.io.IOException;
 
+import javax.annotation.Nonnull;
 import javax.websocket.CloseReason;
 
 /**
@@ -36,12 +37,12 @@ public interface Connection {
 	 * @param frame
 	 * @throws IOException
 	 */
-	void sendToClient(Frame frame) throws IOException;
+	void sendToClient(@Nonnull Frame frame) throws IOException;
 
 	/**
 	 * 
 	 * @param reason
 	 * @throws IOException
 	 */
-	void close(CloseReason reason) throws IOException;
+	void close(@Nonnull CloseReason reason) throws IOException;
 }

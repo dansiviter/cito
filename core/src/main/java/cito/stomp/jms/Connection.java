@@ -15,6 +15,7 @@
  */
 package cito.stomp.jms;
 
+import static cito.Util.isNullOrEmpty;
 import static cito.stomp.Headers.ACCEPT_VERSION;
 
 import java.io.IOException;
@@ -24,15 +25,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
+import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.Dependent;
+import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.jms.JMSException;
 import javax.websocket.CloseReason;
 import javax.ws.rs.core.MediaType;
 
-import cito.Strings;
-import cito.event.MessageEvent;
+import cito.annotation.FromBroker;
+import cito.event.Message;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Frame.HeartBeat;
@@ -57,6 +60,8 @@ public class Connection extends AbstractConnection {
 	private Factory factory;
 	@Inject // XXX use ManagedScheduledExecutorService?
 	private ScheduledExecutorService scheduler;
+	@Inject @FromBroker
+	private Event<Message> brokerMessageEvent;
 
 	private HeartBeatMonitor heartBeatMonitor;
 	private String sessionId;
@@ -76,12 +81,12 @@ public class Connection extends AbstractConnection {
 	}
 
 	@Override
-	public void sendToClient(Frame frame) {
+	public void sendToClient(@Nonnull Frame frame) {
 		this.heartBeatMonitor.resetSend();
 		final Command command = frame.getCommand();
 		this.log.info("Sending message to client. [sessionId={},command={}]",
 				this.sessionId, command != null ? command : "HEARTBEAT");
-		this.relay.send(new MessageEvent(this.sessionId, frame));
+		this.brokerMessageEvent.fire(new Message(this.sessionId, frame));
 	}
 
 	/**
@@ -109,7 +114,7 @@ public class Connection extends AbstractConnection {
 	 * @return
 	 * @throws JMSException
 	 */
-	private Session getSession(Frame in) throws JMSException {
+	private Session getSession(@Nonnull Frame in) throws JMSException {
 		final String tx = in.transaction();
 		if (tx != null)
 			return this.txSessions.get(tx);
@@ -124,14 +129,14 @@ public class Connection extends AbstractConnection {
 	 * @return
 	 * @throws JMSException
 	 */
-	public Connection connect(MessageEvent msg) throws JMSException {
+	public Connection connect(@Nonnull Message msg) throws JMSException {
 		if (this.sessionId != null) {
 			throw new IllegalStateException("Already connected!");
 		}
 
 		this.log.info("Connecting... [sessionId={}]", msg.sessionId());
 
-		if (Strings.isNullOrEmpty(msg.sessionId())) {
+		if (isNullOrEmpty(msg.sessionId())) {
 			throw new IllegalArgumentException("Session ID cannot be null!");
 		}
 
@@ -179,7 +184,7 @@ public class Connection extends AbstractConnection {
 	 * @param msg
 	 */
 	@Override
-	public void on(MessageEvent msg) {
+	public void on(Message msg) {
 		if (!getSessionId().equals(msg.sessionId())) {
 			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + this.sessionId + ",actual=" + msg.sessionId() + "]");
 		}
@@ -205,9 +210,19 @@ public class Connection extends AbstractConnection {
 				final String id = msg.frame().getFirstHeader(Headers.ID);
 				javax.jms.Message message = this.ackMessages.remove(id);
 				if (message == null) {
-					throw new IllegalStateException("No such message! [" + id + "]");
+					throw new IllegalStateException("No such message to ACK! [" + id + "]");
 				}
 				message.acknowledge();
+				break;
+			}
+			case NACK: {
+				final String id = msg.frame().getFirstHeader(Headers.ID);
+				javax.jms.Message message = this.ackMessages.remove(id);
+				if (message == null) {
+					throw new IllegalStateException("No such message to NACK! [" + id + "]");
+				}
+				// not sure what to do here, but we're 
+				this.log.warn("NACK recieved, but no JMS equivalent! [{}]", id);
 				break;
 			}
 			case BEGIN: {
@@ -219,21 +234,37 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			case COMMIT: {
-				final Session txSession = this.txSessions.remove(msg.frame().transaction());
+				final String tx = msg.frame().transaction();
+				final Session txSession = this.txSessions.remove(tx);
+				if (txSession == null) {
+					throw new IllegalStateException("Transaction session does not exists! [" + tx + "]");
+				}
 				txSession.commit();
 				break;
 			}
 			case ABORT: {
-				final Session txSession = this.txSessions.remove(msg.frame().transaction());
+				final String tx = msg.frame().transaction();
+				final Session txSession = this.txSessions.remove(tx);
+				if (txSession == null) {
+					throw new IllegalStateException("Transaction session does not exists! [" + tx + "]");
+				}
 				txSession.rollback();
 				break;
 			}
 			case SUBSCRIBE: {
 				final String subscriptionId = msg.frame().getFirstHeader(Headers.ID);
-				final Subscription subscription = this.subscriptions.putIfAbsent(
-						subscriptionId, new Subscription(getSession(msg.frame()), subscriptionId, msg.frame(), this.factory));
-				if (subscription != null)
-					throw new IllegalStateException("Subscription already exists! [" + subscriptionId + "]");
+				this.subscriptions.compute(
+						subscriptionId,
+						(k, v) -> { 
+							try {
+								if (v != null) {
+									throw new IllegalStateException("Subscription already exists! [" + subscriptionId + "]");
+								}
+								return new Subscription(getSession(msg.frame()), k, msg.frame());
+							} catch (JMSException e) {
+								throw new IllegalStateException("Unable to subscribe! [" + subscriptionId + "]");
+							}
+						});
 				break;
 			}
 			case UNSUBSCRIBE: {
@@ -257,7 +288,7 @@ public class Connection extends AbstractConnection {
 	 * 
 	 * @param msg
 	 */
-	public void disconnect(MessageEvent msg) {
+	public void disconnect(@Nonnull Message msg) {
 		sendReceipt(msg.frame());
 	}
 
@@ -266,7 +297,7 @@ public class Connection extends AbstractConnection {
 	 * @param frame
 	 * @throws Exception
 	 */
-	private void sendReceipt(Frame frame)  {
+	private void sendReceipt(@Nonnull Frame frame)  {
 		final String receiptId = frame.getFirstHeader(Headers.RECIEPT);
 		if (receiptId != null) {
 			sendToClient(Frame.receipt(receiptId).build());
@@ -278,7 +309,7 @@ public class Connection extends AbstractConnection {
 	 * @param msg
 	 * @throws JMSException 
 	 */
-	public void addAckMessage(javax.jms.Message msg) throws JMSException {
+	public void addAckMessage(@Nonnull javax.jms.Message msg) throws JMSException {
 		this.ackMessages.put(msg.getJMSMessageID(), msg);
 	}
 

@@ -24,7 +24,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-import cito.server.AbstractServer;
+import cito.server.AbstractEndpoint;
 import cito.server.ws.FrameEncoding;
 import cito.server.ws.WebSocketConfigurator;
 import cito.stomp.Frame;
@@ -42,7 +42,7 @@ import cito.stomp.Frame;
 		decoders = FrameEncoding.class,
 		configurator = WebSocketConfigurator.class
 		)
-public class WebSocketServer extends AbstractServer {
+public class Endpoint extends AbstractEndpoint {
 	@OnOpen
 	@Override
 	public void onOpen(Session session, EndpointConfig config) {

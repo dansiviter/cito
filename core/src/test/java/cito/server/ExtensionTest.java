@@ -56,7 +56,7 @@ import cito.annotation.OnSubscribe;
 import cito.annotation.OnUnsubscribe;
 import cito.annotation.Qualifiers;
 import cito.annotation.WebSocketScope;
-import cito.event.MessageEvent;
+import cito.event.Message;
 import cito.scope.WebSocketContext;
 import cito.scope.WebSocketSessionHolder;
 import cito.server.Extension;
@@ -92,8 +92,8 @@ public class ExtensionTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void register_onConnected() {
-		final ProcessObserverMethod<MessageEvent, ?> processObserverMethod = mock(ProcessObserverMethod.class);
-		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
+		final ProcessObserverMethod<Message, ?> processObserverMethod = mock(ProcessObserverMethod.class);
+		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onConnected()));
 
@@ -109,8 +109,8 @@ public class ExtensionTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void register_onSend() {
-		final ProcessObserverMethod<MessageEvent, ?> processObserverMethod = mock(ProcessObserverMethod.class);
-		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
+		final ProcessObserverMethod<Message, ?> processObserverMethod = mock(ProcessObserverMethod.class);
+		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSend("")));
 
@@ -126,8 +126,8 @@ public class ExtensionTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void register_onSubscribe() {
-		final ProcessObserverMethod<MessageEvent, ?> processObserverMethod = mock(ProcessObserverMethod.class);
-		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
+		final ProcessObserverMethod<Message, ?> processObserverMethod = mock(ProcessObserverMethod.class);
+		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("")));
 
@@ -143,8 +143,8 @@ public class ExtensionTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void register_onUnsubscribe() {
-		final ProcessObserverMethod<MessageEvent, ?> processObserverMethod = mock(ProcessObserverMethod.class);
-		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
+		final ProcessObserverMethod<Message, ?> processObserverMethod = mock(ProcessObserverMethod.class);
+		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("")));
 
@@ -160,8 +160,8 @@ public class ExtensionTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void register_onDisconnect() {
-		final ProcessObserverMethod<MessageEvent, ?> processObserverMethod = mock(ProcessObserverMethod.class);
-		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
+		final ProcessObserverMethod<Message, ?> processObserverMethod = mock(ProcessObserverMethod.class);
+		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onDisconnect()));
 
@@ -177,10 +177,10 @@ public class ExtensionTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void getObservers() {
-		final ObserverMethod<MessageEvent> observerMethod = mock(ObserverMethod.class);
+		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
 		getMessageObservers(this.extension).put(OnSubscribe.class, Collections.singleton(observerMethod));
 
-		final Set<ObserverMethod<MessageEvent>> results = this.extension.getMessageObservers(OnSubscribe.class);
+		final Set<ObserverMethod<Message>> results = this.extension.getMessageObservers(OnSubscribe.class);
 
 		assertEquals(Collections.singleton(observerMethod), results);
 
@@ -275,7 +275,7 @@ public class ExtensionTest {
 	 * @param e
 	 * @return
 	 */
-	private static Map<Class<? extends Annotation>, Set<ObserverMethod<MessageEvent>>> getMessageObservers(Extension e) {
+	private static Map<Class<? extends Annotation>, Set<ObserverMethod<Message>>> getMessageObservers(Extension e) {
 		return ReflectionUtil.get(e, "messageObservers");
 	}
 }

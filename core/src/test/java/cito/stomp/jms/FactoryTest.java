@@ -121,7 +121,7 @@ public class FactoryTest {
 	public void toMessage_bytes() throws JMSException {
 		final javax.jms.Session session = mock(javax.jms.Session.class);
 		final Frame frame = mock(Frame.class);
-		final ByteBuffer buffer = ByteBuffer.wrap(new byte[0]);
+		final ByteBuffer buffer = ByteBuffer.wrap(new byte[0]).asReadOnlyBuffer();
 		when(frame.getBody()).thenReturn(buffer);
 		when(frame.getHeaders()).thenReturn(new MultivaluedHashMap<>());
 		when(frame.containsHeader(Headers.CONTENT_LENGTH)).thenReturn(true);
@@ -143,7 +143,7 @@ public class FactoryTest {
 	public void toMessage_text() throws JMSException {
 		final javax.jms.Session session = mock(javax.jms.Session.class);
 		final Frame frame = mock(Frame.class);
-		final ByteBuffer buffer = ByteBuffer.wrap(new byte[0]);
+		final ByteBuffer buffer = ByteBuffer.wrap(new byte[0]).asReadOnlyBuffer();
 		when(frame.getBody()).thenReturn(buffer);
 		when(frame.getHeaders()).thenReturn(new MultivaluedHashMap<>());
 		when(frame.containsHeader(Headers.CONTENT_LENGTH)).thenReturn(false);

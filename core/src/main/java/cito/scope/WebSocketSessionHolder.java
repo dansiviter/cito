@@ -17,10 +17,10 @@ package cito.scope;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
+import javax.inject.Inject;
 import javax.websocket.Session;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import cito.annotation.WebSocketScope;
 
@@ -31,16 +31,17 @@ import cito.annotation.WebSocketScope;
  */
 @ApplicationScoped
 public class WebSocketSessionHolder {
-	private static final Logger LOG = LoggerFactory.getLogger(WebSocketSessionHolder.class);
-
 	private final ThreadLocal<Session> session = new ThreadLocal<>();
+
+	@Inject
+	private Logger log;
 
 	/**
 	 * 
 	 * @param session
 	 */
 	public void set(Session session) {
-		LOG.debug("Setting session. [sessionId={}]", session.getId());
+		this.log.debug("Setting session. [sessionId={}]", session.getId());
 		if (this.session.get() != null) {
 			throw new IllegalStateException("Session already set! [expected=" + this.session.get().getId() + ",current=" + session.getId() + "]");
 		}
@@ -55,7 +56,7 @@ public class WebSocketSessionHolder {
 		if (session == null) {
 			throw new IllegalArgumentException("Session not set!");
 		}
-		LOG.debug("Removing session. [sessionId={}]", session.getId());
+		this.log.debug("Removing session. [sessionId={}]", session.getId());
 		this.session.remove();
 	}
 

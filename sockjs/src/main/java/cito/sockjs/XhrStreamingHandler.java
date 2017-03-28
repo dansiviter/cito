@@ -28,6 +28,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cito.sockjs.nio.WriteStream;
 
@@ -66,7 +68,7 @@ public class XhrStreamingHandler extends AbstractSessionHandler {
 		if (initial) {
 			pipe.sink().write(UTF_8.encode(CharBuffer.wrap("o\n")));
 		} else if (!session.isOpen()) {
-			this.servlet.log("Session closed! [" + session.getId() + "]");
+			this.log.debug("Session closed! [{}]", session.getId());
 			pipe.sink().write(UTF_8.encode(closeFrame(3000, "Go away!", "\n")));
 			pipe.sink().close();
 		} 
@@ -81,6 +83,7 @@ public class XhrStreamingHandler extends AbstractSessionHandler {
 	 * @since v1.0 [18 Feb 2017]
 	 */
 	private class XhrStreamingSender implements Sender {
+		private final Logger log = LoggerFactory.getLogger(XhrStreamingSender.class);
 		private final ServletSession session;
 		private final WritableByteChannel dest;
 		private int bytesSent;
@@ -94,7 +97,7 @@ public class XhrStreamingHandler extends AbstractSessionHandler {
 		public void send(Queue<String> frames) throws IOException {
 			while (!frames.isEmpty()) {
 				String frame = frames.poll();
-				servlet.log("Flushing frame. [sessionId=" + this.session.getId() + ",frame=" + frame + "]");
+				this.log.debug("Flushing frame. [sessionId={},frame={}]", this.session.getId(), frame);
 				frame = StringEscapeUtils.escapeJson(frame);
 				final CharBuffer buf = CharBuffer.allocate(frame.length() + 6);
 				buf.append("a[\"").append(frame).append("\"]\n").flip();
@@ -103,7 +106,7 @@ public class XhrStreamingHandler extends AbstractSessionHandler {
 				this.bytesSent += byteBuf.limit();
 				final boolean limitReached = this.bytesSent >= servlet.getConfig().maxStreamBytes();
 				if (limitReached) {
-					servlet.log("Limit to streaming bytes reached. Closing sender.");
+					this.log.debug("Limit to streaming bytes reached. Closing sender.");
 					close();
 					return;
 				}

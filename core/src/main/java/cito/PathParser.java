@@ -18,6 +18,8 @@ package cito;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
+import javax.annotation.Nonnull;
+
 import cito.annotation.PathParam;
 
 /**
@@ -37,7 +39,7 @@ public class PathParser {
 	 * 
 	 * @param pattern the pattern to parse.
 	 */
-	public PathParser(String pattern) {
+	public PathParser(@Nonnull String pattern) {
 		this.glob = Glob.from(this.pattern = pattern);
 	}
 

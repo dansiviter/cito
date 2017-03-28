@@ -26,11 +26,12 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import cito.servlet.HttpFilter;
 
 /**
- * Permits
+ * Permits the WebSocket implementation to get a handle on {@link HttpSession#getId()}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [9 Aug 2016]
@@ -51,6 +52,7 @@ public class SessionFilter extends HttpFilter {
 	// --- Inner Classes ---
 
 	/**
+	 * Simple wrapper to expose the {@code httpSessionId}.
 	 * 
 	 * @author Daniel Siviter
 	 * @since v1.0 [9 Aug 2016]
@@ -60,6 +62,8 @@ public class SessionFilter extends HttpFilter {
 
 		SessionRequestWrapper(HttpServletRequest request) {
 			super(request);
+
+			@SuppressWarnings("unchecked")
 			final Map<String, String[]> parameterMap = new HashMap<>(request.getParameterMap());
 			parameterMap.put("httpSessionId", new String[] { request.getSession(true).getId() });
 			this.parameterMap = Collections.unmodifiableMap(parameterMap);

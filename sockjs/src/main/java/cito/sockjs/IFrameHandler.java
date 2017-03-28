@@ -57,7 +57,7 @@ public class IFrameHandler extends AbstractHandler {
 		final HttpServletResponse res = async.getResponse();
 
 		if (!req.getRequestURI().endsWith(".html")) {
-			this.servlet.log("Invalid path! [" + req.getRequestURI() + "]");
+			this.log.warn("Invalid path! [{}]", req.getRequestURI());
 			sendErrorNonBlock(async, HttpServletResponse.SC_NOT_FOUND);
 			async.complete();
 			return;
@@ -77,7 +77,7 @@ public class IFrameHandler extends AbstractHandler {
 		res.getOutputStream().setWriteListener(new WriteStream(async, iFrameChannel, t -> {
 			iFrameChannel.close();
 			if (t != null) {
-				async.getRequest().getServletContext().log("Unable to write entity!", t);
+				this.log.warn("Unable to write entity!", t);
 			}
 			async.complete();
 		}));

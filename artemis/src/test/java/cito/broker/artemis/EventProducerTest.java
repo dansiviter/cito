@@ -50,7 +50,7 @@ public class EventProducerTest {
 	@Mock
 	private EmbeddedJMS broker;
 	@Mock
-	private Event<cito.event.DestinationEvent> destinationEvent;
+	private Event<cito.event.DestinationChanged> destinationEvent;
 	@Mock
 	private Message message;
 

@@ -15,41 +15,43 @@
  */
 package cito.event;
 
+import javax.annotation.concurrent.Immutable;
+
+import cito.stomp.Frame;
+
 /**
  * 
  * @author Daniel Siviter
- * @since v1.0 [18 Jul 2016]
+ * @since v1.0 [19 Jul 2016]
  */
-public class DestinationEvent {
-	private final Type type;
-	private final String destination;
+@Immutable
+public class Message {
+	private final String sessionId;
+	private final Frame frame;
 
-	public DestinationEvent(Type type, String destination) {
-		this.type = type;
-		this.destination = destination;
+	public Message(Frame frame) {
+		this(null, frame);
 	}
 
-	public Type getType() {
-		return type;
+	public Message(String sessionId, Frame frame) {
+		this.sessionId = sessionId;
+		this.frame = frame;
 	}
-
-	public String getDestination() {
-		return destination;
-	}
-
-	public boolean isTopic() {
-		return destination.startsWith("/topic/");
-	}
-
-	// --- Inner Classes ---
 
 	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [19 Jul 2016]
+	 * @return the originating session identifier. If this is a internally generated message (i.e. application code)
+	 * then this will be {@code null}.
 	 */
-	public enum Type {
-		ADDED,
-		REMOVED
+	public String sessionId() {
+		return sessionId;
 	}
+
+	/**
+	 * @return the STOMP frame.
+	 */
+	public Frame frame() {
+		return frame;
+	}
+
+
 }

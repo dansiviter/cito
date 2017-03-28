@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
+ * General utility methods. Yea, I know someone will think this is an anti pattern, but meh!
  * 
  * @author Daniel Siviter
  * @since v1.0 [9 Aug 2016]
@@ -53,7 +54,7 @@ public enum Util { ;
 	public static boolean isEmpty(CharSequence s) {
 		return s != null && s.length() == 0;
 	}
-	
+
 	/**
 	 * 
 	 * @param annotation
@@ -69,5 +70,13 @@ public enum Util { ;
 			}
 		}
 		return found.toArray((A[]) Array.newInstance(annotation, 0));
+	}
+
+	/**
+	 * @param s the string to check.
+	 * @return {@code true} if the given string is {@code null} or is the empty string.
+	 */
+	public static boolean isNullOrEmpty(String s) {
+		return s == null || s.isEmpty();
 	}
 }

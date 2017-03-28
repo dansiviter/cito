@@ -22,7 +22,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.jms.JMSException;
 
-import cito.event.MessageEvent;
+import cito.event.Message;
 import cito.stomp.Frame;
 
 /**
@@ -68,13 +68,13 @@ public class SystemConnection extends AbstractConnection {
 	 */
 	private Session getSession() throws JMSException {
 		if (this.session == null) {
-			this.session = factory.toSession(this, false, javax.jms.Session.AUTO_ACKNOWLEDGE);
+			this.session = this.factory.toSession(this, false, javax.jms.Session.AUTO_ACKNOWLEDGE);
 		}
 		return this.session;
 	}
 
 	@Override
-	public void on(MessageEvent msg) {
+	public void on(Message msg) {
 		final String sessionId = msg.sessionId();
 		if (!getSessionId().equals(sessionId) && sessionId != null) {
 			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + getSessionId() + " OR null,actual=" + msg.sessionId() + "]");

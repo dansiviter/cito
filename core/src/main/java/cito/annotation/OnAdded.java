@@ -26,11 +26,11 @@ import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
 import cito.Glob;
-import cito.event.DestinationEvent;
+import cito.event.DestinationChanged;
 import cito.stomp.Command;
 
 /**
- * Observable {@link DestinationEvent} for when the first user performs a {@link Command#SUBSCRIBE} to a destination.
+ * Observable {@link DestinationChanged} for when the first user performs a {@link Command#SUBSCRIBE} to a destination.
  * 
  * <pre>
  * 	public void on(&#064;Observes &#064;OnAdded("/topic/{param}.world}") DestinationEvent e) {

@@ -26,11 +26,11 @@ import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
 import cito.Glob;
-import cito.event.MessageEvent;
+import cito.event.Message;
 import cito.stomp.Command;
 
 /**
- * Observable qualifier {@link MessageEvent} for when a user performs a {@link Command#SEND}.
+ * Observable qualifier {@link Message} for when a user performs a {@link Command#SEND}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [12 Jul 2016]

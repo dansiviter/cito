@@ -13,19 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cito;
+package cito.event;
+
+import javax.annotation.concurrent.Immutable;
 
 /**
  * 
  * @author Daniel Siviter
- * @since v1.0 [2 Feb 2017]
+ * @since v1.0 [18 Jul 2016]
  */
-public enum Strings { ;
+@Immutable
+public class DestinationChanged {
+	private final Type type;
+	private final String destination;
+
+	public DestinationChanged(Type type, String destination) {
+		this.type = type;
+		this.destination = destination;
+	}
+
+	public Type getType() {
+		return type;
+	}
+
+	public String getDestination() {
+		return destination;
+	}
+
+	public boolean isTopic() {
+		return destination.startsWith("/topic/");
+	}
+
+	// --- Inner Classes ---
+
 	/**
-	 * @param s the string to check.
-	 * @return {@code true} if the given string is {@code null} or is the empty string.
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [19 Jul 2016]
 	 */
-	public static boolean isNullOrEmpty(String s) {
-		return s == null || s.isEmpty();
+	public enum Type {
+		ADDED,
+		REMOVED
 	}
 }

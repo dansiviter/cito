@@ -188,6 +188,12 @@
 			<artifactId>javax.jms-api</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>com.google.code.findbugs</groupId>
+			<artifactId>jsr305</artifactId>
+			<version>3.0.1</version>
+		</dependency>
+
 
 		<!-- Test Dependencies -->
 
@@ -202,5 +208,4 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
 </project>

@@ -13,42 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cito.event;
+package cito.server;
 
-import cito.stomp.Frame;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
+import javax.websocket.Session;
+
+import cito.annotation.WebSocketScope;
 
 /**
+ * A producer for accessing the {@link SecurityContext} from the {@link Session}.
  * 
  * @author Daniel Siviter
- * @since v1.0 [19 Jul 2016]
+ * @since v1.0 [27 Oct 2016]
  */
-public class MessageEvent {
-	private final String sessionId;
-	private final Frame frame;
-
-	public MessageEvent(Frame frame) {
-		this(null, frame);
-	}
-
-	public MessageEvent(String sessionId, Frame frame) {
-		this.sessionId = sessionId;
-		this.frame = frame;
-	}
-
+@ApplicationScoped
+public class SecurityContextProducer {
 	/**
-	 * @return the originating session identifier. If this is a internally generated message (i.e. application code)
-	 * then this will be {@code null}.
+	 * 
+	 * @param session
+	 * @return
 	 */
-	public String sessionId() {
-		return sessionId;
+	@Produces @WebSocketScope
+	public static SecurityContext session(Session session) {
+		return (SecurityContext) session.getUserProperties().get(SecurityContext.class.getSimpleName());
 	}
-
-	/**
-	 * @return the STOMP frame.
-	 */
-	public Frame frame() {
-		return frame;
-	}
-
-
 }

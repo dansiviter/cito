@@ -25,16 +25,15 @@ import java.util.Optional;
 
 import javax.enterprise.context.ContextNotActiveException;
 import javax.enterprise.context.spi.Contextual;
-import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.websocket.Session;
 
 import org.apache.deltaspike.core.impl.scope.AbstractBeanHolder;
 import org.apache.deltaspike.core.util.context.AbstractContext;
 import org.apache.deltaspike.core.util.context.ContextualStorage;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import cito.QuietClosable;
 import cito.annotation.WebSocketScope;
@@ -46,22 +45,21 @@ import cito.server.SessionRegistry;
  * @since v1.0 [17 Aug 2016]
  */
 public class WebSocketContext extends AbstractContext {
-	private static final Logger LOG = LoggerFactory.getLogger(WebSocketContext.class);
-
 	private final Holder holder;
 
 	private final BeanManager beanManager;
 	private WebSocketSessionHolder sessionHolder;
 
 	@Inject
-	private Instance<SessionRegistry> sessionRegistry;
+	private Logger log;
+	@Inject
+	private Provider<SessionRegistry> sessionRegistry;
 
 	public WebSocketContext(BeanManager beanManager) {
 		super(beanManager);
-		this.holder = new Holder(this.isPassivatingScope());
+		this.holder = new Holder(isPassivatingScope());
 		this.beanManager = beanManager;
 		injectFields(beanManager, this);
-		LOG.info("Context initialised.");
 	}
 
 	public void init(WebSocketSessionHolder sessionHolder) {
@@ -84,7 +82,7 @@ public class WebSocketContext extends AbstractContext {
 	 * @return
 	 */
 	public QuietClosable activate(Session session) {
-		LOG.debug("Activiating scope. [sessionId={}]", session.getId());
+		this.log.debug("Activiating scope. [sessionId={}]", session.getId());
 		this.sessionHolder.set(session);
 
 		final Thread thread = Thread.currentThread();
@@ -131,10 +129,12 @@ public class WebSocketContext extends AbstractContext {
 	 * @param session
 	 */
 	public void dispose(Session session) {
-		LOG.debug("Disposing scope. [sessionId={}]", session.getId());
+		this.log.debug("Disposing scope. [sessionId={}]", session.getId());
 		try (QuietClosable c = activate(session)) {
 			final ContextualStorage storage = getContextualStorage(null, false);
-			AbstractContext.destroyAllActive(storage);
+			if (storage != null) {
+				AbstractContext.destroyAllActive(storage);
+			}
 		}
 	}
 

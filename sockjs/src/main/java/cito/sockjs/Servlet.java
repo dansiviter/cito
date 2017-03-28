@@ -44,6 +44,9 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * The link between SockJS and the servlet container. See {@link Config} for usage.
  * 
@@ -57,6 +60,8 @@ public class Servlet extends GenericServlet {
 	private final Map<String, ServletSession> sessions = new ConcurrentHashMap<>();
 	// XXX Should I use ManagedScheduledExecutorService?
 	private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+	private final Logger log = LoggerFactory.getLogger(Servlet.class);
 	private final Config config;
 
 	private boolean webSocketSupported;
@@ -117,7 +122,7 @@ public class Servlet extends GenericServlet {
 	 * @throws IOException
 	 */
 	private void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-		log("SockJS request recieved. [name=" + this.config.name() + ",path=" + req.getRequestURI() + ",method=" + req.getMethod() + "]");
+		this.log.info("SockJS request recieved. [name={},path={},method={}]", this.config.name(), req.getRequestURI(), req.getMethod());
 
 		String type = null;
 		if (req.getPathTranslated() == null) {
@@ -136,7 +141,7 @@ public class Servlet extends GenericServlet {
 
 		final AbstractHandler handler = this.handers.get(type);
 		if (handler == null) {
-			log("Invalid path sent to SockJS! [name=" + this.config.name() + ",path=" + req.getRequestURI() + ",method=" + req.getMethod() + "]");
+			this.log.warn("Invalid path sent to SockJS! [name={},path={},method={}]", this.config.name(), req.getRequestURI(), req.getMethod());
 			res.sendError(HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}
@@ -182,13 +187,13 @@ public class Servlet extends GenericServlet {
 		final String id = session.getId();
 		// if super old, remove straight away
 		if (session.activeTime().isBefore(LocalDateTime.now().minus(5, ChronoUnit.SECONDS))) {
-			log("Removing session straight away. [id=" + id + "]");
+			this.log.debug("Removing session straight away. [{}]", id);
 			this.sessions.remove(id);
 			return;
 		}
 
 		this.scheduler.schedule(() -> {
-			log("Removing session after delay. [id=" + id + "]");
+			this.log.debug("Removing session after delay. [{}]", id);
 			this.sessions.remove(id);
 		}, 5, TimeUnit.SECONDS); 
 	}
@@ -213,7 +218,7 @@ public class Servlet extends GenericServlet {
 	 * @param async
 	 */
 	private void onError(Throwable t, HttpAsyncContext async) {
-		log("Error while servicing request!", t);
+		this.log.warn("Error while servicing request!", t);
 		async.getResponse().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		async.complete();
 	}
@@ -222,7 +227,7 @@ public class Servlet extends GenericServlet {
 	 * 
 	 */
 	private void cleanupSessions() {
-		log("Cleaning up inactive sessions!");
+		this.log.info("Cleaning up inactive sessions!");
 
 		this.sessions.forEach((k, v) -> {
 			final String id = v.getId();

@@ -42,8 +42,8 @@ import cito.annotation.OnSend;
 import cito.annotation.OnSubscribe;
 import cito.annotation.OnUnsubscribe;
 import cito.annotation.WebSocketScope;
-import cito.event.DestinationEvent;
-import cito.event.MessageEvent;
+import cito.event.DestinationChanged;
+import cito.event.Message;
 import cito.scope.WebSocketContext;
 import cito.scope.WebSocketSessionHolder;
 
@@ -53,8 +53,8 @@ import cito.scope.WebSocketSessionHolder;
  * @since v1.0 [12 Jul 2016]
  */
 public class Extension implements javax.enterprise.inject.spi.Extension {
-	private final Map<Class<? extends Annotation>, Set<ObserverMethod<MessageEvent>>> messageObservers = new ConcurrentHashMap<>();
-	private final Map<Class<? extends Annotation>, Set<ObserverMethod<DestinationEvent>>> destinationObservers = new ConcurrentHashMap<>();
+	private final Map<Class<? extends Annotation>, Set<ObserverMethod<Message>>> messageObservers = new ConcurrentHashMap<>();
+	private final Map<Class<? extends Annotation>, Set<ObserverMethod<DestinationChanged>>> destinationObservers = new ConcurrentHashMap<>();
 
 	private WebSocketContext webSocketContext;
 
@@ -63,8 +63,8 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param cls
 	 * @param method
 	 */
-	private <A extends Annotation> void registerMessageObserver(Class<A> cls, ObserverMethod<MessageEvent> method) {
-		Set<ObserverMethod<MessageEvent>> annotations = this.messageObservers.get(cls);
+	private <A extends Annotation> void registerMessageObserver(Class<A> cls, ObserverMethod<Message> method) {
+		Set<ObserverMethod<Message>> annotations = this.messageObservers.get(cls);
 		if (annotations == null) {
 			annotations = new HashSet<>();
 			this.messageObservers.put(cls, annotations);
@@ -77,8 +77,8 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param e
 	 * @param beanManager
 	 */
-	public void registerMessageEvent(@Observes ProcessObserverMethod<MessageEvent, ?> e, BeanManager beanManager) {
-		final ObserverMethod<MessageEvent> method = e.getObserverMethod();
+	public void registerMessageEvent(@Observes ProcessObserverMethod<Message, ?> e, BeanManager beanManager) {
+		final ObserverMethod<Message> method = e.getObserverMethod();
 		for (Annotation a : method.getObservedQualifiers()) {
 			if (a instanceof OnConnected)
 				registerMessageObserver(OnConnected.class, method);
@@ -98,8 +98,8 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param qualifier
 	 * @return
 	 */
-	public Set<ObserverMethod<MessageEvent>> getMessageObservers(Class<? extends Annotation> qualifier) {
-		final Set<ObserverMethod<MessageEvent>> observers = this.messageObservers.get(qualifier);
+	public Set<ObserverMethod<Message>> getMessageObservers(Class<? extends Annotation> qualifier) {
+		final Set<ObserverMethod<Message>> observers = this.messageObservers.get(qualifier);
 		return observers == null ? Collections.emptySet() : observers;
 	}
 
@@ -108,8 +108,8 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param cls
 	 * @param method
 	 */
-	private <A extends Annotation> void registerDestinationObserver(Class<A> cls, ObserverMethod<DestinationEvent> method) {
-		Set<ObserverMethod<DestinationEvent>> annotations = this.destinationObservers.get(cls);
+	private <A extends Annotation> void registerDestinationObserver(Class<A> cls, ObserverMethod<DestinationChanged> method) {
+		Set<ObserverMethod<DestinationChanged>> annotations = this.destinationObservers.get(cls);
 		if (annotations == null) {
 			annotations = new HashSet<>();
 			this.destinationObservers.put(cls, annotations);
@@ -122,8 +122,8 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param e
 	 * @param beanManager
 	 */
-	public void registerDestinationEvent(@Observes ProcessObserverMethod<DestinationEvent, ?> e, BeanManager beanManager) {
-		final ObserverMethod<DestinationEvent> method = e.getObserverMethod();
+	public void registerDestinationEvent(@Observes ProcessObserverMethod<DestinationChanged, ?> e, BeanManager beanManager) {
+		final ObserverMethod<DestinationChanged> method = e.getObserverMethod();
 		for (Annotation a : method.getObservedQualifiers()) {
 			if (a instanceof OnAdded)
 				registerDestinationObserver(OnAdded.class, method);
@@ -137,8 +137,8 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param qualifier
 	 * @return
 	 */
-	public Set<ObserverMethod<DestinationEvent>> getDestinationObservers(Class<? extends Annotation> qualifier) {
-		final Set<ObserverMethod<DestinationEvent>> observers = this.destinationObservers.get(qualifier);
+	public Set<ObserverMethod<DestinationChanged>> getDestinationObservers(Class<? extends Annotation> qualifier) {
+		final Set<ObserverMethod<DestinationChanged>> observers = this.destinationObservers.get(qualifier);
 		return observers == null ? Collections.emptySet() : observers;
 	}
 

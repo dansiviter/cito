@@ -26,11 +26,11 @@ import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
 import cito.Glob;
-import cito.event.DestinationEvent;
+import cito.event.DestinationChanged;
 import cito.stomp.Command;
 
 /**
- * Observable {@link DestinationEvent} for when the last user performs a {@link Command#UNSUBSCRIBE} to a destination.
+ * Observable {@link DestinationChanged} for when the last user performs a {@link Command#UNSUBSCRIBE} to a destination.
  * 
  * <pre>
  * 	public void on(&#064;Observes &#064;OnRemoved("/topic/{param}.world}") DestinationEvent e) {

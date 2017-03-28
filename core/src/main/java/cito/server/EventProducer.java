@@ -37,7 +37,7 @@ import cito.annotation.OnDisconnect;
 import cito.annotation.OnSend;
 import cito.annotation.OnSubscribe;
 import cito.annotation.OnUnsubscribe;
-import cito.event.MessageEvent;
+import cito.event.Message;
 
 /**
  * Fires off events related to destinations.
@@ -56,7 +56,7 @@ public class EventProducer {
 	 * 
 	 * @param msg
 	 */
-	public void message(@Observes MessageEvent msg) {
+	public void message(@Observes Message msg) {
 		if (msg.frame().isHeartBeat()) return;
 
 		final Extension extension = this.manager.getExtension(Extension.class);
@@ -103,8 +103,8 @@ public class EventProducer {
 	 * @param destination
 	 * @param evt
 	 */
-	private static <A extends Annotation> void notify(Class<A> annotation, Set<ObserverMethod<MessageEvent>> observerMethods, String destination, MessageEvent evt) {
-		for (ObserverMethod<MessageEvent> om : observerMethods) {
+	private static <A extends Annotation> void notify(Class<A> annotation, Set<ObserverMethod<Message>> observerMethods, String destination, Message evt) {
+		for (ObserverMethod<Message> om : observerMethods) {
 			for (A a : getAnnotations(annotation, om.getObservedQualifiers())) {
 				final String value = ReflectionUtil.invoke(a, "value");
 				if (!Glob.from(value).matches(destination)) {

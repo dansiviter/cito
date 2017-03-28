@@ -22,6 +22,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
+import javax.annotation.Nonnull;
+
 /**
  * 
  * @author Daniel Siviter
@@ -34,7 +36,7 @@ public enum ReflectionUtil { ;
 	 * @param name
 	 * @return
 	 */
-	public static <T> T get(Object source, String name) {
+	public static <T> T get(@Nonnull Object source, @Nonnull String name) {
 		return get(source, name, null);
 	}
 
@@ -46,7 +48,7 @@ public enum ReflectionUtil { ;
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T get(Object source, String name, Class<T> type) {
+	public static <T> T get(@Nonnull Object source, @Nonnull String name, Class<T> type) {
 		try {
 			final Field field = findField(source.getClass(), name, type);
 			if (field == null) {
@@ -66,7 +68,7 @@ public enum ReflectionUtil { ;
 	 * @param name
 	 * @param value
 	 */
-	public static void set(Object source, String name, Object value) {
+	public static void set(@Nonnull Object source, @Nonnull String name, Object value) {
 		set(source, name, value, null);
 	}
 
@@ -77,7 +79,7 @@ public enum ReflectionUtil { ;
 	 * @param value
 	 * @param type
 	 */
-	public static void set(Object source, String name, Object value, Class<?> type) {
+	public static void set(@Nonnull Object source, @Nonnull String name, Object value, Class<?> type) {
 		try {
 			final Field field = findField(source.getClass(), name, type);
 			if (field == null) {
@@ -98,7 +100,7 @@ public enum ReflectionUtil { ;
 	 * @param args
 	 * @return
 	 */
-	public static <T> T invoke(Object source, String name, Object... args) {
+	public static <T> T invoke(@Nonnull Object source, @Nonnull String name, Object... args) {
 		Class<?>[] argTypes = new Class<?>[args.length];
 		for (int i = 0; i< args.length; i++) {
 			argTypes[i] = args[i] == null ? Object.class : args[i].getClass();
@@ -119,11 +121,8 @@ public enum ReflectionUtil { ;
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T invoke(Object source, Method method, Object... args) {
+	public static <T> T invoke(@Nonnull Object source, @Nonnull Method method, Object... args) {
 		try {
-			if (method == null) {
-				throw new NullPointerException("Method was null!");
-			}
 			setAccessible(method);
 			return (T) method.invoke(source, args);
 		} catch (IllegalAccessException | InvocationTargetException ex) {
@@ -139,7 +138,7 @@ public enum ReflectionUtil { ;
 	 * @param type
 	 * @return
 	 */
-	public static Field findField(Class<?> clazz, String name, Class<?> type) {
+	public static Field findField(@Nonnull Class<?> clazz, @Nonnull String name, Class<?> type) {
 		Class<?> searchType = clazz;
 		while (!Object.class.equals(searchType) && searchType != null) {
 			for (Field field : searchType.getDeclaredFields()) {
@@ -159,7 +158,7 @@ public enum ReflectionUtil { ;
 	 * @param params
 	 * @return
 	 */
-	public static Method findMethod(Class<?> clazz, String name, Class<?>... params) {
+	public static Method findMethod(@Nonnull Class<?> clazz, @Nonnull String name, Class<?>... params) {
 		Class<?> searchType = clazz;
 		while (!Object.class.equals(searchType) && searchType != null) {
 			for (Method method : searchType.getDeclaredMethods()) {
@@ -176,7 +175,7 @@ public enum ReflectionUtil { ;
 	 * 
 	 * @param field
 	 */
-	public static void setAccessible(Field field) {
+	public static void setAccessible(@Nonnull Field field) {
 		if ((!Modifier.isPublic(field.getModifiers()) ||
 				!Modifier.isPublic(field.getDeclaringClass().getModifiers()) ||
 				Modifier.isFinal(field.getModifiers())) &&
@@ -190,7 +189,7 @@ public enum ReflectionUtil { ;
 	 * 
 	 * @param method
 	 */
-	public static void setAccessible(Method method) {
+	public static void setAccessible(@Nonnull Method method) {
 		if ((!Modifier.isPublic(method.getModifiers()) ||
 				!Modifier.isPublic(method.getDeclaringClass().getModifiers()) ||
 				Modifier.isFinal(method.getModifiers())) &&
@@ -206,7 +205,7 @@ public enum ReflectionUtil { ;
 	 * @param annotation
 	 * @return
 	 */
-	public static <A extends Annotation> A getAnnotation(Class<?> cls, Class<A> annotation) {
+	public static <A extends Annotation> A getAnnotation(@Nonnull Class<?> cls, @Nonnull Class<A> annotation) {
 		return annotation.cast(cls.getAnnotation(annotation));
 	}
 
@@ -216,7 +215,7 @@ public enum ReflectionUtil { ;
 	 * @param annotation
 	 * @return
 	 */
-	public static <A extends Annotation> A getAnnotation(Object obj, Class<A> annotation) {
+	public static <A extends Annotation> A getAnnotation(@Nonnull Object obj, @Nonnull Class<A> annotation) {
 		return getAnnotation(obj.getClass(), annotation);
 	}
 
@@ -227,7 +226,9 @@ public enum ReflectionUtil { ;
 	 * @param def
 	 * @return
 	 */
-	public static <V, A extends Annotation> V getAnnotationValue(Class<?> cls, Class<A> annotation, V def) {
+	public static <V, A extends Annotation> V getAnnotationValue(
+			@Nonnull Class<?> cls, @Nonnull Class<A> annotation, V def)
+	{
 		final A a = getAnnotation(cls, annotation);
 		return a != null ? get(a, "value") : def;
 	}
@@ -239,7 +240,9 @@ public enum ReflectionUtil { ;
 	 * @param def
 	 * @return
 	 */
-	public static <V, A extends Annotation> V getAnnotationValue(Object obj, Class<A> annotation, V def) {
+	public static <V, A extends Annotation> V getAnnotationValue(
+			@Nonnull Object obj, @Nonnull Class<A> annotation, V def)
+	{
 		return getAnnotationValue(obj.getClass(), annotation, def);
 	}
 
@@ -249,8 +252,8 @@ public enum ReflectionUtil { ;
 	 * @param annotation
 	 * @return
 	 */
-	public static <V, A extends Annotation> V getAnnotationValue(Class<?> cls, Class<A> annotation) {
-		return getAnnotationValue(cls,  null);
+	public static <V, A extends Annotation> V getAnnotationValue(@Nonnull Class<?> cls, @Nonnull Class<A> annotation) {
+		return getAnnotationValue(cls, annotation, null);
 	}
 
 	/**
@@ -259,6 +262,6 @@ public enum ReflectionUtil { ;
 	 * @return
 	 */
 	public static <V, A extends Annotation> V getAnnotationValue(Object obj, Class<A> annotation) {
-		return getAnnotationValue(obj.getClass(),  null);
+		return getAnnotationValue(obj.getClass(), annotation);
 	}
 }

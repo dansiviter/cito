@@ -42,7 +42,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
-import cito.event.MessageEvent;
+import cito.event.Message;
 import cito.server.SecurityContext;
 import cito.server.SessionRegistry;
 import cito.server.security.SecurityRegistry;
@@ -61,7 +61,7 @@ public class RelayTest {
 	@Mock
 	private Logger log;
 	@Mock
-	private Event<MessageEvent> messageEvent;
+	private Event<Message> messageEvent;
 	@Mock
 	private SessionRegistry sessionRegistry;
 	@Mock
@@ -92,7 +92,7 @@ public class RelayTest {
 	@Test
 	public void fromClient_CONNECT() throws JMSException {
 		final Frame frame = Frame.builder(Command.CONNECT).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build();
-		final MessageEvent msg = new MessageEvent("sessionId", frame);
+		final Message msg = new Message("sessionId", frame);
 		this.relay.fromClient(msg);
 
 		verify(this.log).debug("Message from client. [sessionId={},command={}]", "sessionId", Command.CONNECT);
@@ -106,7 +106,7 @@ public class RelayTest {
 	@Test
 	public void fromClient_STOMP() throws JMSException {
 		final Frame frame = Frame.builder(Command.STOMP).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build();
-		final MessageEvent msg = new MessageEvent("sessionId", frame);
+		final Message msg = new Message("sessionId", frame);
 		this.relay.fromClient(msg);
 
 		verify(this.log).debug("Message from client. [sessionId={},command={}]", "sessionId", Command.STOMP);
@@ -126,7 +126,7 @@ public class RelayTest {
 		when(session.isOpen()).thenReturn(true);
 
 		final Frame frame = Frame.disconnect().build();
-		final MessageEvent msg = new MessageEvent("sessionId", frame);
+		final Message msg = new Message("sessionId", frame);
 		this.relay.fromClient(msg);
 
 		verify(this.log).debug("Message from client. [sessionId={},command={}]", "sessionId", Command.DISCONNECT);
@@ -136,7 +136,7 @@ public class RelayTest {
 		verify(this.log).info("Destroying JMS connection. [{}]", "sessionId");
 		verify(this.connectionInstance).destroy(this.connection);
 		verify(this.sessionRegistry).getSession("sessionId");
-		verify(this.connection).disconnect(any(MessageEvent.class));
+		verify(this.connection).disconnect(any(Message.class));
 		verify(session).isOpen();
 		verify(session).close();
 		verifyNoMoreInteractions(session);
@@ -156,15 +156,6 @@ public class RelayTest {
 		verify(session).isOpen();
 		verify(session).close();
 		verifyNoMoreInteractions(session);
-	}
-
-	@Test
-	public void send() {
-		final MessageEvent msg = mock(MessageEvent.class);
-		this.relay.send(msg);
-
-		verifyNoMoreInteractions(msg);
-		verify(this.messageEvent).fire(msg);
 	}
 
 	@After

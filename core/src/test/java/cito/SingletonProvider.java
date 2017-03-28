@@ -1,4 +1,5 @@
 /*
+
  * Copyright 2016-2017 Daniel Siviter
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,31 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cito.server;
+package cito;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-import javax.websocket.Session;
-
-import org.slf4j.LoggerFactory;
-
-import cito.annotation.WebSocketScope;
+import javax.inject.Provider;
 
 /**
+ * A basic value holder that conforms to the {@link Provider} interface.
  * 
  * @author Daniel Siviter
- * @since v1.0 [27 Oct 2016]
+ * @since v1.0 [28 Mar 2017]
  */
-@ApplicationScoped
-public class SecurityContextProvider {
+public class SingletonProvider<T> implements Provider<T> {
+	private final T value;
+
 	/**
 	 * 
-	 * @param session
-	 * @return
+	 * @param value
 	 */
-	@Produces @WebSocketScope
-	public static SecurityContext session(Session session) {
-		LoggerFactory.getLogger(SecurityContext.class).info("Returning SecurityContext... [sessionId={}]", session.getId());
-		return (SecurityContext) session.getUserProperties().get(SecurityContext.class.getSimpleName());
+	public SingletonProvider(T value) {
+		this.value = value;
+	}
+
+	@Override
+	public T get() {
+		return this.value;
 	}
 }

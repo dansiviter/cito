@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.annotation.Nonnull;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
@@ -30,10 +30,9 @@ import javax.websocket.Session;
 
 import org.slf4j.Logger;
 
-import cito.annotation.FromBroker;
 import cito.annotation.FromServer;
 import cito.annotation.OnClose;
-import cito.event.MessageEvent;
+import cito.event.Message;
 import cito.server.SecurityContext;
 import cito.server.SessionRegistry;
 import cito.server.security.SecurityRegistry;
@@ -50,8 +49,6 @@ public class Relay {
 
 	@Inject
 	private Logger log;
-	@Inject @FromBroker
-	private Event<MessageEvent> messageEvent;
 	@Inject
 	private SessionRegistry sessionRegistry;
 	@Inject
@@ -66,25 +63,27 @@ public class Relay {
 	private SystemConnection systemConn;
 
 	/**
+	 * Message from the client.
 	 * 
-	 * @param evt
+	 * @param msg
 	 */
-	public void fromClient(MessageEvent evt) {
-		this.log.debug("Message from client. [sessionId={},command={}]", evt.sessionId(), evt.frame().getCommand());
+	public void fromClient(@Nonnull Message msg) {
+		this.log.debug("Message from client. [sessionId={},command={}]", msg.sessionId(), msg.frame().getCommand());
 
-		final boolean permitted = this.securityRegistry.isPermitted(evt.frame(), this.securityCtx.get());
+		final boolean permitted = this.securityRegistry.isPermitted(msg.frame(), this.securityCtx.get());
 		if (!permitted) {
-			this.errorHandler.onError(this, evt.sessionId(), evt.frame(), "Not permitted!", null);
+			this.errorHandler.onError(this, msg.sessionId(), msg.frame(), "Not permitted!", null);
 			return;
 		}
-		on(evt);
+		on(msg);
 	}
 
 	/**
+	 * Message from the server layer.
 	 * 
 	 * @param evt
 	 */
-	public void fromServer(@Observes @FromServer MessageEvent evt) {
+	public void fromServer(@Observes @FromServer Message evt) {
 		this.log.debug("Message event from server. [sessionId={},command={}]", evt.sessionId(), evt.frame().getCommand());
 		on(evt);
 	}
@@ -93,7 +92,7 @@ public class Relay {
 	 * 
 	 * @param evt
 	 */
-	private void on(MessageEvent evt) {
+	private void on(Message evt) {
 		final String sessionId = evt.sessionId() != null ? evt.sessionId() : SystemConnection.SESSION_ID;
 		try {
 			AbstractConnection conn = evt.sessionId() != null ? this.connections.get(sessionId) : this.systemConn;
@@ -134,7 +133,7 @@ public class Relay {
 	 * 
 	 * @param sessionId
 	 */
-	public void close(String sessionId) {
+	public void close(@Nonnull String sessionId) {
 		this.connections.computeIfPresent(sessionId, (k, c) -> {
 			log.info("Destroying JMS connection. [{}]", k);
 			this.connectionInstance.destroy(c);
@@ -156,13 +155,5 @@ public class Relay {
 	 */
 	public void close(@Observes @OnClose Session session) {
 		close(session.getId());
-	}
-
-	/**
-	 * 
-	 * @param msg
-	 */
-	public void send(MessageEvent msg) {
-		this.messageEvent.fire(msg);
 	}
 }

@@ -41,7 +41,7 @@ import cito.annotation.OnSend;
 import cito.annotation.OnSubscribe;
 import cito.annotation.OnUnsubscribe;
 import cito.annotation.Qualifiers;
-import cito.event.MessageEvent;
+import cito.event.Message;
 import cito.server.EventProducer;
 import cito.server.Extension;
 import cito.stomp.Command;
@@ -60,7 +60,7 @@ public class EventProducerTest {
 	@Mock
 	private Extension extension;
 	@Mock
-	private ObserverMethod<MessageEvent> observerMethod;
+	private ObserverMethod<Message> observerMethod;
 	
 	@InjectMocks
 	private EventProducer eventProducer;
@@ -74,7 +74,7 @@ public class EventProducerTest {
 	public void message_CONNECTED() {
 		when(this.extension.getMessageObservers(OnConnected.class)).thenReturn(Collections.singleton(this.observerMethod));
 
-		final MessageEvent event = new MessageEvent(
+		final Message event = new Message(
 				Frame.connnected("1.2", "sessionId", "server").build());
 
 		this.eventProducer.message(event);
@@ -89,7 +89,7 @@ public class EventProducerTest {
 		when(this.extension.getMessageObservers(OnSend.class)).thenReturn(Collections.singleton(this.observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSend("/topic/*")));
 
-		final MessageEvent event = new MessageEvent(
+		final Message event = new Message(
 				Frame.send("/topic/foo", MediaType.APPLICATION_JSON_TYPE, "{}").build());
 
 		this.eventProducer.message(event);
@@ -105,7 +105,7 @@ public class EventProducerTest {
 		when(this.extension.getMessageObservers(OnSubscribe.class)).thenReturn(Collections.singleton(this.observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("/topic/*")));
 
-		final MessageEvent event = new MessageEvent(
+		final Message event = new Message(
 				Frame.builder(Command.SUBSCRIBE).destination("/topic/foo").subscription("id").build());
 
 		this.eventProducer.message(event);
@@ -123,7 +123,7 @@ public class EventProducerTest {
 		when(this.observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("/topic/*")));
 		ReflectionUtil.<Map<String,String>>get(this.eventProducer, "idDestinationMap").put("id", "/topic/foo");
 
-		final MessageEvent event = new MessageEvent(
+		final Message event = new Message(
 				Frame.builder(Command.UNSUBSCRIBE).subscription("id").build());
 
 		this.eventProducer.message(event);
@@ -139,7 +139,7 @@ public class EventProducerTest {
 		when(this.extension.getMessageObservers(OnDisconnect.class)).thenReturn(Collections.singleton(observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("/topic/*")));
 
-		final MessageEvent event = new MessageEvent(
+		final Message event = new Message(
 				Frame.builder(Command.DISCONNECT).build());
 
 		this.eventProducer.message(event);

@@ -33,7 +33,7 @@ import javax.websocket.Session;
 import org.slf4j.Logger;
 
 import cito.annotation.FromBroker;
-import cito.event.MessageEvent;
+import cito.event.Message;
 
 /**
  * 
@@ -94,7 +94,7 @@ public class SessionRegistry {
 	 * 
 	 * @param msg
 	 */
-	public void fromBroker(@Observes @FromBroker MessageEvent msg) {
+	public void fromBroker(@Observes @FromBroker Message msg) {
 		this.log.debug("Sending message to client. [sessionId={},command={}]",
 				msg.sessionId(), msg.frame().getCommand() != null ? msg.frame().getCommand() : "HEARTBEAT");
 

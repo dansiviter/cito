@@ -23,7 +23,7 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 
 import cito.annotation.FromServer;
-import cito.event.MessageEvent;
+import cito.event.Message;
 import cito.stomp.Frame;
 import cito.stomp.Frame.Builder;
 import cito.stomp.Headers;
@@ -38,7 +38,7 @@ public class ErrorHandler {
 	@Inject
 	private Logger log;
 	@Inject @FromServer
-	protected Event<MessageEvent> messageEvent;
+	private Event<Message> messageEvent;
 
 	/**
 	 * 
@@ -57,7 +57,7 @@ public class ErrorHandler {
 			msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
 		}
 		error.body(MediaType.TEXT_PLAIN_TYPE, msg);
-		this.messageEvent.fire(new MessageEvent(sessionId, error.build()));
+		this.messageEvent.fire(new Message(sessionId, error.build()));
 		relay.close(sessionId);
 	}
 }

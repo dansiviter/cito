@@ -52,7 +52,7 @@ public abstract class AbstractSessionHandler extends AbstractHandler {
 		if (session == null) {
 			initial = true;
 			if (this.createSession) {
-				this.servlet.log("New session! [" + Util.session(this.servlet, async.getRequest()) + "]");
+				this.log.info("New session! [{}]", Util.session(this.servlet, async.getRequest()));
 				session = this.servlet.createSession(async.getRequest());
 			}
 		}

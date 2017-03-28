@@ -19,7 +19,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.enterprise.concurrent.ManagedScheduledExecutorService;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Disposes;
 import javax.enterprise.inject.Produces;
@@ -28,7 +27,7 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 
 /**
- * XXX is this needed with {@link ManagedScheduledExecutorService}?
+ * XXX is this needed with {@code ManagedScheduledExecutorService}?
  * 
  * @author Daniel Siviter
  * @since v1.0 [25 Jul 2016]
@@ -55,10 +54,10 @@ public class SchedulerProducer {
 		scheduler.shutdown();
 		try {
 			if (!scheduler.awaitTermination(1, TimeUnit.MINUTES)) {
-				log.warn("Shutdown did not complete in time!");
+				this.log.warn("Shutdown did not complete in time!");
 			}
 		} catch (InterruptedException e) {
-			log.warn("Shutdown interrupted!", e);
+			this.log.warn("Shutdown interrupted!", e);
 		}
 	}
 }

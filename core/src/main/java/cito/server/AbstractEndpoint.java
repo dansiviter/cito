@@ -26,13 +26,12 @@ import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import cito.QuietClosable;
 import cito.annotation.FromClient;
 import cito.annotation.Qualifiers;
-import cito.event.ClientMessageEventProducer;
-import cito.event.MessageEvent;
+import cito.event.ClientMessageProducer;
+import cito.event.Message;
 import cito.stomp.Frame;
 import cito.stomp.jms.Relay;
 
@@ -41,9 +40,9 @@ import cito.stomp.jms.Relay;
  * @author Daniel Siviter
  * @since v1.0 [15 Jul 2016]
  */
-public abstract class AbstractServer extends Endpoint {
-	protected final Logger log;
-
+public abstract class AbstractEndpoint extends Endpoint {
+	@Inject
+	protected Logger log;
 	@Inject
 	private BeanManager beanManager;
 	@Inject
@@ -51,18 +50,11 @@ public abstract class AbstractServer extends Endpoint {
 	@Inject
 	private Relay relay;
 	@Inject @FromClient
-	private Event<MessageEvent> messageEvent;
+	private Event<Message> messageEvent;
 	@Inject
 	private Event<Session> sessionEvent;
 	@Inject
 	private Event<Throwable> errorEvent;
-
-	/**
-	 * 
-	 */
-	public AbstractServer() {
-		this.log = LoggerFactory.getLogger(getClass());
-	}
 
 	@Override
 	public void onOpen(Session session, EndpointConfig config) {
@@ -89,8 +81,8 @@ public abstract class AbstractServer extends Endpoint {
 	public void message(Session session, Frame frame) {
 		this.log.debug("Received message from client. [id={},principle={},command={}]", session.getId(), session.getUserPrincipal(), frame.getCommand());
 		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
-			final MessageEvent event = new MessageEvent(session.getId(), frame);
-			try (QuietClosable closable = ClientMessageEventProducer.set(event)) {
+			final Message event = new Message(session.getId(), frame);
+			try (QuietClosable closable = ClientMessageProducer.set(event)) {
 				this.relay.fromClient(event); // due to no @Observe @Priority we need to ensure the relay gets this first
 				this.messageEvent.select(fromClient()).fire(event);
 			}

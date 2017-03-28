@@ -24,6 +24,8 @@ import java.util.Queue;
 import javax.servlet.ServletException;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cito.sockjs.nio.WriteStream;
 
@@ -58,13 +60,13 @@ public class XhrHandler extends AbstractSessionHandler {
 			pipe.sink().write(UTF_8.encode(CharBuffer.wrap("o\n")));
 			pipe.sink().close();
 		} else if (!session.isOpen()) {
-			this.servlet.log("Session closed! [" + session.getId() + "]");
+			this.log.info("Session closed! [{}]", session.getId());
 			pipe.sink().write(UTF_8.encode(closeFrame(3000, "Go away!", "\n")));
 			pipe.sink().close();
 		} else {
 			try (Sender sender = new XhrSender(session, pipe.sink())) {
 				if (!session.setSender(sender)) {
-					this.servlet.log("Connection still open! [" + session.getId() + "]");
+					this.log.warn("Connection still open! [{}]", session.getId());
 					pipe.sink().write(UTF_8.encode(closeFrame(2010, "Another connection still open", "\n")));
 				}
 			}
@@ -80,6 +82,7 @@ public class XhrHandler extends AbstractSessionHandler {
 	 * @since v1.0 [18 Feb 2017]
 	 */
 	private class XhrSender implements Sender {
+		private final Logger log = LoggerFactory.getLogger(XhrSender.class);
 		private final ServletSession session;
 		private final WritableByteChannel dest;
 
@@ -98,7 +101,7 @@ public class XhrHandler extends AbstractSessionHandler {
 			this.dest.write(UTF_8.encode("a[\""));
 			while (!frames.isEmpty()) {
 				final String frame = frames.poll();
-				servlet.log("Flushing frame. [sessionId=" + this.session.getId() + ",frame=" + frame + "]");
+				this.log.debug("Flushing frame. [sessionId={},frame={}]", this.session.getId(), frame);
 				this.dest.write(UTF_8.encode(StringEscapeUtils.escapeJson(frame)));
 				if (!frames.isEmpty()) {
 					this.dest.write(UTF_8.encode("\",\""));
