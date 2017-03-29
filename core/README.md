@@ -18,7 +18,7 @@ Citō can be deployed in fours ways:
 * Standalone, remote JMS broker,
 * Clustered, remote JMS broker.
 
-Citō utilises highly scalable [Apache ActiveMQ Artemis](http://activemq.apache.org/artemis/) to act as an embedded message broker. This is a very high performant broker that has been shown to post 8 million messages/sec on [SPECjms2007](http://planet.jboss.org/post/8_2_million_messages_second_with_specjms) benchmark (when formally HornetQ) in addition to scaling well.
+Citō utilises [Apache ActiveMQ Artemis](http://activemq.apache.org/artemis/) to act as an embedded message broker. This is a very high performant broker although it should be possible to integrate your own using JMS API.
 
 
 ## Messaging ##
@@ -27,21 +27,21 @@ Citō has rich messaging functionality for based on CDI events.
 
 ### `SEND` ###
 
-When a user sends a message to the server this can be recieved using the `@OnSend` annotation:
+When a user sends a `cito.event.Message` to the server this can be recieved using the `@OnSend` annotation:
 
-	public void onSend(@Observes @OnSend MessageEvent) { ... }
+	public void onSend(@Observes @OnSend Message) { ... }
 	
 It is also possible to perform automatic serialisation of beans using the `@Body` annotation:
 
-	public void onSend(@Observes @OnSend MessageEvent, @Body MyBean myBean) { ... }
+	public void onSend(@Observes @OnSend Message, @Body MyBean myBean) { ... }
 
 `@OnSend` accepts a destination pattern to match. See the 'Destination Filtering' section.
 
 ### `SUBSCRIBE` & `UNSUBSCRIBE` ###
 
-When a user subscribes or unsubscribes to a destination the event can be captured using the `@OnSubscribe` and `@OnUnsubscribe`
+When a user subscribes or unsubscribes to a destination the event can be captured using the `@OnSubscribe` and `@OnUnsubscribe`:
 
-	public void onSubscribe(@Observes @OnSubscribe MessageEvent) { ... }
+	public void onSubscribe(@Observes @OnSubscribe Message) { ... }
 
 Both `@OnSubscribe` and `@OnUnsubscribe` accept a destination pattern to match. See the 'Destination Filtering' section.
 
@@ -49,13 +49,13 @@ For the first subscription and last unsubscription to a topic see the following 
 
 ### Destination Changed ###
 
-It's often desirable to be informed when the first user requests data and the last one leaves. This is especially useful in circumstances such as a rate subscription so not to create multiple subscriptions to a downstream system improving resource utilisation. Events are received using the CDI `@Observes` mechanism on `DestinationEvent`:
+It's often desirable to be informed when the first user requests data and the last one leaves. This is especially useful in circumstances such as a rate subscription so not to create multiple subscriptions to a downstream system improving resource utilisation. Events are received using the CDI `@Observes` mechanism on `cito.event.DestinationChanged`:
 
-	public void on(@Observes DestinationEvent) { ... }
+	public void on(@Observes DestinationChanged) { ... }
 
 In this circumstance all events will be passed to the method. It is also possible to filter the event based on addition or removal using `@OnAdded` and `@OnRemoved` annotations respectively:
 
-	public void onAdded(@Observes @OnAdded DestinationEvent) { ... }
+	public void onAdded(@Observes @OnAdded DestinationChanged) { ... }
 
 Both `@OnAdded` and `@OnRemoved` accept a destination pattern to match. See the 'Destination Filtering' section.
 
@@ -74,7 +74,7 @@ See `cito.stomp.Glob` for more information.
 In addition to matching patterns it's also possible to use path parameters, via curly braces parenthesis (`{}`) and `@PathParam` annotation for use within the method. For example:
 
 	public void on(
-			@Observes @OnAdded("/topic/{param}.world") DestinationEvent,
+			@Observes @OnAdded("/topic/{param}.world") DestinationChanged,
 			@PathParam("param") String param)
 	{
 		// for '/topic/hello.world', 'param' will be 'hello'
