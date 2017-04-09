@@ -16,30 +16,18 @@
 package cito.sockjs;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.channels.Pipe;
-import java.nio.channels.Pipe.SinkChannel;
-import java.nio.channels.WritableByteChannel;
-import java.util.Queue;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import cito.sockjs.nio.WriteStream;
 
 /**
- * Handles XHR Streaming ({@code /<server>/session/xhr_streaming}) connections.
+ * Handles XHR Streaming ({@code /<server>/<session>/xhr_streaming}) connections.
  * 
  * @author Daniel Siviter
  * @since v1.0 [3 Jan 2017]
  */
-public class XhrStreamingHandler extends AbstractSessionHandler {
+public class XhrStreamingHandler extends AbstractStreamingHandler {
 	private static final long serialVersionUID = -527374807374550532L;
 
 	static final String XHR_STREAMING = "xhr_streaming";
@@ -51,72 +39,13 @@ public class XhrStreamingHandler extends AbstractSessionHandler {
 	 * @param ctx
 	 */
 	public XhrStreamingHandler(Servlet servlet) {
-		super(servlet, CONTENT_TYPE_VALUE, true, "POST");
+		super(servlet, CONTENT_TYPE_VALUE, "POST");
 	}
 
 	@Override
 	protected void handle(HttpAsyncContext async, ServletSession session, boolean initial)
 	throws ServletException, IOException
 	{
-		final HttpServletResponse res = async.getResponse();
-
-		final Pipe pipe = Pipe.open();
-		session.setSender(new XhrStreamingSender(session, pipe.sink()));
-		res.getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
-
-		pipe.sink().write(UTF_8.encode(CharBuffer.wrap(PRELUDE)));
-		if (initial) {
-			pipe.sink().write(UTF_8.encode(CharBuffer.wrap("o\n")));
-		} else if (!session.isOpen()) {
-			this.log.debug("Session closed! [{}]", session.getId());
-			pipe.sink().write(UTF_8.encode(closeFrame(3000, "Go away!", "\n")));
-			pipe.sink().close();
-		} 
-	}
-
-
-	// --- Inner Classes ---
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [18 Feb 2017]
-	 */
-	private class XhrStreamingSender implements Sender {
-		private final Logger log = LoggerFactory.getLogger(XhrStreamingSender.class);
-		private final ServletSession session;
-		private final WritableByteChannel dest;
-		private int bytesSent;
-
-		public XhrStreamingSender(ServletSession session, SinkChannel dest) throws IOException {
-			this.session = session;
-			this.dest = dest;
-		}
-
-		@Override
-		public void send(Queue<String> frames) throws IOException {
-			while (!frames.isEmpty()) {
-				String frame = frames.poll();
-				this.log.debug("Flushing frame. [sessionId={},frame={}]", this.session.getId(), frame);
-				frame = StringEscapeUtils.escapeJson(frame);
-				final CharBuffer buf = CharBuffer.allocate(frame.length() + 6);
-				buf.append("a[\"").append(frame).append("\"]\n").flip();
-				final ByteBuffer byteBuf = UTF_8.encode(buf);
-				this.dest.write(byteBuf);
-				this.bytesSent += byteBuf.limit();
-				final boolean limitReached = this.bytesSent >= servlet.getConfig().maxStreamBytes();
-				if (limitReached) {
-					this.log.debug("Limit to streaming bytes reached. Closing sender.");
-					close();
-					return;
-				}
-			}
-		}
-
-		@Override
-		public void close() throws IOException {
-			this.session.setSender(null);
-			this.dest.close();
-		}
+		handle(async, session, initial, DEFAULT_FORMAT, () -> PRELUDE);
 	}
 }

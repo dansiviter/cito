@@ -21,6 +21,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 
 import cito.sockjs.nio.WriteStream;
 
@@ -30,7 +31,7 @@ import cito.sockjs.nio.WriteStream;
  */
 public class GreetingHandler extends AbstractHandler {
 	private static final long serialVersionUID = -6439964384579190044L;
-	private static final byte[] PAYLOAD = "Welcome to SockJS!\n".getBytes(UTF_8);
+	private static final String PAYLOAD = "Welcome to SockJS!\n";
 	static final String GREETING = "greeting";
 
 	/**
@@ -43,13 +44,6 @@ public class GreetingHandler extends AbstractHandler {
 
 	@Override
 	protected void handle(HttpAsyncContext async) throws ServletException, IOException {
-		final ReadableByteChannel iFrameChannel = Channels.newChannel(new ByteArrayInputStream(PAYLOAD));
-		async.getResponse().getOutputStream().setWriteListener(new WriteStream(async, iFrameChannel, t -> {
-			iFrameChannel.close();
-			if (t != null) {
-				async.getRequest().getServletContext().log("Unable to write entity!", t);
-			}
-			async.complete();
-		}));
+		sendNonBlock(async, HttpServletResponse.SC_OK, PAYLOAD);
 	}
 }

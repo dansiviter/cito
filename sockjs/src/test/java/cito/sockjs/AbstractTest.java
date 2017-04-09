@@ -314,6 +314,24 @@ public abstract class AbstractTest {
 	protected static BufferedReader toReader(InputStream is) {
 		return new BufferedReader(new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)));
 	}
+	
+	/**
+	 * 
+	 * @param reader
+	 * @param find
+	 * @return
+	 * @throws IOException
+	 */
+	protected static String readTill(BufferedReader reader, String find) throws IOException {
+		final StringBuilder builder = new StringBuilder();
+		String line;
+		do {
+			line = reader.readLine();
+			builder.append(line).append('\n');
+		} while (!line.contains(find));
+		return builder.toString();
+	}
+
 
 
 	// --- Inner Classes ---

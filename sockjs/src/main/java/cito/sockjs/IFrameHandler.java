@@ -58,7 +58,7 @@ public class IFrameHandler extends AbstractHandler {
 
 		if (!req.getRequestURI().endsWith(".html")) {
 			this.log.warn("Invalid path! [{}]", req.getRequestURI());
-			sendErrorNonBlock(async, HttpServletResponse.SC_NOT_FOUND);
+			sendNonBlock(async, HttpServletResponse.SC_NOT_FOUND);
 			async.complete();
 			return;
 		}

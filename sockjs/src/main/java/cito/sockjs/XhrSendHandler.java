@@ -34,7 +34,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import cito.sockjs.nio.ReadStream;
 
 /**
- * Handles XHR Send ({@code /<server>/session/xhr_send}) connections.
+ * Handles XHR Send ({@code /<server>/<session>/xhr_send}) connections.
  * 
  * @author Daniel Siviter
  * @since v1.0 [11 Feb 2017]
@@ -60,16 +60,17 @@ public class XhrSendHandler extends AbstractSessionHandler {
 
 		if (req.getContentLength() <= 0) {
 			this.log.warn("Payload expected.");
-			sendErrorNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Payload expected.");
+			sendNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Payload expected.");
 			return;
 		}
 		if (session == null) {
 			this.log.warn("Session not found! [{}]", Util.session(this.servlet, async.getRequest()));
-			sendErrorNonBlock(async, HttpServletResponse.SC_NOT_FOUND);
+			sendNonBlock(async, HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}
-		
+
 		final Pipe pipe = Pipe.open();
+		// FIXME Not strictly non-blocking as it's still reading off another thread which is blocked
 		async.start(() -> start(session, async, pipe.source()));
 		req.getInputStream().setReadListener(new ReadStream(async, pipe.sink(), t -> pipe.sink().close()));
 	}
@@ -101,8 +102,8 @@ public class XhrSendHandler extends AbstractSessionHandler {
 			async.complete();
 		} catch (IOException | JsonException e) {
 			final String message = e instanceof JsonException ? "Broken JSON encoding." : "Error processing data!";
-			this.servlet.log(message, e);
-			sendErrorNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, message);
+			this.log.warn(message, e);
+			sendNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, message);
 		}
 	}
 }

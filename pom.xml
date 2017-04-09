@@ -33,6 +33,7 @@
 		<module>websocket</module>
 		<module>sockjs</module>
 		<module>bom</module>
+		
 	</modules>
 
 	<repositories>
@@ -99,7 +100,7 @@
 			<dependency>
 				<groupId>org.wildfly.swarm</groupId>
 				<artifactId>bom-all</artifactId>
-				<version>2017.3.3</version>
+				<version>2017.4.0</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

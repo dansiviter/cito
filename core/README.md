@@ -20,6 +20,17 @@ Citō can be deployed in fours ways:
 
 Citō utilises [Apache ActiveMQ Artemis](http://activemq.apache.org/artemis/) to act as an embedded message broker. This is a very high performant broker although it should be possible to integrate your own using JMS API.
 
+## Getting Started ##
+
+First import the core into your project:
+
+	<dependency>
+		<groupId>io.cito</groupId>
+		<artifactId>core</artifactId>
+		<version>x.x.x</version>
+	</dependency>
+
+Core is automatically pulled in via both [Artemis](../artemis) and [WebSocket](../websocket) so no need to include if you're using either of those. It's recommended you use the [BOM](../bom) to ensure you have the correct versions and assist in upgrading at a later date.
 
 ## Messaging ##
 

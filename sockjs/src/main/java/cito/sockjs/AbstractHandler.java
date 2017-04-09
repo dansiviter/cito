@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.Pipe;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
@@ -55,7 +56,7 @@ public abstract class AbstractHandler implements Serializable {
 	protected static final byte[] OPEN_FRAME = "o".getBytes(UTF_8);
 	protected static final byte[] HEARDTBEAT_FRAME = "h".getBytes(UTF_8);
 	protected static final byte[] ARRAY_FRAME = "a".getBytes(UTF_8);
-//	protected static final byte[] CLOSE_FRAME = "c".getBytes(UTF_8);
+	//	protected static final byte[] CLOSE_FRAME = "c".getBytes(UTF_8);
 
 	protected static final String CORS_ORIGIN = "Access-Control-Allow-Origin";
 	protected static final String CORS_CREDENTIALS = "Access-Control-Allow-Credentials";
@@ -102,7 +103,7 @@ public abstract class AbstractHandler implements Serializable {
 			return;
 		}
 		if (!ArrayUtils.contains(this.methods, method)) {
-			sendErrorNonBlock(async, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+			sendNonBlock(async, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 			return;
 		}
 
@@ -193,13 +194,12 @@ public abstract class AbstractHandler implements Serializable {
 
 	/**
 	 * 
-	 * @param asyncCtx
+	 * @param async
 	 * @param statusCode
 	 * @throws IOException
 	 */
-	protected void sendErrorNonBlock(HttpAsyncContext asyncCtx, int statusCode) throws IOException {
-		asyncCtx.getResponse().setStatus(statusCode);
-		asyncCtx.complete();
+	protected void sendNonBlock(HttpAsyncContext async, int statusCode) throws IOException {
+		sendNonBlock(async, statusCode, null);
 	}
 
 	/**
@@ -208,10 +208,16 @@ public abstract class AbstractHandler implements Serializable {
 	 * @param statusCode
 	 * @param message
 	 */
-	protected void sendErrorNonBlock(HttpAsyncContext async, int statusCode, String message) {
+	protected void sendNonBlock(HttpAsyncContext async, int statusCode, String message) {
 		try {
 			final HttpServletResponse res = async.getResponse();
 			res.setStatus(statusCode);
+
+			if (Util.isEmptyOrNull(message)) {
+				async.complete();
+				return;
+			}
+
 			final ServletOutputStream os = res.getOutputStream();
 			os.setWriteListener(new WriteListener() {
 				@Override
@@ -230,6 +236,63 @@ public abstract class AbstractHandler implements Serializable {
 			this.log.error("Unable to write error!", e);
 			async.complete();
 		}
+	}
+
+	/**
+	 * 
+	 * @param pipe
+	 * @param s
+	 * @return
+	 * @throws IOException
+	 */
+	protected int write(Pipe pipe, CharSequence s) throws IOException {
+		if (s == null || s.length() == 0) {
+			return 0;
+		}
+		return pipe.sink().write(UTF_8.encode(CharBuffer.wrap(s)));
+	}
+
+	/**
+	 * 
+	 * @param pipe
+	 * @param s0
+	 * @param s1
+	 * @return
+	 * @throws IOException
+	 */
+	protected int write(Pipe pipe, CharSequence s0, CharSequence s1) throws IOException {
+		return write(pipe, s0) + write(pipe, s1);
+	}
+
+	/**
+	 * 
+	 * @param pipe
+	 * @param s0
+	 * @param s1
+	 * @param s2
+	 * @return
+	 * @throws IOException
+	 */
+	protected int write(Pipe pipe, CharSequence s0, CharSequence s1, CharSequence s2) throws IOException {
+		return write(pipe, s0, s1) + write(pipe, s2);
+	}
+
+	/**
+	 * Convenience method to write lots of data to the pipe.
+	 * <p/>
+	 * Creates garbage as the vararg will create a new array regardless.
+	 * 
+	 * @param pipe
+	 * @param sequences
+	 * @return
+	 * @throws IOException
+	 */
+	protected int write(Pipe pipe, CharSequence... sequences) throws IOException {
+		int bytes = 0;
+		for (CharSequence s : sequences) {
+			bytes += write(pipe, s);
+		}
+		return bytes;
 	}
 
 
@@ -273,10 +336,10 @@ public abstract class AbstractHandler implements Serializable {
 	 * @param message
 	 * @return
 	 */
-	protected static CharBuffer closeFrame(int code, String message, String separator) {
-		final String codeStr = Integer.toString(code);
-		final CharBuffer buf = CharBuffer.allocate(codeStr.length() + message.length() + separator.length() + 6);
-		buf.append("c[").append(codeStr).append(",\"").append(message).append("\"]").append(separator).flip();
-		return buf;
+	protected static String closeFrame(int code, String message) {
+		return new StringBuilder("c[")
+				.append(code).append(",\"")
+				.append(message).append("\"]")
+				.toString();
 	}
 }

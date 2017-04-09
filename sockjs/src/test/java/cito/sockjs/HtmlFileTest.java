@@ -16,19 +16,23 @@
  */
 package cito.sockjs;
 
+import static cito.sockjs.EventSourceHandler.EVENTSOURCE;
 import static cito.sockjs.XhrSendHandler.XHR_SEND;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -86,23 +90,6 @@ public class HtmlFileTest extends AbstractTest {
 	}
 
 	/**
-	 * 
-	 * @param reader
-	 * @param find
-	 * @return
-	 * @throws IOException
-	 */
-	private String readTill(BufferedReader reader, String find) throws IOException {
-		final StringBuilder builder = new StringBuilder();
-		String line;
-		do {
-			line = reader.readLine();
-			builder.append(line).append('\n');
-		} while (!line.contains(find));
-		return builder.toString();
-	}
-
-	/**
 	 * Test no callback.
 	 */
 	@Test
@@ -142,6 +129,29 @@ public class HtmlFileTest extends AbstractTest {
 		//	The connection should be closed after enough data was delivered.
 		//
 		//	        self.assertFalse(r.read())
+		
+		final String uuid = uuid();
+		final Response res = target("000", uuid, EVENTSOURCE).request().get();
+
+		final InputStream is = res.readEntity(InputStream.class);
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+			assertEquals("", reader.readLine());
+			assertEquals("data: o", reader.readLine());
+			assertEquals("", reader.readLine());
+
+			// Test server should gc streaming session after 4096 bytes were sent (including framing).
+
+			final String msg = StringUtils.leftPad("", 4096, "x");
+			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"" + msg + "\"]")); 
+			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
+			verifyEmptyEntity(res0);
+			res0.close();
+			assertEquals("data: a[\"" + msg + "\"]", reader.readLine());
+			assertEquals("", reader.readLine());
+			// The connection should be closed after enough data was delivered.
+			assertNull(reader.readLine());
+			res.close();
+		}
 	}
 
 

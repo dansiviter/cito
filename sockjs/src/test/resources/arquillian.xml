@@ -7,7 +7,7 @@
 	<container qualifier="jboss" default="true">
 		<configuration>
 			<!-- <property name="javaVmArguments">-agentlib:jdwp=transport=dt_socket,address=9090,server=y,suspend=y</property> -->
-			<property name="javaVmArguments">-Dswarm.logging=WARN</property>
+			<!-- <property name="javaVmArguments">-Dswarm.logging=DEBUG</property> -->
 		</configuration>
 	</container>
 </arquillian>

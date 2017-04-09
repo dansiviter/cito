@@ -6,8 +6,8 @@ Use this to cleanly ensure all the correct versions of Citō are imported into M
 		<dependencies>
 			...
 			<dependency>
-				<groupId>cito</groupId>
-				<artifactId>cito-bom</artifactId>
+				<groupId>io.cito</groupId>
+				<artifactId>bom</artifactId>
 				<version>x.x.x</version>
 				<scope>import</scope>
 				<type>pom</type>

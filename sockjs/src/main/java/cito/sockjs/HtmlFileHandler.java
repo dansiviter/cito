@@ -19,12 +19,6 @@ package cito.sockjs;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.channels.Pipe;
-import java.nio.channels.Pipe.SinkChannel;
-import java.nio.channels.WritableByteChannel;
-import java.util.Queue;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -32,68 +26,64 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import cito.sockjs.nio.WriteStream;
 
 /**
+ * Handles HTML File Streaming ({@code /<server>/<session>/htmlfile}) connections.
+ * 
  * @author Daniel Siviter
  * @since v1.0 [1 Mar 2017]
  */
-public class HtmlFileHandler extends AbstractSessionHandler {
+public class HtmlFileHandler extends AbstractStreamingHandler {
 	private static final long serialVersionUID = -4614348605938993415L;
 
 	static final String HTMLFILE = "htmlfile";
 
-	private String prelude;
+	private static final String PRELUDE;
+	static {
+		try {
+			final String htmlfile = Util.resourceToString(HtmlFileHandler.class, "htmlfile.html");
+			PRELUDE = new StringBuilder(StringUtils.rightPad(htmlfile, 1_024)).append("\r\n").toString();
+		} catch (IOException e) {
+			throw new IllegalStateException("Unable to load template!", e);
+		}
+	}
 
 	/**
 	 * 
 	 * @param servlet
 	 */
 	public HtmlFileHandler(Servlet servlet) {
-		super(servlet, "text/html;charset=UTF-8", true, "GET");
-	}
-
-	@Override
-	public HtmlFileHandler init() throws ServletException {
-		try {
-			this.prelude = Util.resourceToString(getClass(), "htmlfile.html");
-			this.prelude = StringUtils.rightPad(this.prelude, 1_024);
-			this.prelude += "\r\n";
-		} catch (IOException e) {
-			throw new ServletException("Unable to load template!", e);
-		}
-		return this;
+		super(servlet, "text/html;charset=UTF-8", "GET");
 	}
 
 	@Override
 	protected void handle(HttpAsyncContext async, ServletSession session, boolean initial)
-			throws ServletException, IOException
+	throws ServletException, IOException
 	{
-		final HttpServletResponse res = async.getResponse();
-
-		final Pipe pipe = Pipe.open();
-		session.setSender(new HtmlFileSender(session, pipe.sink()));
-
 		final String callback = getCallback(async.getRequest());
 		if (callback == null || callback.isEmpty()) {
 			this.log.warn("Callback expected.");
-			sendErrorNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "\"callback\" parameter required");
+			sendNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "\"callback\" parameter required");
 			return;
 		}
 
-		res.getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
-		final String prelude = String.format(this.prelude, callback);
-		pipe.sink().write(UTF_8.encode(CharBuffer.wrap(prelude)));
-		if (initial) {
-			pipe.sink().write(UTF_8.encode(CharBuffer.wrap("<script>\np(\"o\");\n</script>\r\n")));
-		}
+		handle(async, session, initial, HtmlFileHandler::format, () -> String.format(PRELUDE, callback));
 	}
 
 
 	// --- Static Methods ---
+
+	/**
+	 * 
+	 * @param frame
+	 * @param callback
+	 * @return
+	 */
+	private static CharSequence format(CharSequence frame) {
+		return new StringBuilder("<script>\np(\"")
+				.append(StringEscapeUtils.ESCAPE_ECMASCRIPT.translate(frame))
+				.append("\");\n</script>\r\n");
+	}
 
 	/**
 	 * 
@@ -106,53 +96,6 @@ public class HtmlFileHandler extends AbstractSessionHandler {
 			return StringUtils.isEmpty(value) ? null : URLDecoder.decode(value, "UTF8");
 		} catch (UnsupportedEncodingException e) {
 			throw new IllegalStateException(e); // UTF-8 should always be supported!
-		}
-	}
-
-
-	// --- Inner Classes ---
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [25 Feb 2017]
-	 */
-	private class HtmlFileSender implements Sender {
-		private final Logger log = LoggerFactory.getLogger(HtmlFileSender.class);
-		private final ServletSession session;
-		private final WritableByteChannel dest;
-		private int bytesSent;
-
-		public HtmlFileSender(ServletSession session, SinkChannel dest) {
-			this.session = session;
-			this.dest = dest;
-		}
-
-		@Override
-		public void send(Queue<String> frames) throws IOException {
-			while (!frames.isEmpty()) {
-				String frame = frames.poll();
-				this.log.debug("Flushing frame. [sessionId={},frame={}]", this.session.getId(), frame);
-				frame = StringEscapeUtils.escapeJson(frame);
-				// +34 represents the possible start/end frame
-				final CharBuffer buf = CharBuffer.allocate(frame.length() + 34);
-				buf.append("<script>\np(\"a[\\\"").append(frame).append("\\\"]\");\n</script>\r\n").flip();
-				final ByteBuffer byteBuf = UTF_8.encode(buf);
-				this.dest.write(byteBuf);
-				this.bytesSent += byteBuf.limit();
-				final boolean limitReached = this.bytesSent >= servlet.getConfig().maxStreamBytes();
-				if (limitReached) {
-					this.log.debug("Limit to streaming bytes reached. Closing sender.");
-					close();
-					return;
-				}
-			}
-		}
-
-		@Override
-		public void close() throws IOException {
-			this.session.setSender(null);
-			this.dest.close();
 		}
 	}
 }

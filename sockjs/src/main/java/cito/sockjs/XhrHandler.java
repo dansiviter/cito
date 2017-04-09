@@ -16,9 +16,7 @@
 package cito.sockjs;
 
 import java.io.IOException;
-import java.nio.CharBuffer;
 import java.nio.channels.Pipe;
-import java.nio.channels.WritableByteChannel;
 import java.util.Queue;
 
 import javax.servlet.ServletException;
@@ -57,17 +55,17 @@ public class XhrHandler extends AbstractSessionHandler {
 		async.getResponse().getOutputStream().setWriteListener(new WriteStream(async, pipe.source()));
 
 		if (initial) {
-			pipe.sink().write(UTF_8.encode(CharBuffer.wrap("o\n")));
+			write(pipe, "o\n");
 			pipe.sink().close();
 		} else if (!session.isOpen()) {
 			this.log.info("Session closed! [{}]", session.getId());
-			pipe.sink().write(UTF_8.encode(closeFrame(3000, "Go away!", "\n")));
+			write(pipe, closeFrame(3000, "Go away!"), "\n");
 			pipe.sink().close();
 		} else {
-			try (Sender sender = new XhrSender(session, pipe.sink())) {
+			try (Sender sender = new XhrSender(session, pipe)) {
 				if (!session.setSender(sender)) {
 					this.log.warn("Connection still open! [{}]", session.getId());
-					pipe.sink().write(UTF_8.encode(closeFrame(2010, "Another connection still open", "\n")));
+					write(pipe, closeFrame(2010, "Another connection still open"), "\n");
 				}
 			}
 		}
@@ -84,36 +82,36 @@ public class XhrHandler extends AbstractSessionHandler {
 	private class XhrSender implements Sender {
 		private final Logger log = LoggerFactory.getLogger(XhrSender.class);
 		private final ServletSession session;
-		private final WritableByteChannel dest;
+		private final Pipe pipe;
 
-		public XhrSender(ServletSession session, WritableByteChannel dest) {
+		public XhrSender(ServletSession session, Pipe pipe) {
 			this.session = session;
-			this.dest = dest;
+			this.pipe = pipe;
 		}
 
 		@Override
 		public void send(Queue<String> frames) throws IOException {
 			if (frames.isEmpty()) {
-				this.dest.write(UTF_8.encode("a[]\n"));
+				write(this.pipe, "a[]\n");
 				return;
 			}
 
-			this.dest.write(UTF_8.encode("a[\""));
+			write(this.pipe, "a[\"");
 			while (!frames.isEmpty()) {
 				final String frame = frames.poll();
 				this.log.debug("Flushing frame. [sessionId={},frame={}]", this.session.getId(), frame);
-				this.dest.write(UTF_8.encode(StringEscapeUtils.escapeJson(frame)));
+				write(pipe, StringEscapeUtils.escapeJson(frame));
 				if (!frames.isEmpty()) {
-					this.dest.write(UTF_8.encode("\",\""));
+					write(this.pipe, "\",\"");
 				}
 			}
-			this.dest.write(UTF_8.encode("\"]\n"));
+			write(this.pipe, "\"]\n");
 		}
 
 		@Override
 		public void close() throws IOException {
 			this.session.setSender(null);
-			this.dest.close();
+			this.pipe.sink().close();
 		}
 	}
 }
