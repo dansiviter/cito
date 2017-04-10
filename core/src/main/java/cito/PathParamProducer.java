@@ -38,11 +38,6 @@ public class PathParamProducer {
 	private static final Map<String, PathParser> PARSERS = new WeakHashMap<>();
 	private static final ThreadLocal<PathParser> HOLDER = new ThreadLocal<>();
 
-	@Produces @Dependent
-	public static PathParser pathParser() {
-		return HOLDER.get();
-	}
-
 	/**
 	 * 
 	 * @param path
@@ -54,14 +49,15 @@ public class PathParamProducer {
 
 	/**
 	 * 
-	 * @param e
+	 * @param parser
+	 * @return
 	 */
-	public static QuietClosable set(PathParser e) {
+	public static QuietClosable set(PathParser parser) {
 		final PathParser old = pathParser();
 		if (old != null) {
 			throw new IllegalStateException("Already set!");
 		}
-		HOLDER.set(e);
+		HOLDER.set(parser);
 		return new QuietClosable() {
 			@Override
 			public void close() {
@@ -72,8 +68,16 @@ public class PathParamProducer {
 
 	/**
 	 * 
-	 * @param ip
-	 * @param e
+	 * @return
+	 */
+	@Produces @Dependent
+	public static PathParser pathParser() {
+		return HOLDER.get();
+	}
+
+	/**
+	 * 
+	 * @param path
 	 * @return
 	 */
 	public static PathParser pathParser(String path) {
@@ -84,21 +88,24 @@ public class PathParamProducer {
 	 * 
 	 * @param ip
 	 * @param parser
-	 * @param e
+	 * @param msg
+	 * @param dc
 	 * @return
 	 */
 	@Produces @Dependent @PathParam("nonbinding")
-	public static String pathParam(InjectionPoint ip, PathParser parser, Message me, DestinationChanged de) {
+	public static String pathParam(InjectionPoint ip, PathParser parser, Message msg, DestinationChanged dc) {
 		final String destination;
-		if (me != null) {
-			destination = me.frame().destination();
-		} else if (de != null) {
-			destination = de.getDestination();
+		if (msg != null) {
+			destination = msg.frame().destination();
+		} else if (dc != null) {
+			destination = dc.getDestination();
 		} else {
 			throw new IllegalStateException("Neither MessageEvent or DestinationEvent is resolvable!");
 		}
 
-		final PathParam param = ip.getAnnotated().getAnnotation(PathParam.class);
+		final PathParam param = ip
+				.getAnnotated()
+				.getAnnotation(PathParam.class);
 		final Result r = parser.parse(destination);
 		if (r.isSuccess()) {
 			return r.get(param.value());

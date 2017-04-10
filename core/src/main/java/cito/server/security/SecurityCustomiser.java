@@ -52,5 +52,5 @@ public interface SecurityCustomiser {
 	 * 
 	 * @param registry
 	 */
-	void configure(SecurityRegistry registry);
+	void customise(SecurityRegistry registry);
 }

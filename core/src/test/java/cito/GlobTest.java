@@ -15,11 +15,14 @@
  */
 package cito;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.regex.Pattern;
 
 import org.junit.Test;
 
-import cito.Glob;
 
 /**
  * Unit tests for {@link Glob}.
@@ -30,6 +33,8 @@ import cito.Glob;
 public class GlobTest {
 	@Test
 	public void go() {
+		assertFalse(Glob.matches("/foo.bar/??/blagh", null));
+
 		assertTrue(Glob.matches("/foo/bar/", "/foo/bar/"));
 		assertFalse(Glob.matches("/foo/bar/", "/foo/bar"));
 		assertFalse(Glob.matches("/foo/bar/", "/foo/bar/blagh"));
@@ -62,6 +67,15 @@ public class GlobTest {
 	}
 
 	@Test
+	public void wildCard() {
+		assertTrue(new Glob("/foo/*").hasWildcard());
+		assertTrue(new Glob("/foo/*/bar").hasWildcard());
+		assertTrue(new Glob("/foo/?").hasWildcard());
+		assertTrue(new Glob("/foo/?/bar").hasWildcard());
+		assertFalse(new Glob("/foo/").hasWildcard());
+	}
+
+	@Test
 	public void capture() {
 		assertTrue(Glob.matches("/foo.bar/{hello}/blagh", "/foo.bar/hello/blagh"));
 	}
@@ -69,5 +83,11 @@ public class GlobTest {
 	@Test
 	public void capture_hypen() {
 		assertTrue(Glob.matches("/foo.bar/{hello}/blagh", "/foo.bar/hello-world/blagh"));
+	}
+
+	@Test
+	public void compile() {
+		final Pattern pattern = Glob.compile("/foo.bar/{hello}/blagh");
+		assertEquals("/foo\\.bar/(?<hello>[A-Za-z0-9\\-\\_]*)/blagh", pattern.pattern());
 	}
 }

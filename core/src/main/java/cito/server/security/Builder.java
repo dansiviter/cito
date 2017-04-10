@@ -15,12 +15,15 @@
  */
 package cito.server.security;
 
+import static cito.Util.requireNonEmpty;
+import static java.util.Collections.unmodifiableList;
+
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,7 +46,6 @@ import cito.stomp.Headers;
  * @since v1.0 [19 Oct 2016]
  */
 public class Builder {
-
 	private final SecurityRegistry registry;
 	private final List<FrameMatcher> frameMatchers = new ArrayList<>();
 	private final List<SecurityMatcher> securityMatchers = new ArrayList<>();
@@ -82,20 +84,20 @@ public class Builder {
 
 	/**
 	 * 
-	 * @return
-	 */
-	public Builder nullDestination() {
-		return matches(new NullDestinationMatcher());
-	}
-
-	/**
-	 * 
 	 * @param constraint
 	 * @return
 	 */
 	public Builder matches(SecurityMatcher matcher) {
 		this.securityMatchers.add(matcher);
 		return this;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public Builder nullDestination() {
+		return matches(new NullDestinationMatcher());
 	}
 
 	/**
@@ -150,7 +152,7 @@ public class Builder {
 	 * @author Daniel Siviter
 	 * @since v1.0 [18 Oct 2016]
 	 */
-	private static class CommandMatcher implements FrameMatcher {
+	public static class CommandMatcher implements FrameMatcher {
 		private final Set<Command> commands;
 
 		public CommandMatcher(Command... commands) {
@@ -169,7 +171,7 @@ public class Builder {
 	 * @author Daniel Siviter
 	 * @since v1.0 [18 Oct 2016]
 	 */
-	private static abstract class DestinationMatcher implements FrameMatcher {
+	public static abstract class DestinationMatcher implements FrameMatcher {
 		@Override
 		public final boolean matches(Frame frame) {
 			return matches(frame.containsHeader(Headers.DESTINATION) ? frame.destination() : null);
@@ -184,7 +186,7 @@ public class Builder {
 	 * @author Daniel Siviter
 	 * @since v1.0 [18 Oct 2016]
 	 */
-	private static class ExactDestinationMatcher extends DestinationMatcher {
+	public static class ExactDestinationMatcher extends DestinationMatcher {
 		private final String destination;
 
 		public ExactDestinationMatcher(String destination) {
@@ -193,7 +195,7 @@ public class Builder {
 
 		@Override
 		public boolean matches(String destination) {
-			return destination != null && this.destination.equals(destination);
+			return Objects.equals(destination, this.destination);
 		}
 	}
 
@@ -202,7 +204,7 @@ public class Builder {
 	 * @author Daniel Siviter
 	 * @since v1.0 [27 Oct 2016]
 	 */
-	private static class NullDestinationMatcher extends ExactDestinationMatcher {
+	public static class NullDestinationMatcher extends ExactDestinationMatcher {
 		public NullDestinationMatcher() {
 			super(null);
 		}
@@ -214,7 +216,7 @@ public class Builder {
 	 * @author Daniel Siviter
 	 * @since v1.0 [18 Oct 2016]
 	 */
-	private static class GlobDestinationMatcher extends DestinationMatcher {
+	public static class GlobDestinationMatcher extends DestinationMatcher {
 		private final Glob glob;
 
 		public GlobDestinationMatcher(String destination) {
@@ -237,7 +239,7 @@ public class Builder {
 	 * @author Daniel Siviter
 	 * @since v1.0 [18 Oct 2016]
 	 */
-	private static class DestinationsMatcher implements FrameMatcher {
+	public static class DestinationsMatcher implements FrameMatcher {
 		private final DestinationMatcher[] matchers;
 
 		public DestinationsMatcher(String... destinations) {
@@ -273,7 +275,7 @@ public class Builder {
 	 */
 	public static class PrincipalMatcher implements SecurityMatcher {
 		@Override
-		public boolean isPermitted(SecurityContext securityCtx) {
+		public boolean permitted(SecurityContext securityCtx) {
 			return securityCtx.getUserPrincipal() != null;
 		}
 	}
@@ -283,7 +285,7 @@ public class Builder {
 	 * @author Daniel Siviter
 	 * @since v1.0 [30 Aug 2016]
 	 */
-	public class SecurityAnnotationMatcher implements SecurityMatcher {
+	public static class SecurityAnnotationMatcher implements SecurityMatcher {
 		private final Annotation annotation;
 
 		public SecurityAnnotationMatcher(Annotation annotation) {
@@ -297,7 +299,7 @@ public class Builder {
 		}
 
 		@Override
-		public boolean isPermitted(SecurityContext securityCtx) {
+		public boolean permitted(SecurityContext securityCtx) {
 			if (this.annotation.annotationType() == DenyAll.class) {
 				return false;
 			}
@@ -333,8 +335,8 @@ public class Builder {
 
 		public Limitation(List<FrameMatcher> frameMatchers, List<SecurityMatcher> securityMatchers) {
 			this.id = ID.incrementAndGet();
-			this.frameMatchers = Collections.unmodifiableList(new ArrayList<>(frameMatchers));
-			this.securityMatchers = Collections.unmodifiableList(new ArrayList<>(securityMatchers));
+			this.frameMatchers = unmodifiableList(new ArrayList<>(requireNonEmpty(frameMatchers)));
+			this.securityMatchers = unmodifiableList(new ArrayList<>(requireNonEmpty(securityMatchers)));
 		}
 
 		public int getId() {
@@ -352,9 +354,9 @@ public class Builder {
 		}
 
 		@Override
-		public boolean isPermitted(SecurityContext ctx) {
+		public boolean permitted(SecurityContext ctx) {
 			for (SecurityMatcher matcher : this.securityMatchers) {
-				if (!matcher.isPermitted(ctx)) {
+				if (!matcher.permitted(ctx)) {
 					return false;
 				}
 			}

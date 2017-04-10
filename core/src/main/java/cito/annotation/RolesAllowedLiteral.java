@@ -28,7 +28,7 @@ public class RolesAllowedLiteral extends AnnotationLiteral<RolesAllowed> impleme
 
 	private final String[] value;
 
-	public RolesAllowedLiteral(String[] value) {
+	public RolesAllowedLiteral(String... value) {
 		this.value = value;
 	}
 

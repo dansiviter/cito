@@ -67,6 +67,29 @@ public enum ReflectionUtil { ;
 	 * 
 	 * @param source
 	 * @param name
+	 * @param type
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T get(@Nonnull Class<?> sourceCls, @Nonnull String name, Class<T> type) {
+		try {
+			final Field field = findField(sourceCls, name, type);
+			if (field == null) {
+				throw new IllegalArgumentException(
+						String.format("Unable to find '%s' on '%s'!", name, sourceCls));
+			}
+			setAccessible(field);
+			return (T) field.get(null);
+		} catch (IllegalAccessException ex) {
+			throw new IllegalStateException(String.format(
+					"Unexpected reflection exception - %s", ex.getClass().getName()), ex);
+		}
+	}
+
+	/**
+	 * 
+	 * @param source
+	 * @param name
 	 * @param value
 	 */
 	public static void set(@Nonnull Object source, @Nonnull String name, Object value) {

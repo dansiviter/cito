@@ -64,7 +64,9 @@ public class XhrSendHandler extends AbstractSessionHandler {
 			return;
 		}
 		if (session == null) {
-			this.log.warn("Session not found! [{}]", Util.session(this.servlet, async.getRequest()));
+			if (this.log.isWarnEnabled()) {
+				this.log.warn("Session not found! [{}]", Util.session(this.servlet, async.getRequest()));
+			}
 			sendNonBlock(async, HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}

@@ -46,7 +46,20 @@ public class SecurityRegistry {
 	private final Set<Limitation> limitations = new LinkedHashSet<>();
 
 	@Inject @Any
-	private Instance<SecurityCustomiser> configurers;
+	private Instance<SecurityCustomiser> customisers;
+
+	/**
+	 * 
+	 */
+	@PostConstruct
+	public void init() {
+		final Set<SecurityCustomiser> configurers = new TreeSet<>(Comparator.comparing(SecurityRegistry::getPriority));
+		this.customisers.forEach(configurers::add);
+		configurers.forEach(c -> { 
+			customise(c);
+			this.customisers.destroy(c);
+		});
+	}
 
 	/**
 	 * 
@@ -73,7 +86,7 @@ public class SecurityRegistry {
 	 */
 	public boolean isPermitted(Frame frame, SecurityContext ctx) {
 		for (Limitation limitation : getMatching(frame)) {
-			if (!limitation.isPermitted(ctx)) {
+			if (!limitation.permitted(ctx)) {
 				return false;
 			}
 		}
@@ -90,25 +103,11 @@ public class SecurityRegistry {
 
 	/**
 	 * 
-	 * @param configurer
+	 * @param customiser
 	 */
-	public void configure(SecurityCustomiser configurer) {
-		configurer.configure(this);
+	public void customise(SecurityCustomiser customiser) {
+		customiser.customise(this);
 	}
-
-	/**
-	 * 
-	 */
-	@PostConstruct
-	public void init() {
-		final Set<SecurityCustomiser> configurers = new TreeSet<>(Comparator.comparing(SecurityRegistry::getPriority));
-		this.configurers.forEach(configurers::add);
-		configurers.forEach(c -> { 
-			configure(c);
-			this.configurers.destroy(c);
-		});
-	}
-
 
 
 	// --- Static Methods ---

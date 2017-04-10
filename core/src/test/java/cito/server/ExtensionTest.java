@@ -17,7 +17,6 @@ package cito.server;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -35,7 +34,6 @@ import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
-import javax.enterprise.inject.spi.InjectionTarget;
 import javax.enterprise.inject.spi.ObserverMethod;
 import javax.enterprise.inject.spi.ProcessObserverMethod;
 import javax.websocket.Session;
@@ -59,7 +57,6 @@ import cito.annotation.WebSocketScope;
 import cito.event.Message;
 import cito.scope.WebSocketContext;
 import cito.scope.WebSocketSessionHolder;
-import cito.server.Extension;
 
 /**
  * Unit test for {@link Extension}.
@@ -191,22 +188,14 @@ public class ExtensionTest {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void registerContexts() {
 		final AfterBeanDiscovery afterBeanDiscovery = mock(AfterBeanDiscovery.class);
-		final CreationalContext creationalContext = mock(CreationalContext.class);
-		when(this.beanManager.createCreationalContext(null)).thenReturn(creationalContext);
 		final AnnotatedType annotatedType = mock(AnnotatedType.class);
 		when(this.beanManager.createAnnotatedType(any())).thenReturn(annotatedType);
-		final InjectionTarget injectionTarget = mock(InjectionTarget.class);
-		when(this.beanManager.createInjectionTarget(any())).thenReturn(injectionTarget);
 
 		this.extension.registerContexts(afterBeanDiscovery, this.beanManager);
 
 		verify(afterBeanDiscovery).addContext(any(WebSocketContext.class));
 		verify(this.beanManager).isPassivatingScope(WebSocketScope.class);
-		verify(this.beanManager).createAnnotatedType(any());
-		verify(this.beanManager).createCreationalContext(null);
-		verify(this.beanManager).createInjectionTarget(annotatedType);
-		verify(injectionTarget).inject(any(WebSocketContext.class), eq(creationalContext));
-		verifyNoMoreInteractions(afterBeanDiscovery, creationalContext, injectionTarget);
+		verifyNoMoreInteractions(afterBeanDiscovery);
 	}
 
 	@Test

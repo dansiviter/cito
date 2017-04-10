@@ -15,6 +15,8 @@
  */
 package cito;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Objects;
 import java.util.regex.Matcher;
 
@@ -40,7 +42,7 @@ public class PathParser {
 	 * @param pattern the pattern to parse.
 	 */
 	public PathParser(@Nonnull String pattern) {
-		this.glob = Glob.from(this.pattern = pattern);
+		this.glob = Glob.from(requireNonNull(this.pattern = pattern));
 	}
 
 	/**
@@ -63,12 +65,11 @@ public class PathParser {
 		return Objects.hash(this.pattern);
 	}
 
-
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (getClass() != obj.getClass())
+		if (obj == null ||getClass() != obj.getClass())
 			return false;
 		PathParser other = (PathParser) obj;
 		return Objects.equals(this.pattern, other.pattern);
@@ -112,7 +113,7 @@ public class PathParser {
 		 * @param matcher
 		 */
 		public Result(Matcher matcher) {
-			this.matcher = matcher;
+			this.matcher = requireNonNull(matcher);
 		}
 
 		/**

@@ -29,5 +29,5 @@ public interface SecurityMatcher {
 	 * @param ctx
 	 * @return
 	 */
-	boolean isPermitted(SecurityContext ctx);
+	boolean permitted(SecurityContext ctx);
 }

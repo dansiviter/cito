@@ -102,10 +102,10 @@ Sending a message to a client can be achieved in three ways:
 * Broadcast to all sessions for a user subscribed to a topic or queue,
 * Send to a specific session for a user subscribed to a topic or queue.
 
-To perform these inject the `cito.stomp.server.Support` class:
+To perform these inject the `cito.server.MessagingSupport` class:
 
 	@Inject
-	private Support support;
+	private MessagingSupport support;
 
 Any bean passed as a payload will be serialised to the `MediaType` before being sent to the user. The default type is `application/json`.
 
@@ -135,7 +135,7 @@ Finally the least granular approach will only send to a specific session of a us
 
 ## Security ##
 
-By default all detinations are permitted to all users. However, it may be essential to prevent access for a user with a specific role, or just those who have passed authorisation. To do this implement `SecurityCustomiser` class:
+By default all destinations are permitted to all users. However, it may be essential to prevent access for a user with a specific role, or just those who have passed authorisation. To do this implement `SecurityCustomiser` class:
 
 	@Dependent // preferred scope
 	public class Customiser implements SecurityCustomiser {

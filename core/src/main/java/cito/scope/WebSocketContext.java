@@ -15,7 +15,8 @@
  */
 package cito.scope;
 
-import static cito.cdi.Util.injectFields;
+import static cito.LogProducer.logger;
+import static org.apache.deltaspike.core.api.provider.BeanProvider.getContextualReference;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -27,7 +28,6 @@ import javax.enterprise.context.ContextNotActiveException;
 import javax.enterprise.context.spi.Contextual;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.websocket.Session;
 
 import org.apache.deltaspike.core.impl.scope.AbstractBeanHolder;
@@ -52,14 +52,12 @@ public class WebSocketContext extends AbstractContext {
 
 	@Inject
 	private Logger log;
-	@Inject
-	private Provider<SessionRegistry> sessionRegistry;
 
 	public WebSocketContext(BeanManager beanManager) {
 		super(beanManager);
+		this.log = logger(getClass());
 		this.holder = new Holder(isPassivatingScope());
 		this.beanManager = beanManager;
-		injectFields(beanManager, this);
 	}
 
 	public void init(WebSocketSessionHolder sessionHolder) {
@@ -108,13 +106,12 @@ public class WebSocketContext extends AbstractContext {
 	 */
 	private Session getSession(Contextual<?> contextual) {
 		final List<Session> sessions = new ArrayList<>();
+		final SessionRegistry registry = getContextualReference(this.beanManager, SessionRegistry.class, false);
 		for (Entry<String, ContextualStorage> e : this.holder.getStorageMap().entrySet()) {
 			final Object key = e.getValue().getBeanKey(contextual);
 			if (e.getValue().getBean(key) != null) {
-				final Optional<Session> session = this.sessionRegistry.get().getSession(e.getKey());
-				if (session.isPresent()) {
-					sessions.add(session.get());
-				}
+				final Optional<Session> session = registry.getSession(e.getKey());
+				session.ifPresent(sessions::add);
 			}
 		}
 		if (sessions.size() > 1) {

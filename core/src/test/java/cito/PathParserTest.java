@@ -17,6 +17,7 @@ package cito;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -84,5 +85,19 @@ public class PathParserTest {
 		assertTrue(result.isSuccess());
 		assertEquals("first", result.get("param1"));
 		assertEquals("second", result.get("param2"));
+	}
+
+	@Test
+	public void equality() {
+		final PathParser parser0 = new PathParser("/{param}");
+		final PathParser parser1 = new PathParser("/{param}");
+		assertTrue(parser0.equals(parser1));
+		assertEquals(parser0.hashCode(), parser1.hashCode());
+
+		assertFalse(parser0.equals(null));
+
+		final PathParser parser2 = new PathParser("/{anotherParam}");
+		assertFalse(parser0.equals(parser2));
+		assertNotEquals(parser0.hashCode(), parser2.hashCode());
 	}
 }

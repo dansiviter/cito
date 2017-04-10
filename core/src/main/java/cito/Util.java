@@ -57,6 +57,21 @@ public enum Util { ;
 
 	/**
 	 * 
+	 * @param collection
+	 * @return
+	 */
+	public static <C extends Collection<?>> C requireNonEmpty(C collection) {
+		if (collection == null) {
+			throw new NullPointerException();
+		}
+		if (collection.isEmpty()) {
+			throw new IllegalArgumentException("Collection is empty!");
+		}
+		return collection;
+	}
+
+	/**
+	 * 
 	 * @param annotation
 	 * @param annocations
 	 * @return

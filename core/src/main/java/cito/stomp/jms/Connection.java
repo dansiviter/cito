@@ -56,8 +56,6 @@ public class Connection extends AbstractConnection {
 	private final Map<String, Session> txSessions = new ConcurrentHashMap<>();
 	private final Map<String, javax.jms.Message> ackMessages = new ConcurrentHashMap<>();
 
-	@Inject
-	private Factory factory;
 	@Inject // XXX use ManagedScheduledExecutorService?
 	private ScheduledExecutorService scheduler;
 	@Inject @FromBroker

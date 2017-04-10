@@ -13,35 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cito;
+package cito.annotation;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.InjectionPoint;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.enterprise.util.AnnotationLiteral;
 
 /**
- * Produces {@link Logger} instances for injection.
  * 
  * @author Daniel Siviter
- * @since v1.0 [15 Jul 2016]
+ * @since v1.0 [30 Aug 2016]
  */
-@ApplicationScoped
-public class LogProducer {
-	@Produces @Dependent
-	public static Logger logger(InjectionPoint ip) {
-		return logger(ip.getBean().getBeanClass());
+public class PathParamLiteral extends AnnotationLiteral<PathParam> implements PathParam {
+	private static final long serialVersionUID = 4780749201927204493L;
+
+	private final String value;
+
+	public PathParamLiteral(String value) {
+		this.value = value;
 	}
 
-	/**
-	 * 
-	 * @param cls
-	 * @return
-	 */
-	public static Logger logger(Class<?> cls) {
-		return LoggerFactory.getLogger(cls);
+	@Override
+	public String value() {
+		return this.value;
 	}
 }

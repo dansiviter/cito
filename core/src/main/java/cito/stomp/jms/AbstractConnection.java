@@ -43,7 +43,9 @@ public abstract class AbstractConnection implements cito.stomp.Connection {
 	@Inject
 	protected Relay relay;
 	@Inject
-	protected ConnectionFactory factory;
+	protected ConnectionFactory connectionFactory;
+	@Inject
+	protected Factory factory;
 
 	private javax.jms.Connection delegate;
 
@@ -64,9 +66,9 @@ public abstract class AbstractConnection implements cito.stomp.Connection {
 			throw new IllegalStateException("Already connected!");
 		}
 		if (login != null) {
-			this.delegate = this.factory.createConnection(login, passcode);
+			this.delegate = this.connectionFactory.createConnection(login, passcode);
 		} else {
-			this.delegate = this.factory.createConnection();
+			this.delegate = this.connectionFactory.createConnection();
 		}
 
 		final String sessionId = getSessionId();

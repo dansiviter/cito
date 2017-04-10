@@ -15,11 +15,8 @@
  */
 package cito.stomp.jms;
 
-import java.io.IOException;
-
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import javax.jms.JMSException;
 
 import cito.event.Message;
@@ -33,9 +30,6 @@ import cito.stomp.Frame;
 @ApplicationScoped
 public class SystemConnection extends AbstractConnection {
 	static final String SESSION_ID = "$Y$TEM";
-
-	@Inject
-	private Factory factory;
 
 	private Session session;
 
@@ -57,7 +51,7 @@ public class SystemConnection extends AbstractConnection {
 	}
 
 	@Override
-	public void sendToClient(Frame frame) throws IOException {
+	public void sendToClient(Frame frame) {
 		throw new UnsupportedOperationException("Cannot sent to client from system connection!");
 	}
 
