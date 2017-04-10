@@ -52,13 +52,14 @@ public enum ReflectionUtil { ;
 		try {
 			final Field field = findField(source.getClass(), name, type);
 			if (field == null) {
-				throw new IllegalArgumentException("Unable to find '" + name + "' on '" + source.getClass() + "'!");
+				throw new IllegalArgumentException(
+						String.format("Unable to find '%s' on '%s'!", name, source.getClass()));
 			}
 			setAccessible(field);
 			return (T) field.get(source);
 		} catch (IllegalAccessException ex) {
-			throw new IllegalStateException(
-					"Unexpected reflection exception - " + ex.getClass().getName() + ": " + ex.getMessage());
+			throw new IllegalStateException(String.format(
+					"Unexpected reflection exception - %s", ex.getClass().getName()), ex);
 		}
 	}
 
@@ -88,8 +89,8 @@ public enum ReflectionUtil { ;
 			setAccessible(field);
 			field.set(source, value);
 		} catch (IllegalAccessException ex) {
-			throw new IllegalStateException(
-					"Unexpected reflection exception - " + ex.getClass().getName() + ": " + ex.getMessage());
+			throw new IllegalStateException(String.format(
+					"Unexpected reflection exception - %s", ex.getClass().getName()), ex);
 		}
 	}
 
@@ -108,7 +109,9 @@ public enum ReflectionUtil { ;
 
 		final Method method = findMethod(source.getClass(), name, argTypes);
 		if (method == null) {
-			throw new IllegalArgumentException("Unable to find '" + name + "' with '" + Arrays.toString(argTypes) + "' on '" + source.getClass() + "'!");
+			throw new IllegalArgumentException(
+					String.format("Unable to find '%s' with '%s' on '%s'!",
+							name, Arrays.toString(argTypes), source.getClass()));
 		}
 		return invoke(source, method, args);
 	}
@@ -126,9 +129,9 @@ public enum ReflectionUtil { ;
 			setAccessible(method);
 			return (T) method.invoke(source, args);
 		} catch (IllegalAccessException | InvocationTargetException ex) {
-			throw new IllegalStateException(
-					"Unexpected reflection exception - " + ex.getClass().getName() + ": " + ex.getMessage());
-		}
+			throw new IllegalStateException(String.format(
+					"Unexpected reflection exception - %s", ex.getClass().getName()), ex);
+	}
 	}
 
 	/**
