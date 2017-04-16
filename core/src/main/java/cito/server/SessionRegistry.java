@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 
 import cito.annotation.FromBroker;
 import cito.event.Message;
+import cito.stomp.Frame;
 
 /**
  * 
@@ -45,7 +46,7 @@ public class SessionRegistry {
 	@Inject
 	private Logger log;
 
-	private static final Principal NULL_PRINCIPLE = new NullPrinciple();
+	static final Principal NULL_PRINCIPLE = new NullPrinciple();
 	private final ConcurrentMap<String, Session> sessionMap = new ConcurrentHashMap<>();
 	private final ConcurrentMap<Principal, Set<Session>> principalSessionMap = new ConcurrentHashMap<>();
 
@@ -68,15 +69,21 @@ public class SessionRegistry {
 	 * @param session
 	 */
 	public void unregister(Session session) {
-		final Session oldSession = this.sessionMap.remove(session.getId());
+		final String sessionId = session.getId();
+		final Session oldSession = this.sessionMap.remove(sessionId);
 		if (oldSession == null)
-			throw new IllegalArgumentException("Session not registered! [" + session.getId() + "]");
+			throw new IllegalArgumentException("Session not registered! [" + sessionId + "]");
 		Principal principal = session.getUserPrincipal();
 		if (principal == null)
 			principal = NULL_PRINCIPLE;
 		this.principalSessionMap.computeIfPresent(principal, (k, v) -> { v.remove(session); return v.isEmpty() ? null : v; });
 	}
 
+	/**
+	 * 
+	 * @param id
+	 * @return
+	 */
 	public Optional<Session> getSession(String id) {
 		return Optional.ofNullable(this.sessionMap.get(id));
 	}
@@ -87,7 +94,8 @@ public class SessionRegistry {
 	 * @return
 	 */
 	public Set<Session> getSessions(Principal principal) {
-		return Collections.unmodifiableSet(this.principalSessionMap.get(principal));
+		final Set<Session> sessions = this.principalSessionMap.get(principal);
+		return sessions != null ? Collections.unmodifiableSet(sessions) : Collections.emptySet();
 	}
 
 	/**
@@ -95,15 +103,17 @@ public class SessionRegistry {
 	 * @param msg
 	 */
 	public void fromBroker(@Observes @FromBroker Message msg) {
+		final String sessionId = msg.sessionId();
+		final Frame frame = msg.frame();
 		this.log.debug("Sending message to client. [sessionId={},command={}]",
-				msg.sessionId(), msg.frame().getCommand() != null ? msg.frame().getCommand() : "HEARTBEAT");
+				sessionId, frame.getCommand() != null ? frame.getCommand() : "HEARTBEAT");
 
-			final Session session = getSession(msg.sessionId()).orElseThrow(
-					() -> new IllegalStateException("Session does not exist! [" + msg.sessionId() + "]"));
+			final Session session = getSession(sessionId).orElseThrow(
+					() -> new IllegalStateException("Session does not exist! [" + sessionId + "]"));
 		try {
-			session.getBasicRemote().sendObject(msg.frame());
+			session.getBasicRemote().sendObject(frame);
 		} catch (IOException | EncodeException e) {
-			this.log.warn("Unable to send message! [sessionid={},command={}]", msg.sessionId(), msg.frame().getCommand(), e);
+			this.log.warn("Unable to send message! [sessionid={},command={}]", sessionId, frame.getCommand(), e);
 		}
 	}
 

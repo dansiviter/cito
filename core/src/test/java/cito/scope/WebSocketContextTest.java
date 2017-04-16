@@ -58,7 +58,6 @@ public class WebSocketContextTest {
 	private WebSocketContext context;
 
 	@Before
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void before() {
 		when(this.session.getId()).thenReturn("sessionId");
 

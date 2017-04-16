@@ -36,7 +36,6 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.ObserverMethod;
 import javax.enterprise.inject.spi.ProcessObserverMethod;
-import javax.websocket.Session;
 
 import org.junit.After;
 import org.junit.Before;
@@ -45,7 +44,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import cito.QuietClosable;
 import cito.ReflectionUtil;
 import cito.annotation.OnConnected;
 import cito.annotation.OnDisconnect;
@@ -220,35 +218,6 @@ public class ExtensionTest {
 		verify(this.beanManager).getReference(bean, WebSocketSessionHolder.class, creationalContext);
 		verify(webSocketContext).init(webSocketSessionHolder);
 		verifyNoMoreInteractions(webSocketContext, afterDeploymentValidation, bean, creationalContext, webSocketSessionHolder);
-	}
-
-	@SuppressWarnings("unused")
-	@Test
-	public void activateScope() {
-		final WebSocketContext webSocketContext = mock(WebSocketContext.class);
-		ReflectionUtil.set(this.extension, "webSocketContext", webSocketContext);
-		when(this.beanManager.getExtension(Extension.class)).thenReturn(this.extension);
-		final Session session = mock(Session.class);
-
-		final QuietClosable closable = Extension.activateScope(this.beanManager, session);
-
-		verify(this.beanManager).getExtension(Extension.class);
-		verify(webSocketContext).activate(session);
-		verifyNoMoreInteractions(webSocketContext, session);
-	}
-
-	@Test
-	public void disposeScope() {
-		final WebSocketContext webSocketContext = mock(WebSocketContext.class);
-		ReflectionUtil.set(this.extension, "webSocketContext", webSocketContext);
-		when(this.beanManager.getExtension(Extension.class)).thenReturn(this.extension);
-		final Session session = mock(Session.class);
-
-		Extension.disposeScope(this.beanManager, session);
-
-		verify(this.beanManager).getExtension(Extension.class);
-		verify(webSocketContext).dispose(session);
-		verifyNoMoreInteractions(webSocketContext, session);
 	}
 
 	@After

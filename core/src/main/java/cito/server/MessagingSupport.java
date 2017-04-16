@@ -15,7 +15,7 @@
  */
 package cito.server;
 
-import static cito.annotation.Qualifiers.fromServer;
+import static cito.annotation.FromServer.FROM_SERVER;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -102,7 +102,7 @@ public class MessagingSupport {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		this.log.debug("Broadcasting... [destination={}]", destination);
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
-		this.msgEvent.select(fromServer()).fire(new Message(frame));
+		this.msgEvent.select(FROM_SERVER).fire(new Message(frame));
 	}
 
 	/**
@@ -202,7 +202,7 @@ public class MessagingSupport {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		this.log.debug("Sending... [sessionId={},destination={}]", sessionId, destination);
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();
-		this.msgEvent.select(fromServer()).fire(new Message(frame));
+		this.msgEvent.select(FROM_SERVER).fire(new Message(frame));
 	}
 
 	/**

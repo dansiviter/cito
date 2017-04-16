@@ -33,7 +33,6 @@ import javax.websocket.Session;
 
 import org.apache.deltaspike.core.api.provider.BeanProvider;
 
-import cito.QuietClosable;
 import cito.annotation.OnAdded;
 import cito.annotation.OnConnected;
 import cito.annotation.OnDisconnect;
@@ -170,25 +169,22 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 		this.webSocketContext.init(sessionHolder);
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
+	public WebSocketContext webSocketContext() {
+		return this.webSocketContext;
+	}
+
 
 	// --- Static Methods ---
 
 	/**
 	 * @return the instance of {@code WebSocketContext}.
 	 */
-	public static WebSocketContext getWebSocketContext(BeanManager manager) {
-		return manager.getExtension(Extension.class).webSocketContext;
-	}
-
-	/**
-	 * Activates the {@link WebSocketScope} for the {@link Session}.
-	 * 
-	 * @param manager
-	 * @param session
-	 * @return a {@link QuietClosable} that can be used to pacify the scope.
-	 */
-	public static QuietClosable activateScope(BeanManager manager, Session session) {
-		return getWebSocketContext(manager).activate(session);
+	public static WebSocketContext webSocketContext(BeanManager manager) {
+		return manager.getExtension(Extension.class).webSocketContext();
 	}
 
 	/**
@@ -196,16 +192,6 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @return the current session within the context.
 	 */
 	public static Session currentSession(BeanManager manager) {
-		return getWebSocketContext(manager).currentSession();
-	}
-
-	/**
-	 * Disposes the {@link WebSocketScope} for the {@link Session}.
-	 * 
-	 * @param manager
-	 * @param session
-	 */
-	public static void disposeScope(BeanManager manager, Session session) {
-		getWebSocketContext(manager).dispose(session);
+		return webSocketContext(manager).currentSession();
 	}
 }

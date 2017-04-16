@@ -15,7 +15,11 @@
  */
 package cito.server;
 
-import static cito.annotation.Qualifiers.fromClient;
+import static cito.annotation.FromClient.FROM_CLIENT;
+import static cito.annotation.OnClose.ON_CLOSE;
+import static cito.annotation.OnError.ON_ERROR;
+import static cito.annotation.OnOpen.ON_OPEN;
+import static cito.server.Extension.webSocketContext;
 
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.spi.BeanManager;
@@ -29,9 +33,12 @@ import org.slf4j.Logger;
 
 import cito.QuietClosable;
 import cito.annotation.FromClient;
+import cito.annotation.OnError;
+import cito.annotation.OnOpen;
 import cito.annotation.Qualifiers;
 import cito.event.ClientMessageProducer;
 import cito.event.Message;
+import cito.scope.WebSocketContext;
 import cito.stomp.Frame;
 import cito.stomp.jms.Relay;
 
@@ -64,12 +71,11 @@ public abstract class AbstractEndpoint extends Endpoint {
 				httpSessionId,
 				session.getUserPrincipal());
 		// remove instances associated with 'httpSessionId' to avoid bloating
-		session.getUserProperties().get(httpSessionId);
 		final SecurityContext securityCtx = (SecurityContext) config.getUserProperties().remove(httpSessionId);
 		session.getUserProperties().put(SecurityContext.class.getSimpleName(), securityCtx);
-		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
+		try (QuietClosable c = webSocketContext(this.beanManager).activate(session)) {
 			this.registry.register(session);
-			this.sessionEvent.select(Qualifiers.onOpen()).fire(session);
+			this.sessionEvent.select(ON_OPEN).fire(session);
 		}
 	}
 
@@ -79,32 +85,34 @@ public abstract class AbstractEndpoint extends Endpoint {
 	 * @param frame
 	 */
 	public void message(Session session, Frame frame) {
-		this.log.debug("Received message from client. [id={},principle={},command={}]", session.getId(), session.getUserPrincipal(), frame.getCommand());
-		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
-			final Message event = new Message(session.getId(), frame);
+		final String sessionId = session.getId();
+		this.log.debug("Received message from client. [id={},principle={},command={}]", sessionId, session.getUserPrincipal(), frame.getCommand());
+		try (QuietClosable c = webSocketContext(this.beanManager).activate(session)) {
+			final Message event = new Message(sessionId, frame);
 			try (QuietClosable closable = ClientMessageProducer.set(event)) {
 				this.relay.fromClient(event); // due to no @Observe @Priority we need to ensure the relay gets this first
-				this.messageEvent.select(fromClient()).fire(event);
+				this.messageEvent.select(FROM_CLIENT).fire(event);
 			}
 		}
 	}
 
 	@Override
-	public void onError(Session session, Throwable t) {
-		this.log.warn("WebSocket error. [id={},principle={}]", session.getId(), session.getUserPrincipal(), t);
-		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
+	public void onError(Session session, Throwable cause) {
+		this.log.warn("WebSocket error. [id={},principle={}]", session.getId(), session.getUserPrincipal(), cause);
+		try (QuietClosable c = webSocketContext(this.beanManager).activate(session)) {
 			this.registry.unregister(session);
-			this.errorEvent.select(Qualifiers.onError()).fire(t);
+			this.errorEvent.select(ON_ERROR).fire(cause);
 		}
 	}
 
 	@Override
 	public void onClose(Session session, CloseReason reason) {
 		this.log.info("WebSocket connection closed. [id={},principle={},code={},reason={}]", session.getId(), session.getUserPrincipal(), reason.getCloseCode(), reason.getReasonPhrase());
-		try (QuietClosable c = Extension.activateScope(this.beanManager, session)) {
+		final WebSocketContext ctx = Extension.webSocketContext(this.beanManager);
+		try (QuietClosable c = ctx.activate(session)) {
 			this.registry.unregister(session);
-			this.sessionEvent.select(Qualifiers.onClose()).fire(session);
+			this.sessionEvent.select(ON_CLOSE).fire(session);
 		}
-		Extension.disposeScope(this.beanManager, session);
+		ctx.dispose(session);
 	}
 }
