@@ -55,7 +55,7 @@ import cito.QuietClosable;
 import cito.ReflectionUtil;
 import cito.annotation.OnAdded;
 import cito.annotation.OnRemoved;
-import cito.broker.DestinationEventProducer;
+import cito.broker.DestinationChangedProducer;
 import cito.event.DestinationChanged;
 import cito.event.DestinationChanged.Type;
 import cito.server.Extension;
@@ -115,7 +115,7 @@ public class EventProducer implements MessageListener {
 
 			this.log.info("Destination changed. [type={},destination={}]", type, destination);
 			final cito.event.DestinationChanged evt = new cito.event.DestinationChanged(type, destination);
-			try (QuietClosable c = DestinationEventProducer.set(evt)) {
+			try (QuietClosable c = DestinationChangedProducer.set(evt)) {
 				this.destinationEvent.fire(evt);
 			}
 		} catch (JMSException | RuntimeException e) {

@@ -15,6 +15,9 @@
  */
 package cito.event;
 
+import static java.util.Objects.requireNonNull;
+
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 /**
@@ -27,9 +30,9 @@ public class DestinationChanged {
 	private final Type type;
 	private final String destination;
 
-	public DestinationChanged(Type type, String destination) {
-		this.type = type;
-		this.destination = destination;
+	public DestinationChanged(@Nonnull Type type, @Nonnull String destination) {
+		this.type = requireNonNull(type);
+		this.destination = requireNonNull(destination);
 	}
 
 	public Type getType() {

@@ -30,7 +30,7 @@ import cito.event.DestinationChanged;
  * @since v1.0 [25 Jan 2017]
  */
 @ApplicationScoped
-public class DestinationEventProducer {
+public class DestinationChangedProducer {
 	public static final ThreadLocal<DestinationChanged> HOLDER = new ThreadLocal<>();
 
 	@Produces @Dependent
