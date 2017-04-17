@@ -20,7 +20,7 @@ package cito.sockjs;
  * @author Daniel Siviter
  * @since v1.0 [1 Mar 2017]
  */
-public class WebSocketTest {
+public class WebSocketIT {
 //    def test_httpMethod(self):
 //        r = GET(base_url + '/0/0/websocket')
 //        self.assertEqual(r.status, 400)

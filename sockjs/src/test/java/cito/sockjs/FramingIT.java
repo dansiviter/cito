@@ -39,7 +39,7 @@ import org.junit.Test;
  * @since v1.0 [3 Jan 2017]
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-42">SockJS 0.3.3 Framing</a>
  */
-public class FramingTest extends AbstractTest {
+public class FramingIT extends AbstractIT {
 	// Due to the inherent difficulties testing concurrent requests this is disabled by default
 	private static final boolean ENABLE_CONCURRENT_REQUESTS_TEST = false;
 

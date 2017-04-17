@@ -40,7 +40,7 @@ import org.junit.Test;
  * @since v1.0 [1 Mar 2017]
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-111">SockJS 0.3.3 JsonP</a>
  */
-public class JsonPTest extends AbstractTest {
+public class JsonPIT extends AbstractIT {
 	/**
 	 * Test the streaming transport.
 	 */

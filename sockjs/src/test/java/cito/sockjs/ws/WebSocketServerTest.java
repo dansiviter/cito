@@ -18,7 +18,7 @@ package cito.sockjs.ws;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.junit.Test;
 
-import cito.sockjs.AbstractTest;
+import cito.sockjs.AbstractIT;
 import cito.sockjs.WebSocketServer;
 
 /**
@@ -28,7 +28,7 @@ import cito.sockjs.WebSocketServer;
  * @since v1.0 [29 Dec 2016]
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-50">SockJS 0.3.3 WebSocket</a>
  */
-public class WebSocketServerTest extends AbstractTest {
+public class WebSocketServerTest extends AbstractIT {
 	/**
 	 * Normal requests to websocket should not succeed.
 	 */

@@ -65,7 +65,7 @@ import cito.sockjs.jaxrs.JsonMessageBodyReader;
  * @since v1.0 [29 Dec 2016]
  */
 @RunWith(Arquillian.class)
-public abstract class AbstractTest {
+public abstract class AbstractIT {
 	@ArquillianResource
 	private URI deploymenUri;
 

@@ -48,7 +48,7 @@ import org.junit.Test;
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-74">SockJS 0.3.3 XHR Polling</a>
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-85">SockJS 0.3.3 XHR Streaming</a>
  */
-public class XhrTest extends AbstractTest {
+public class XhrIT extends AbstractIT {
 	/**
 	 * The transport must support CORS requests, and answer correctly to OPTIONS requests.
 	 */

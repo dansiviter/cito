@@ -34,7 +34,7 @@ import org.junit.Test;
  * @since v1.0 [29 Dec 2016]
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-12">SockJS 0.3.3 Greeting</a>
  */
-public class GreetingTest extends AbstractTest {
+public class GreetingIT extends AbstractIT {
 	/**
 	 * The most important part of the url scheme, is without doubt, the top url. Make sure the greeting is valid.
 	 */

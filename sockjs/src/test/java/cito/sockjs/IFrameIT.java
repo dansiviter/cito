@@ -38,7 +38,7 @@ import org.junit.Test;
  * @since v1.0 [29 Dec 2016]
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-15">SockJS 0.3.3 iFrame</a>
  */
-public class IFrameTest extends AbstractTest{
+public class IFrameIT extends AbstractIT{
 	private static final String I_FRAME = "<!DOCTYPE html>\n" +
 			"<html>\n" +
 			"<head>\n" +

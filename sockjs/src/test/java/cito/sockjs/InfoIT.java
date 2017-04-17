@@ -42,7 +42,7 @@ import org.junit.Test;
  * @since v1.0 [29 Dec 2016]
  * @see <a href="https://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-26">SockJS 0.3.3 Info</a>
  */
-public class InfoTest extends AbstractTest {
+public class InfoIT extends AbstractIT {
 	/**
 	 * This url is called before the client starts the session. It's used to check server capabilities (websocket
 	 * support, cookies requirement) and to get the value of "origin" setting (currently not used).

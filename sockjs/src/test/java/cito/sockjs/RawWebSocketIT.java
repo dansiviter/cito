@@ -25,7 +25,7 @@ import org.junit.Test;
  * @author Daniel Siviter
  * @since v1.0 [1 Mar 2017]
  */
-public class RawWebSocketTest {
+public class RawWebSocketIT {
 	/**
 	 * Test the streaming transport.
 	 */
