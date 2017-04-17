@@ -52,7 +52,15 @@ public enum Util { ;
 	 * @return
 	 */
 	public static boolean isEmpty(CharSequence s) {
-		return s == null || s.length() == 0;
+		return s != null && s.length() == 0;
+	}
+
+	/**
+	 * @param s the string to check.
+	 * @return {@code true} if the given string is {@code null} or is the empty string.
+	 */
+	public static boolean isNullOrEmpty(String s) {
+		return s == null || s.isEmpty();
 	}
 
 	/**
@@ -85,13 +93,5 @@ public enum Util { ;
 			}
 		}
 		return found.toArray((A[]) Array.newInstance(annotation, 0));
-	}
-
-	/**
-	 * @param s the string to check.
-	 * @return {@code true} if the given string is {@code null} or is the empty string.
-	 */
-	public static boolean isNullOrEmpty(String s) {
-		return s == null || s.isEmpty();
 	}
 }

@@ -81,15 +81,7 @@ public class WebSocketContext extends AbstractContext {
 	 */
 	public QuietClosable activate(Session session) {
 		this.log.debug("Activiating scope. [sessionId={}]", session.getId());
-		this.sessionHolder.set(session);
-
-		final Thread thread = Thread.currentThread();
-		return () -> {
-			if (Thread.currentThread() != thread) {
-				throw new IllegalStateException("Different thread! Potential resource leak!");
-			}
-			WebSocketContext.this.sessionHolder.remove();
-		};
+		return this.sessionHolder.set(session);
 	}
 
 	/**

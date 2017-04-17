@@ -22,9 +22,11 @@ import javax.websocket.Session;
 
 import org.slf4j.Logger;
 
+import cito.QuietClosable;
 import cito.annotation.WebSocketScope;
 
 /**
+ * Holds a WebSocket {@link Session} within the CDI runtime.
  * 
  * @author Daniel Siviter
  * @since v1.0 [17 Aug 2016]
@@ -40,24 +42,13 @@ public class WebSocketSessionHolder {
 	 * 
 	 * @param session
 	 */
-	public void set(Session session) {
+	public QuietClosable set(Session session) {
 		this.log.debug("Setting session. [sessionId={}]", session.getId());
 		if (this.session.get() != null) {
 			throw new IllegalStateException("Session already set! [expected=" + this.session.get().getId() + ",current=" + session.getId() + "]");
 		}
 		this.session.set(session);
-	}
-
-	/**
-	 * 
-	 */
-	public void remove() {
-		final Session session = this.session.get();
-		if (session == null) {
-			throw new IllegalArgumentException("Session not set!");
-		}
-		this.log.debug("Removing session. [sessionId={}]", session.getId());
-		this.session.remove();
+		return () -> this.session.remove();
 	}
 
 	/**

@@ -54,9 +54,17 @@ public class UtilTest {
 	@Test
 	public void isEmpty() {
 		assertTrue(Util.isEmpty(""));
-		assertTrue(Util.isEmpty(null));
+		assertFalse(Util.isEmpty(null));
 		assertFalse(Util.isEmpty(" "));
 		assertFalse(Util.isEmpty("-"));
+	}
+
+	@Test
+	public void isNullOrEmpty() {
+		assertTrue(Util.isNullOrEmpty(""));
+		assertTrue(Util.isNullOrEmpty(null));
+		assertFalse(Util.isNullOrEmpty(" "));
+		assertFalse(Util.isNullOrEmpty("-"));
 	}
 
 	@Test

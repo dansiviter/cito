@@ -30,26 +30,26 @@ import cito.event.DestinationChanged;
 import cito.event.DestinationChanged.Type;
 
 /**
- * Unit tests {@link DestinationChangedProducer}.
+ * Unit tests {@link DestinationChangedHolder}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [16 Apr 2017]
  */
-public class DestinationChangedProducerTest {
+public class DestinationChangedHolderTest {
 	@Test
 	public void scope() {
-		Assert.assertNotNull(ReflectionUtil.getAnnotation(DestinationChangedProducer.class, ApplicationScoped.class));
+		Assert.assertNotNull(ReflectionUtil.getAnnotation(DestinationChangedHolder.class, ApplicationScoped.class));
 	}
 
 	@Test
 	public void test() {
-		assertNull(DestinationChangedProducer.get());
+		assertNull(DestinationChangedHolder.get());
 
 		final DestinationChanged e = new DestinationChanged(Type.ADDED, "/");
 
-		try (QuietClosable c = DestinationChangedProducer.set(e)) {
-			assertNotNull(DestinationChangedProducer.get());
+		try (QuietClosable c = DestinationChangedHolder.set(e)) {
+			assertNotNull(DestinationChangedHolder.get());
 		}
-		assertNull(DestinationChangedProducer.get());
+		assertNull(DestinationChangedHolder.get());
 	}
 }

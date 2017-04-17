@@ -15,6 +15,7 @@
  */
 package cito.scope;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -68,12 +69,14 @@ public class WebSocketContextTest {
 
 	@Test
 	public void activate() {
-		final QuietClosable closable = this.context.activate(session);
-		closable.close();
+		final QuietClosable closable = () -> { };
+		when(this.sessionHolder.set(this.session)).thenReturn(closable);
+
+		final QuietClosable actual = this.context.activate(session);
+		assertEquals(closable, actual);
 
 		verify(this.session).getId();
 		verify(this.sessionHolder).set(this.session);
-		verify(this.sessionHolder).remove();
 		verify(this.log).debug("Activiating scope. [sessionId={}]", "sessionId");
 	}
 
@@ -103,7 +106,6 @@ public class WebSocketContextTest {
 		verify(this.session, times(3)).getId();
 		verify(this.sessionHolder).set(this.session);
 		verify(this.sessionHolder).get();
-		verify(this.sessionHolder).remove();
 		verify(this.log).debug("Activiating scope. [sessionId={}]", "sessionId");
 		verify(this.log).debug("Disposing scope. [sessionId={}]", "sessionId");
 	}
