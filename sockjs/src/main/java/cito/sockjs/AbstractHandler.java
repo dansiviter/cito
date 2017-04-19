@@ -53,11 +53,6 @@ public abstract class AbstractHandler implements Serializable {
 
 	protected static final Charset UTF_8 = StandardCharsets.UTF_8;
 
-	protected static final byte[] OPEN_FRAME = "o".getBytes(UTF_8);
-	protected static final byte[] HEARDTBEAT_FRAME = "h".getBytes(UTF_8);
-	protected static final byte[] ARRAY_FRAME = "a".getBytes(UTF_8);
-	//	protected static final byte[] CLOSE_FRAME = "c".getBytes(UTF_8);
-
 	protected static final String CORS_ORIGIN = "Access-Control-Allow-Origin";
 	protected static final String CORS_CREDENTIALS = "Access-Control-Allow-Credentials";
 	protected static final String CORS_REQUEST_HEADERS = "Access-Control-Request-Headers";

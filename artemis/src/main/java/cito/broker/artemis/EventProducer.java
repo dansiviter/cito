@@ -17,6 +17,7 @@ package cito.broker.artemis;
 
 import static cito.Util.getAnnotations;
 import static org.apache.activemq.artemis.api.core.management.ManagementHelper.HDR_NOTIFICATION_TYPE;
+import static org.apache.activemq.artemis.jms.client.ActiveMQDestination.JMS_TOPIC_ADDRESS_PREFIX;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_CREATED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_DESTROYED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.TOPIC_CREATED;
@@ -36,6 +37,7 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.ObserverMethod;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
@@ -45,8 +47,8 @@ import javax.jms.Topic;
 
 import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
 import org.apache.activemq.artemis.api.core.management.NotificationType;
+import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.jms.server.management.JMSNotificationType;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.slf4j.Logger;
 
 import cito.Glob;
@@ -61,31 +63,34 @@ import cito.event.DestinationChanged.Type;
 import cito.server.Extension;
 
 /**
- * Produces {@link DestinationChanged}s based on the Artemis notification topic. By default this will listen to
- * {@code jmx.topic.notifications} which is the one setup for the embedded broker. However, if you're using a remote
- * instance be sure to check what is used on that and set {@code artemis.notificationTopic} property.
+ * Produces {@link DestinationChanged}s based on the Artemis notification topic.
+ * By default this will listen to {@code jmx.topic.notifications} which is the
+ * one setup for the embedded broker. However, if you're using a remote instance
+ * be sure to check what is used on that and set
+ * {@code artemis.notificationTopic} property.
  * 
  * @author Daniel Siviter
  * @since v1.0 [2 Feb 2017]
  */
 @ApplicationScoped
 public class EventProducer implements MessageListener {
-	private static final Collection<JMSNotificationType> ALL = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED, QUEUE_CREATED, QUEUE_DESTROYED);
+	private static final Collection<JMSNotificationType> ALL = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED, QUEUE_CREATED,
+			QUEUE_DESTROYED);
 	private static final Collection<JMSNotificationType> CREATED = EnumSet.of(TOPIC_CREATED, QUEUE_CREATED);
 	private static final Collection<JMSNotificationType> TOPIC = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED);
 
 	@Inject
 	private BeanManager manager;
 	@Inject
-	@ConfigProperty(name = "artemis.notificationTopic", defaultValue = "notifications")
-	private String notificationTopic;
+	private Configuration artemisConfig;
 	@Inject
 	private Logger log;
 	@Inject
-	private JMSContext ctx;
+	private Provider<JMSContext> ctxProvider;
 	@Inject
 	private Event<cito.event.DestinationChanged> destinationEvent;
 
+	private JMSContext ctx;
 	private JMSConsumer consumer;
 
 	/**
@@ -93,24 +98,46 @@ public class EventProducer implements MessageListener {
 	 */
 	public void startup(@Observes @Initialized(ApplicationScoped.class) Object init) { }
 
+	/**
+	 * Connect to the broker to source events.
+	 */
 	@PostConstruct
-	public void init() {
-		log.info("Sourcing DestinationEvents from remote broker.");
-		final Topic topic = this.ctx.createTopic(this.notificationTopic);
-		this.consumer = this.ctx.createConsumer(topic);
+	public void connect() {
+		this.log.info("Connecting to broker for sourcing destination events.");
+		this.ctx = this.ctxProvider.get();
+		final String address = this.artemisConfig.getManagementNotificationAddress().toString();
+		final Topic destination = this.ctx.createTopic(
+				address.substring(JMS_TOPIC_ADDRESS_PREFIX.length()));
+		this.consumer = this.ctx.createConsumer(destination);
+		this.ctx.setExceptionListener(this::onError);
 		this.consumer.setMessageListener(this);
+	}
+
+	/**
+	 * Handles errors from the broker. As we can't guarantee that we're left in an inconsistent state we'll re-attempt
+	 * connection.
+	 * 
+	 * @param e
+	 */
+	private void onError(JMSException e) {
+		this.log.error("Error occured processing destination events! Reconnecting...", e);
+		// clean up anyway
+		this.consumer.close();
+		this.ctx.close();
+		connect();
 	}
 
 	@Override
 	public void onMessage(Message msg) {
 		try {
-			final NotificationType notifType = valueofNotificationType(msg.getStringProperty(HDR_NOTIFICATION_TYPE.toString()));
+			final NotificationType notifType = valueofNotificationType(
+					msg.getStringProperty(HDR_NOTIFICATION_TYPE.toString()));
 			if (!ALL.contains(notifType)) {
 				return;
 			}
 
 			String destination = msg.getStringProperty(JMSNotificationType.MESSAGE.toString());
-			destination = (TOPIC.contains(notifType) ? "/topic/" : "/queue/" ) + destination;
+			destination = (TOPIC.contains(notifType) ? "/topic/" : "/queue/") + destination;
 			final Type type = CREATED.contains(notifType) ? Type.ADDED : Type.REMOVED;
 
 			this.log.info("Destination changed. [type={},destination={}]", type, destination);
@@ -153,7 +180,6 @@ public class EventProducer implements MessageListener {
 		this.consumer.close();
 	}
 
-
 	// --- Static Methods ---
 
 	/**
@@ -163,7 +189,8 @@ public class EventProducer implements MessageListener {
 	 * @param destination
 	 * @param evt
 	 */
-	private static <A extends Annotation> void notify(Class<A> annotation, Set<ObserverMethod<DestinationChanged>> observerMethods, String destination, DestinationChanged evt) {
+	private static <A extends Annotation> void notify(Class<A> annotation,
+			Set<ObserverMethod<DestinationChanged>> observerMethods, String destination, DestinationChanged evt) {
 		for (ObserverMethod<DestinationChanged> om : observerMethods) {
 			for (A a : getAnnotations(annotation, om.getObservedQualifiers())) {
 				final String value = ReflectionUtil.invoke(a, "value");

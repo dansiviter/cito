@@ -15,8 +15,20 @@
  */
 package cito.broker.artemis;
 
+import static org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants.SERVER_ID_PROP_NAME;
+import static org.apache.activemq.artemis.jms.client.ActiveMQDestination.createTopicAddressFromName;
+
+import java.util.Collections;
+import java.util.Map;
+
+import javax.enterprise.context.ApplicationScoped;
+
+import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
+import org.apache.activemq.artemis.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnectorFactory;
+import org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory;
 
 /**
@@ -24,60 +36,93 @@ import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactor
  * @author Daniel Siviter
  * @since v1.0 [2 Feb 2017]
  */
-public interface BrokerConfig {
+@ApplicationScoped
+public class BrokerConfig {
+	public static final String IN_VM_CONNECTOR = InVMConnectorFactory.class.getName();
+	public static final String REMOTE_CONNECTOR = NettyConnectorFactory.class.getName();
+	public static final String IN_VM_ACCEPTOR = InVMAcceptorFactory.class.getName();
+	public static final String REMOTE_ACCEPTOR = NettyAcceptorFactory.class.getName();
 
-	String IN_VM_CONNECTOR = InVMConnectorFactory.class.getName();
-	String REMOTE_CONNECTOR = NettyConnectorFactory.class.getName();
+
 
 	/**
 	 * @return if present, sends a username for the connection
 	 */
-	String getUsername();
+	public String getUsername() {
+		return null;
+	}
 
 	/**
 	 * @return the password for the connection.  If username is set, password must be set
 	 */
-	String getPassword();
+	public String getPassword() {
+		return null;
+	}
 
 	/**
 	 * Either url should be set, or host, port, connector factory should be set.
 	 *
 	 * @return if set, will be used in the server locator to look up the server instead of the hostname/port combination
 	 */
-	String getUrl();
+	public String getUrl() {
+		return null;
+	}
 
 	/**
 	 * @return The hostname to connect to
 	 */
-	String getHost();
+	public String getHost() {
+		return null;
+	}
 
 	/**
 	 * @return the port number to connect to
 	 */
-	Integer getPort();
+	public Integer getPort() {
+		return null;
+	}
 
 	/**
 	 * @return the connector factory to use for connections.
 	 */
-	String getConnectorFactory();
+	public String getConnectorFactory() {
+		return IN_VM_CONNECTOR;
+	}
 
 	/**
 	 * @return Whether or not to start the embedded broker
 	 */
-	boolean startEmbeddedBroker();
-
+	public boolean startEmbeddedBroker() {
+		return true;
+	}
 	/**
 	 * @return whether or not this is an HA connection
 	 */
-	boolean isHa();
+	public boolean isHa() {
+		return false;
+	}
 
 	/**
 	 * @return whether or not the authentication parameters should be used
 	 */
-	boolean hasAuthentication();
+	public boolean hasAuthentication() {
+		return false;
+	}
 
 	/**
-	 * @return the configuration that will be used in the embedded broker.
+	 * @return the configuration that will be used in the broker.
 	 */
-	Configuration getEmbeddedConfiguration();
+	public Configuration getConfiguration() {
+		final Map<String, Object> params = Collections.singletonMap(SERVER_ID_PROP_NAME, "1");
+		final Configuration config = new ConfigurationImpl()
+				.setSecurityEnabled(false)
+				.setPersistenceEnabled(false);
+		// convert to use JMS style topic for management
+		config.setManagementAddress(createTopicAddressFromName(config.getManagementAddress().toString()));
+		config.setManagementNotificationAddress(createTopicAddressFromName(config.getManagementNotificationAddress().toString()));
+		// default In VM Acceptor for all your ConnectionFactory needs
+		config.addAcceptorConfiguration(new TransportConfiguration(IN_VM_ACCEPTOR, params, "InVMAcceptor"));
+		return config;
+	}
 }
+

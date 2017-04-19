@@ -28,9 +28,9 @@ import javax.servlet.ServletException;
  */
 public class EventSourceHandler extends AbstractStreamingHandler {
 	private static final long serialVersionUID = -527374807374550532L;
-	
+
 	private static final FrameFormat ES_FORMAT = c -> new StringBuilder("data: ").append(c).append("\r\n\r\n");
-	
+
 	static final String EVENTSOURCE = "eventsource";
 	private static final String CONTENT_TYPE_VALUE = "text/event-stream;charset=UTF-8";
 	private static final String PRELUDE = "\r\n";

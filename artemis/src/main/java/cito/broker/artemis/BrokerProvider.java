@@ -28,6 +28,7 @@ import javax.jms.JMSContext;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
 import org.apache.activemq.artemis.api.jms.JMSFactoryType;
+import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
@@ -54,13 +55,17 @@ public class BrokerProvider {
 	@Produces
 	@ApplicationScoped
 	private ActiveMQConnectionFactory activeMQConnectionFactory;
+	@Produces
+	@ApplicationScoped
+	private Configuration artemisConfig;
 
 	@PostConstruct
 	public void init() {
 		if (this.config.startEmbeddedBroker()) {
 			this.log.info("Starting embedded broker.");
 			try {
-				ActiveMQServer activeMQServer = ActiveMQServers.newActiveMQServer(this.config.getEmbeddedConfiguration(), false);
+				this.artemisConfig = this.config.getConfiguration();
+				ActiveMQServer activeMQServer = ActiveMQServers.newActiveMQServer(this.artemisConfig, false);
 				this.jmsServerManager = new JMSServerManagerImpl(activeMQServer);
 				this.jmsServerManager.start();
 			} catch (Exception e) {
