@@ -37,7 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.AsyncContext;
-import javax.servlet.GenericServlet;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -53,9 +53,7 @@ import org.slf4j.LoggerFactory;
  * @author Daniel Siviter
  * @since v1.0 [4 Jan 2017]
  */
-public class Servlet extends GenericServlet {
-	private static final long serialVersionUID = 917110139775886906L;
-
+public class Servlet implements javax.servlet.Servlet {
 	private final Map<String, AbstractHandler> handers = new HashMap<>();
 	private final Map<String, ServletSession> sessions = new ConcurrentHashMap<>();
 	// XXX Should I use ManagedScheduledExecutorService?
@@ -64,6 +62,7 @@ public class Servlet extends GenericServlet {
 	private final Logger log = LoggerFactory.getLogger(Servlet.class);
 	private final Config config;
 
+	private ServletConfig servletConfig;
 	private boolean webSocketSupported;
 
 	protected Servlet(Config config) {
@@ -71,7 +70,8 @@ public class Servlet extends GenericServlet {
 	}
 
 	@Override
-	public void init() throws ServletException {
+	public void init(ServletConfig servletConfig) throws ServletException {
+		this.servletConfig = servletConfig;
 		this.handers.put(GREETING, new GreetingHandler(this).init());
 		this.handers.put(IFRAME, new IFrameHandler(this).init());
 		this.handers.put(INFO, new InfoHandler(this).init());
@@ -82,6 +82,16 @@ public class Servlet extends GenericServlet {
 		this.handers.put(HTMLFILE, new HtmlFileHandler(this).init());
 		this.handers.put(JSONP, new JsonPHandler(this).init());
 		this.handers.put(JSONP_SEND, new JsonPSendHandler(this).init());
+	}
+
+	@Override
+	public ServletConfig getServletConfig() {
+		return this.servletConfig;
+	}
+
+	@Override
+	public String getServletInfo() {
+		return "Citō SockJS";
 	}
 
 	/**
@@ -235,9 +245,12 @@ public class Servlet extends GenericServlet {
 				try {
 					v.close();
 				} catch (IOException e) {
-					log("Error closing session! [" + id + "]", e);
+					log.warn("Error closing session! [" + id + "]", e);
 				}
 			}
 		});
 	}
+
+	@Override
+	public void destroy() { }
 }

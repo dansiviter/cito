@@ -18,7 +18,6 @@ package cito.sockjs;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.Serializable;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -48,9 +47,7 @@ import cito.sockjs.ServletSession.MessageHandlerWrapper;
  * @author Daniel Siviter
  * @since v1.0 [12 Feb 2017]
  */
-public abstract class AbstractHandler implements Serializable {
-	private static final long serialVersionUID = 3863326798644998080L;
-
+public abstract class AbstractHandler {
 	protected static final Charset UTF_8 = StandardCharsets.UTF_8;
 
 	protected static final String CORS_ORIGIN = "Access-Control-Allow-Origin";

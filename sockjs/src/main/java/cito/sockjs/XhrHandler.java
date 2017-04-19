@@ -34,8 +34,6 @@ import cito.sockjs.nio.WriteStream;
  * @since v1.0 [3 Jan 2017]
  */
 public class XhrHandler extends AbstractSessionHandler {
-	private static final long serialVersionUID = -527374807374550532L;
-
 	static final String XHR = "xhr";
 	private static final String CONTENT_TYPE_VALUE = "application/javascript;charset=UTF-8";
 

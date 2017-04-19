@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
  * @since v1.0 [29 Dec 2016]
  */
 public class InfoHandler extends AbstractHandler {
-	private static final long serialVersionUID = 4503408709378376273L;
 	static final String INFO = "info";
 
 	protected static final Logger LOG = LoggerFactory.getLogger(InfoHandler.class);

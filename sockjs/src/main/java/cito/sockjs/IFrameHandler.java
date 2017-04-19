@@ -25,7 +25,6 @@ import cito.sockjs.nio.WriteStream;
  * @since v1.0 [29 Dec 2016]
  */
 public class IFrameHandler extends AbstractHandler {
-	private static final long serialVersionUID = -5544345272086874216L;
 	static final String IFRAME = "iframe";
 
 	private byte[] template;

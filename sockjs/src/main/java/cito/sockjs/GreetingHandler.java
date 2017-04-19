@@ -15,22 +15,16 @@
  */
 package cito.sockjs;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
-
-import cito.sockjs.nio.WriteStream;
 
 /**
  * @author Daniel Siviter
  * @since v1.0 [2 Mar 2017]
  */
 public class GreetingHandler extends AbstractHandler {
-	private static final long serialVersionUID = -6439964384579190044L;
 	private static final String PAYLOAD = "Welcome to SockJS!\n";
 	static final String GREETING = "greeting";
 

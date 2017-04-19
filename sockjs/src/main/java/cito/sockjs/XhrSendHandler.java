@@ -40,8 +40,6 @@ import cito.sockjs.nio.ReadStream;
  * @since v1.0 [11 Feb 2017]
  */
 public class XhrSendHandler extends AbstractSessionHandler {
-	private static final long serialVersionUID = 8893825977852213991L;
-
 	static final String XHR_SEND = "xhr_send";
 	private static final String CONTENT_TYPE_VALUE = "text/plain;charset=UTF-8";
 

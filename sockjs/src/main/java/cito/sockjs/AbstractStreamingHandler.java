@@ -34,8 +34,6 @@ import cito.sockjs.nio.WriteStream;
  * @since v1.0 [3 Apr 2017]
  */
 public abstract class AbstractStreamingHandler extends AbstractSessionHandler {
-	private static final long serialVersionUID = -8208091748671715765L;
-
 	protected static final FrameFormat DEFAULT_FORMAT = c -> new StringBuilder(c).append('\n');
 
 	/**

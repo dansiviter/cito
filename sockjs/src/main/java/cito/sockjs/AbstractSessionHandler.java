@@ -25,8 +25,6 @@ import javax.servlet.ServletException;
  * @since v1.0 [23 Feb 2017]
  */
 public abstract class AbstractSessionHandler extends AbstractHandler {
-	private static final long serialVersionUID = -8845547158727723677L;
-
 	private final boolean createSession;
 
 	/**

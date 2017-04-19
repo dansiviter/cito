@@ -34,8 +34,6 @@ import org.apache.commons.lang3.StringUtils;
  * @since v1.0 [1 Mar 2017]
  */
 public class HtmlFileHandler extends AbstractStreamingHandler {
-	private static final long serialVersionUID = -4614348605938993415L;
-
 	static final String HTMLFILE = "htmlfile";
 
 	private static final String PRELUDE;

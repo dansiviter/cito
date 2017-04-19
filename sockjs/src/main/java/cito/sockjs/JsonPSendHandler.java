@@ -51,8 +51,6 @@ import cito.sockjs.nio.ReadStream;
  * @since v1.0 [1 Mar 2017]
  */
 public class JsonPSendHandler extends AbstractSessionHandler {
-	private static final long serialVersionUID = 6883526585964051391L;
-
 	static final String JSONP_SEND = "jsonp_send";
 
 	private static final String CONTENT_TYPE_VALUE = "text/plain;charset=UTF-8";

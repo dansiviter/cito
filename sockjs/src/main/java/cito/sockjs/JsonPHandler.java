@@ -42,8 +42,6 @@ import cito.sockjs.nio.WriteStream;
  * @since v1.0 [1 Mar 2017]
  */
 public class JsonPHandler extends AbstractSessionHandler {
-	private static final long serialVersionUID = 5586170659349345979L;
-
 	static final String JSONP = "jsonp";
 
 	/**

@@ -28,8 +28,6 @@ import org.apache.commons.lang3.StringUtils;
  * @since v1.0 [3 Jan 2017]
  */
 public class XhrStreamingHandler extends AbstractStreamingHandler {
-	private static final long serialVersionUID = -527374807374550532L;
-
 	static final String XHR_STREAMING = "xhr_streaming";
 	private static final String CONTENT_TYPE_VALUE = "application/javascript;charset=UTF-8";
 	private static final String PRELUDE = StringUtils.leftPad("\n", 2049, "h");
