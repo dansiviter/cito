@@ -15,9 +15,9 @@
  */
 package cito.annotation;
 
-import javax.enterprise.util.AnnotationLiteral;
+import java.util.Objects;
 
-import com.google.common.base.Objects;
+import javax.enterprise.util.AnnotationLiteral;
 
 /**
  * 
