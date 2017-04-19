@@ -24,6 +24,7 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
@@ -64,18 +65,18 @@ public class MessagingSupport {
 	 * @param destination
 	 * @param payload the send payload.
 	 */
-	public void broadcast(String destination, Object payload) {
-		broadcast(destination, null, payload);
+	public void broadcast(String destination, @Nonnull Object payload) {
+		broadcast(destination, payload, null);
 	}
 
 	/**
 	 * Broadcast to all users and all sessions subscribed to the {@code destination}.
 	 * 
 	 * @param destination the broadcast destination.
-	 * @param type if {@code null} defaults to {@code application/json}.
 	 * @param payload the send payload.
+	 * @param type if {@code null} defaults to {@code application/json}.
 	 */
-	public void broadcast(String destination, MediaType type, Object payload) {
+	public void broadcast(String destination, @Nonnull Object payload, MediaType type) {
 		broadcast(destination, payload, Collections.<String, String>emptyMap());
 	}
 
@@ -86,19 +87,19 @@ public class MessagingSupport {
 	 * @param payload the send payload.
 	 * @param headers
 	 */
-	public void broadcast(String destination, Object payload, Map<String, String> headers) {
-		broadcast(destination, null, payload, headers);
+	public void broadcast(String destination, @Nonnull Object payload, Map<String, String> headers) {
+		broadcast(destination, payload, null, headers);
 	}
 
 	/**
 	 * Broadcast to all users and all sessions subscribed to the {@code destination}.
 	 * 
 	 * @param destination the broadcast destination.
-	 * @param type if {@code null} defaults to {@code application/json}.
 	 * @param payload the send payload.
+	 * @param type if {@code null} defaults to {@code application/json}.
 	 * @param headers
 	 */
-	public void broadcast(String destination, MediaType type, Object payload, Map<String, String> headers) {
+	public void broadcast(String destination, Object payload, MediaType type, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		this.log.debug("Broadcasting... [destination={}]", destination);
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
@@ -113,7 +114,7 @@ public class MessagingSupport {
 	 * @param destination the broadcast destination.
 	 * @param payload the send payload.
 	 */
-	public void broadcastTo(Principal principal, String destination, Object payload) {
+	public void broadcastTo(@Nonnull Principal principal, String destination, @Nonnull Object payload) {
 		broadcastTo(principal, destination, payload, Collections.<String, String>emptyMap());
 	}
 
@@ -122,10 +123,10 @@ public class MessagingSupport {
 	 * 
 	 * @param principal
 	 * @param destination the broadcast destination.
-	 * @param type if {@code null} defaults to {@code application/json}.
 	 * @param payload the send payload.
+	 * @param type if {@code null} defaults to {@code application/json}.
 	 */
-	public void broadcastTo(Principal principal, String destination, MediaType type, Object payload) {
+	public void broadcastTo(@Nonnull Principal principal, String destination, @Nonnull Object payload, MediaType type) {
 		broadcastTo(principal, destination, type, payload, Collections.<String, String>emptyMap());
 	}
 
@@ -137,7 +138,12 @@ public class MessagingSupport {
 	 * @param payload the send payload.
 	 * @param headers
 	 */
-	public void broadcastTo(Principal principal, String destination, Object payload, Map<String, String> headers) {
+	public void broadcastTo(
+			@Nonnull Principal principal,
+			String destination,
+			@Nonnull Object payload,
+			Map<String, String> headers)
+	{
 		broadcastTo(principal, destination, null, payload, headers);
 	}
 
@@ -146,12 +152,58 @@ public class MessagingSupport {
 	 * 
 	 * @param principal
 	 * @param destination the broadcast destination.
+	 * @param payload the send payload.
 	 * @param type if {@code null} defaults to {@code application/json}.
+	 * @param headers
+	 */
+	public void broadcastTo(
+			@Nonnull Principal principal,
+			String destination,
+			MediaType type,
+			@Nonnull Object payload,
+			Map<String, String> headers)
+	{
+		this.registry.getSessions(principal).forEach(s -> sendTo(s.getId(), destination, payload, type, headers));
+	}
+
+	/**
+	 * Send to a specific user session.
+	 * 
+	 * @param sessionId the user session identifier to send to.
+	 * @param destination
+	 * @param payload the send payload.
+	 * @param type if {@code null} defaults to {@code application/json}.
+	 */
+	public void sendTo(@Nonnull String sessionId, String destination, @Nonnull Object payload, MediaType type) {
+		sendTo(sessionId, destination, payload, type, Collections.<String, String>emptyMap());
+	}
+
+	/**
+	 * Send to a specific user session.
+	 * 
+	 * @param sessionId the user session identifier to send to.
+	 * @param destination
+	 * @param payload the send payload.
+	 */
+	public void sendTo(@Nonnull String sessionId, String destination, @Nonnull Object payload) {
+		sendTo(sessionId, destination, payload, null, Collections.<String, String>emptyMap());
+	}
+
+	/**
+	 * Send to a specific user session.
+	 * 
+	 * @param sessionId the user session identifier to send to.
+	 * @param destination
 	 * @param payload the send payload.
 	 * @param headers
 	 */
-	public void broadcastTo(Principal principal, String destination, MediaType type, Object payload, Map<String, String> headers) {
-		this.registry.getSessions(principal).forEach(s -> sendTo(s.getId(), destination, type, payload, headers));
+	public void sendTo(
+			@Nonnull String sessionId,
+			String destination,
+			@Nonnull Object payload,
+			Map<String, String> headers)
+	{
+		sendTo(sessionId, destination, payload, null, headers);
 	}
 
 	/**
@@ -159,46 +211,17 @@ public class MessagingSupport {
 	 * 
 	 * @param sessionId the user session identifier to send to.
 	 * @param destination
+	 * @param payload the send payload.
 	 * @param type if {@code null} defaults to {@code application/json}.
-	 * @param payload the send payload.
-	 */
-	public void sendTo(String sessionId, String destination, MediaType type, Object payload) {
-		sendTo(sessionId, destination, type, payload, Collections.<String, String>emptyMap());
-	}
-
-	/**
-	 * Send to a specific user session.
-	 * 
-	 * @param sessionId the user session identifier to send to.
-	 * @param destination
-	 * @param payload the send payload.
-	 */
-	public void sendTo(String sessionId, String destination, Object payload) {
-		sendTo(sessionId, destination, null, payload, Collections.<String, String>emptyMap());
-	}
-
-	/**
-	 * Send to a specific user session.
-	 * 
-	 * @param sessionId the user session identifier to send to.
-	 * @param destination
-	 * @param payload the send payload.
 	 * @param headers
 	 */
-	public void sendTo(String sessionId, String destination, Object payload, Map<String, String> headers) {
-		sendTo(sessionId, destination, null, payload, headers);
-	}
-
-	/**
-	 * Send to a specific user session.
-	 * 
-	 * @param sessionId the user session identifier to send to.
-	 * @param destination
-	 * @param type if {@code null} defaults to {@code application/json}.
-	 * @param payload the send payload.
-	 * @param headers
-	 */
-	public void sendTo(String sessionId, String destination, MediaType type, Object payload, Map<String, String> headers) {
+	public void sendTo(
+			@Nonnull String sessionId,
+			String destination,
+			@Nonnull Object payload,
+			MediaType type,
+			Map<String, String> headers)
+	{
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		this.log.debug("Sending... [sessionId={},destination={}]", sessionId, destination);
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();

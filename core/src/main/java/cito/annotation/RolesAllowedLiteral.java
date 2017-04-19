@@ -15,6 +15,8 @@
  */
 package cito.annotation;
 
+import java.util.Arrays;
+
 import javax.annotation.security.RolesAllowed;
 import javax.enterprise.util.AnnotationLiteral;
 
@@ -35,5 +37,20 @@ public class RolesAllowedLiteral extends AnnotationLiteral<RolesAllowed> impleme
 	@Override
 	public String[] value() {
 		return value;
+	}
+
+	@Override
+	public int hashCode() {
+		return Arrays.hashCode(this.value);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj) || getClass() != obj.getClass())
+			return false;
+		RolesAllowedLiteral other = (RolesAllowedLiteral) obj;
+		return Arrays.equals(value, other.value);
 	}
 }

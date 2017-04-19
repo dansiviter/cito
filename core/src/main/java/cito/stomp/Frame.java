@@ -389,11 +389,7 @@ public class Frame {
 	 * @return
 	 */
 	public static Builder send(@Nonnull String destination, MediaType contentType, @Nonnull ByteBuffer body) {
-		final Builder builder = builder(SEND).destination(destination);
-		if (body != null) {
-			builder.body(contentType, body);
-		}
-		return builder;
+		return builder(SEND).destination(destination).body(contentType, body);
 	}
 
 	/**

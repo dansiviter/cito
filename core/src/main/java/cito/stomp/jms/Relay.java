@@ -68,11 +68,12 @@ public class Relay {
 	 * @param msg
 	 */
 	public void fromClient(@Nonnull Message msg) {
-		this.log.debug("Message from client. [sessionId={},command={}]", msg.sessionId(), msg.frame().getCommand());
+		final String sessionId = msg.sessionId();
+		this.log.debug("Message from client. [sessionId={},command={}]", sessionId, msg.frame().getCommand());
 
 		final boolean permitted = this.securityRegistry.isPermitted(msg.frame(), this.securityCtx.get());
 		if (!permitted) {
-			this.errorHandler.onError(this, msg.sessionId(), msg.frame(), "Not permitted!", null);
+			this.errorHandler.onError(this, sessionId, msg.frame(), "Not permitted!", null);
 			return;
 		}
 		on(msg);

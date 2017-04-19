@@ -17,6 +17,8 @@ package cito.annotation;
 
 import javax.enterprise.util.AnnotationLiteral;
 
+import com.google.common.base.Objects;
+
 /**
  * 
  * @author Daniel Siviter
@@ -34,5 +36,20 @@ public class PathParamLiteral extends AnnotationLiteral<PathParam> implements Pa
 	@Override
 	public String value() {
 		return this.value;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(this.value);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj) || getClass() != obj.getClass())
+			return false;
+		PathParamLiteral other = (PathParamLiteral) obj;
+		return Objects.equal(value, other.value);
 	}
 }

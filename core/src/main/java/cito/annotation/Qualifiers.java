@@ -15,6 +15,9 @@
  */
 package cito.annotation;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 import javax.enterprise.util.AnnotationLiteral;
 
 /**
@@ -105,6 +108,21 @@ public enum Qualifiers { ;
 		public String value() {
 			return value;
 		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(this.value);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (!super.equals(obj) || getClass() != obj.getClass())
+				return false;
+			OnSubscribeLiteral other = (OnSubscribeLiteral) obj;
+			return Objects.equals(value, other.value);
+		}
 	}
 
 	/**
@@ -125,6 +143,21 @@ public enum Qualifiers { ;
 		public String value() {
 			return value;
 		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(this.value);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (!super.equals(obj) || getClass() != obj.getClass())
+				return false;
+			OnUnsubscribeLiteral other = (OnUnsubscribeLiteral) obj;
+			return Objects.equals(value, other.value);
+		}
 	}
 
 	/**
@@ -144,6 +177,21 @@ public enum Qualifiers { ;
 		@Override
 		public String value() {
 			return value;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(this.value);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (!super.equals(obj) || getClass() != obj.getClass())
+				return false;
+			OnSendLiteral other = (OnSendLiteral) obj;
+			return Objects.equals(value, other.value);
 		}
 	}
 }
