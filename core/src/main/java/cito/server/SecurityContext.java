@@ -15,7 +15,6 @@
  */
 package cito.server;
 
-import java.io.Serializable;
 import java.security.Principal;
 
 import cito.annotation.WebSocketScope;

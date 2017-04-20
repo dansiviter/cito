@@ -99,7 +99,7 @@ public class MessagingSupport {
 	 * @param type if {@code null} defaults to {@code application/json}.
 	 * @param headers
 	 */
-	public void broadcast(String destination, Object payload, MediaType type, Map<String, String> headers) {
+	public void broadcast(String destination, @Nonnull Object payload, MediaType type, Map<String, String> headers) {
 		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
 		this.log.debug("Broadcasting... [destination={}]", destination);
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();

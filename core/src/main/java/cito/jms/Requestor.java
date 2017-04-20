@@ -27,6 +27,7 @@ import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.JMSProducer;
 import javax.jms.Message;
+import javax.jms.Queue;
 import javax.jms.QueueRequestor;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
@@ -66,7 +67,13 @@ public class Requestor implements AutoCloseable {
 
 		this.producer = context.createProducer();
 		this.consumer = context.createConsumer(dest);
-		this.tempDest = dest instanceof Topic ? this.context.createTemporaryTopic() : this.context.createTemporaryQueue();
+		if (dest instanceof Topic) {
+			this.tempDest = this.context.createTemporaryTopic();
+		} else if (dest instanceof Queue) {
+			this.tempDest = this.context.createTemporaryQueue();
+		} else {
+			throw new IllegalArgumentException("Topic or Queue expected! [" + dest + "]");
+		}
 	}
 
 	/**
