@@ -33,9 +33,6 @@ import org.slf4j.Logger;
 
 import cito.QuietClosable;
 import cito.annotation.FromClient;
-import cito.annotation.OnError;
-import cito.annotation.OnOpen;
-import cito.annotation.Qualifiers;
 import cito.event.ClientMessageProducer;
 import cito.event.Message;
 import cito.scope.WebSocketContext;

@@ -43,10 +43,11 @@ import cito.stomp.Frame;
  */
 @ApplicationScoped
 public class SessionRegistry {
+	static final Principal NULL_PRINCIPLE = new NullPrinciple();
+
 	@Inject
 	private Logger log;
 
-	static final Principal NULL_PRINCIPLE = new NullPrinciple();
 	private final ConcurrentMap<String, Session> sessionMap = new ConcurrentHashMap<>();
 	private final ConcurrentMap<Principal, Set<Session>> principalSessionMap = new ConcurrentHashMap<>();
 
@@ -108,8 +109,8 @@ public class SessionRegistry {
 		this.log.debug("Sending message to client. [sessionId={},command={}]",
 				sessionId, frame.getCommand() != null ? frame.getCommand() : "HEARTBEAT");
 
-			final Session session = getSession(sessionId).orElseThrow(
-					() -> new IllegalStateException("Session does not exist! [" + sessionId + "]"));
+		final Session session = getSession(sessionId).orElseThrow(
+				() -> new IllegalStateException("Session does not exist! [" + sessionId + "]"));
 		try {
 			session.getBasicRemote().sendObject(frame);
 		} catch (IOException | EncodeException e) {
@@ -138,7 +139,7 @@ public class SessionRegistry {
 
 		@Override
 		public boolean equals(Object obj) {
-			return getClass() == obj.getClass();
+			return obj != null && getClass() == obj.getClass();
 		}
 	}
 }

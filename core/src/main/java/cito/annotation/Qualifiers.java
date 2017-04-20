@@ -15,7 +15,6 @@
  */
 package cito.annotation;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 import javax.enterprise.util.AnnotationLiteral;
