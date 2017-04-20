@@ -55,7 +55,7 @@ public class BrokerProvider {
 	private JMSServerManager jmsServerManager;
 	@Produces
 	@ApplicationScoped
-	private ActiveMQConnectionFactory activeMQConnectionFactory;
+	private ActiveMQConnectionFactory connectionFactory;
 	@Produces
 	@ApplicationScoped
 	private Configuration artemisConfig;
@@ -75,7 +75,7 @@ public class BrokerProvider {
 		}
 
 		try {
-			this.activeMQConnectionFactory = createConnectionFactory();
+			this.connectionFactory = createConnectionFactory(this.config);
 		} catch (Exception e) {
 			throw new IllegalStateException("Unable to connect to remote server", e);
 		}
@@ -84,36 +84,7 @@ public class BrokerProvider {
 	@Produces
 	@ApplicationScoped
 	public JMSContext createJMSContext() {
-		return this.activeMQConnectionFactory.createContext();
-	}
-
-	/**
-	 * 
-	 * @return
-	 * @throws Exception
-	 */
-	private ActiveMQConnectionFactory createConnectionFactory() throws Exception {
-		Map<String, Object> params = Collections.singletonMap(
-				org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants.SERVER_ID_PROP_NAME, "1");
-		final ActiveMQConnectionFactory activeMQConnectionFactory;
-		if (config.getUrl() != null) {
-			activeMQConnectionFactory = ActiveMQJMSClient.createConnectionFactory(config.getUrl(), null);
-		} else {
-			if (config.getHost() != null) {
-				params.put(TransportConstants.HOST_PROP_NAME, config.getHost());
-				params.put(TransportConstants.PORT_PROP_NAME, config.getPort());
-			}
-			if (config.isHa()) {
-				activeMQConnectionFactory = ActiveMQJMSClient.createConnectionFactoryWithHA(JMSFactoryType.CF, new TransportConfiguration(config.getConnectorFactory(), params));
-			} else {
-				activeMQConnectionFactory = ActiveMQJMSClient.createConnectionFactoryWithoutHA(JMSFactoryType.CF, new TransportConfiguration(config.getConnectorFactory(), params));
-			}
-		}
-		if (config.hasAuthentication()) {
-			activeMQConnectionFactory.setUser(config.getUsername());
-			activeMQConnectionFactory.setPassword(config.getPassword());
-		}
-		return activeMQConnectionFactory.disableFinalizeChecks();
+		return this.connectionFactory.createContext();
 	}
 
 	@PreDestroy
@@ -133,5 +104,38 @@ public class BrokerProvider {
 	 */
 	public void dispose(@Disposes ActiveMQConnectionFactory connectionFactory) {
 		connectionFactory.close();
+	}
+
+
+	// --- Static Methods ---
+
+	/**
+	 * 
+	 * @param config
+	 * @return
+	 * @throws Exception
+	 */
+	private static ActiveMQConnectionFactory createConnectionFactory(BrokerConfig config) throws Exception {
+		Map<String, Object> params = Collections.singletonMap(
+				org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants.SERVER_ID_PROP_NAME, "1");
+		final ActiveMQConnectionFactory connectionFactory;
+		if (config.getUrl() != null) {
+			connectionFactory = ActiveMQJMSClient.createConnectionFactory(config.getUrl(), null);
+		} else {
+			if (config.getHost() != null) {
+				params.put(TransportConstants.HOST_PROP_NAME, config.getHost());
+				params.put(TransportConstants.PORT_PROP_NAME, config.getPort());
+			}
+			if (config.isHa()) {
+				connectionFactory = ActiveMQJMSClient.createConnectionFactoryWithHA(JMSFactoryType.CF, new TransportConfiguration(config.getConnectorFactory(), params));
+			} else {
+				connectionFactory = ActiveMQJMSClient.createConnectionFactoryWithoutHA(JMSFactoryType.CF, new TransportConfiguration(config.getConnectorFactory(), params));
+			}
+		}
+		if (config.hasAuthentication()) {
+			connectionFactory.setUser(config.getUsername());
+			connectionFactory.setPassword(config.getPassword());
+		}
+		return connectionFactory.disableFinalizeChecks();
 	}
 }
