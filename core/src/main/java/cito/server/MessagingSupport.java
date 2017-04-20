@@ -77,7 +77,7 @@ public class MessagingSupport {
 	 * @param type if {@code null} defaults to {@code application/json}.
 	 */
 	public void broadcast(String destination, @Nonnull Object payload, MediaType type) {
-		broadcast(destination, payload, Collections.<String, String>emptyMap());
+		broadcast(destination, payload, type, Collections.<String, String>emptyMap());
 	}
 
 	/**
@@ -100,7 +100,9 @@ public class MessagingSupport {
 	 * @param headers
 	 */
 	public void broadcast(String destination, @Nonnull Object payload, MediaType type, Map<String, String> headers) {
-		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
+		if (type == null) {
+			type = MediaType.APPLICATION_JSON_TYPE;
+		}
 		this.log.debug("Broadcasting... [destination={}]", destination);
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
 		this.msgEvent.select(FROM_SERVER).fire(new Message(frame));
@@ -222,7 +224,9 @@ public class MessagingSupport {
 			MediaType type,
 			Map<String, String> headers)
 	{
-		if (type == null) type = MediaType.APPLICATION_JSON_TYPE;
+		if (type == null) {
+			type = MediaType.APPLICATION_JSON_TYPE;
+		}
 		this.log.debug("Sending... [sessionId={},destination={}]", sessionId, destination);
 		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();
 		this.msgEvent.select(FROM_SERVER).fire(new Message(frame));
@@ -242,7 +246,7 @@ public class MessagingSupport {
 			this.serialiser.writeTo(obj, obj.getClass(), type, os);
 			return ByteBuffer.wrap(os.toByteArray());
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			throw new IllegalStateException(e);
 		}
 	}
 }
