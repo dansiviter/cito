@@ -44,6 +44,7 @@ public enum Util { ;
 	 * @return
 	 */
 	private static String[] uriTokens(Config config, HttpServletRequest req) {
+		// removes '/<path>/'
 		final String[] tokens = req.getRequestURI().substring(config.path().length() + 2).split("/");
 		if (tokens.length != 3) {
 			throw new IllegalStateException("Invalid path! [" + req.getRequestURI() + "]");

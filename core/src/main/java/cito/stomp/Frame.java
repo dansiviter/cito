@@ -267,7 +267,7 @@ public class Frame {
 			to(writer);
 			return writer.toString();
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			throw new IllegalStateException(e);
 		}
 	}
 
@@ -702,6 +702,7 @@ public class Frame {
 				break;
 			case DISCONNECT:
 			case ERROR:
+			case HEARTBEAT:
 				break;
 			case MESSAGE:
 				assertExists(DESTINATION);
@@ -720,8 +721,6 @@ public class Frame {
 				break;
 			case UNSUBSCRIBE:
 				assertExists(ID);
-				break;
-			case HEARTBEAT:
 				break;
 			}
 		}

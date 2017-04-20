@@ -58,6 +58,7 @@ public class SchedulerProducer {
 			}
 		} catch (InterruptedException e) {
 			this.log.warn("Shutdown interrupted!", e);
+			Thread.currentThread().interrupt();
 		}
 	}
 }

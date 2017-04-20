@@ -27,7 +27,7 @@ import cito.annotation.WebSocketScope;
  * @author Daniel Siviter
  * @since v1.0 [17 Aug 2016]
  */
-public interface SecurityContext extends Serializable {
+public interface SecurityContext {
 	/**
 	 * Returns a {@link Principal} object containing the name of the current authenticated user. If the user
 	 * has not been authenticated, the method returns null.

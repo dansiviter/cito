@@ -67,7 +67,7 @@ public class ServletSession extends SessionAdapter {
 	 * @throws ServletException
 	 */
 	public ServletSession(Servlet servlet, HttpServletRequest instigatingReq)
-	throws ServletException
+			throws ServletException
 	{
 		this.servlet = servlet;
 		this.instigatingReq = instigatingReq;
@@ -102,7 +102,7 @@ public class ServletSession extends SessionAdapter {
 
 	@Override
 	public void addMessageHandler(MessageHandler handler) throws IllegalStateException {
-		throw new UnsupportedOperationException();
+		this.messageHandlers.add(new MessageHandlerWrapper(handler, null));
 	}
 
 	@Override
@@ -114,7 +114,7 @@ public class ServletSession extends SessionAdapter {
 	public <T> void addMessageHandler(Class<T> clazz, Whole<T> handler) {
 		this.messageHandlers.add(new MessageHandlerWrapper(handler, clazz));
 	}
-	
+
 	Set<MessageHandlerWrapper> getMessageHandlerWrappers() {
 		return messageHandlers;
 	}
@@ -126,7 +126,9 @@ public class ServletSession extends SessionAdapter {
 
 	@Override
 	public void removeMessageHandler(MessageHandler handler) {
-		this.messageHandlers.remove(handler);
+		if (!this.messageHandlers.removeIf(h -> h.handler == handler)) {
+			throw new IllegalArgumentException("Handler was unknown to the session!");
+		}
 	}
 
 	@Override
@@ -191,7 +193,7 @@ public class ServletSession extends SessionAdapter {
 	 */
 	boolean setSender(Sender sender) throws IOException {
 		if (checkStillValid()) {
-			
+
 		}
 		synchronized (this) {
 			if (this.sender != null && sender != null) {

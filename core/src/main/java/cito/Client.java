@@ -269,7 +269,8 @@ public class Client implements Connection {
 			if (!terminated) 
 				LOG.warn("Scheduler did not terminate in time!");
 		} catch (InterruptedException e) {
-			throw new IOException("Shutdown interrupted!", e);
+			LOG.warn("Thread interruppted!", e);
+			Thread.currentThread().interrupt();
 		}
 		if (this.session != null)
 			this.session.close(reason);

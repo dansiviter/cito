@@ -47,8 +47,7 @@ public class Initialiser implements ServletContainerInitializer {
 
 	@Override
 	public void onStartup(Set<Class<?>> c, ServletContext ctx) throws ServletException {
-		LOG.info("Initialising SockJS. [" + c + "]");
-		ctx.log("Initialising SockJS. [" + c + "]");
+		LOG.info("Initialising SockJS. [{}]", c);
 		final List<Config> initializers = new LinkedList<Config>();
 
 		if (c != null) {
@@ -57,8 +56,7 @@ public class Initialiser implements ServletContainerInitializer {
 						Config.class.isAssignableFrom(cls)) {
 					try {
 						initializers.add((Config) cls.newInstance());
-					}
-					catch (Throwable e) {
+					} catch (Exception e) {
 						throw new ServletException("Failed to instantiate SockJsInitialiser class!", e);
 					}
 				}
