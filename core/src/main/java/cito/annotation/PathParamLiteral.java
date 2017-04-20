@@ -50,6 +50,6 @@ public class PathParamLiteral extends AnnotationLiteral<PathParam> implements Pa
 		if (!super.equals(obj) || getClass() != obj.getClass())
 			return false;
 		PathParamLiteral other = (PathParamLiteral) obj;
-		return Objects.equal(value, other.value);
+		return Objects.equals(value, other.value);
 	}
 }

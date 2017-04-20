@@ -66,7 +66,7 @@ public class MessagingSupport {
 	 * @param payload the send payload.
 	 */
 	public void broadcast(String destination, @Nonnull Object payload) {
-		broadcast(destination, payload, null);
+		broadcast(destination, payload, (MediaType) null);
 	}
 
 	/**

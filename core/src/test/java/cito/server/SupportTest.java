@@ -96,7 +96,7 @@ public class SupportTest {
 
 	@Test
 	public void broadcast_destination_mediaType_payload() throws IOException {
-		this.support.broadcast("destination", MediaType.TEXT_PLAIN_TYPE, new Object(), Collections.emptyMap());
+		this.support.broadcast("destination", new Object(), MediaType.TEXT_PLAIN_TYPE, Collections.emptyMap());
 
 		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
@@ -191,7 +191,7 @@ public class SupportTest {
 
 	@Test
 	public void sendTo_destination_mediaType_payload() throws IOException {
-		this.support.sendTo("sessionId", "destination", MediaType.TEXT_PLAIN_TYPE, new Object(), Collections.emptyMap());
+		this.support.sendTo("sessionId", "destination", new Object(), MediaType.TEXT_PLAIN_TYPE, Collections.emptyMap());
 
 		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
