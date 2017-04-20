@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Disposes;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.jms.JMSContext;
@@ -125,5 +126,12 @@ public class BrokerProvider {
 				throw new IllegalStateException("Unable to stop embedded JMS", e);
 			}
 		}
+	}
+
+	/**
+	 * @param connectionFactory the connection factory to dispose.
+	 */
+	public void dispose(@Disposes ActiveMQConnectionFactory connectionFactory) {
+		connectionFactory.close();
 	}
 }

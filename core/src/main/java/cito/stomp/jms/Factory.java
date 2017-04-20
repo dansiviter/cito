@@ -192,7 +192,7 @@ public class Factory {
 		if (message.getJMSCorrelationID() != null) {
 			frame.header(Headers.CORRELATION_ID, message.getJMSCorrelationID());
 		}
-		frame.header(Headers.EXPIRATION_TIME, "" + message.getJMSExpiration());
+		frame.header(Headers.EXPIRATION_TIME, Long.toString(message.getJMSExpiration()));
 
 		if (message.getJMSRedelivered()) {
 			frame.header(Headers.REDELIVERED, "true");
