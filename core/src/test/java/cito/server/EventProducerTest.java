@@ -87,10 +87,10 @@ public class EventProducerTest {
 	@Test
 	public void message_SEND() {;
 		when(this.extension.getMessageObservers(OnSend.class)).thenReturn(Collections.singleton(this.observerMethod));
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSend("/topic/*")));
+		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSend("topic/*")));
 
 		final Message event = new Message(
-				Frame.send("/topic/foo", MediaType.APPLICATION_JSON_TYPE, "{}").build());
+				Frame.send("topic/foo", MediaType.APPLICATION_JSON_TYPE, "{}").build());
 
 		this.eventProducer.message(event);
 
@@ -103,10 +103,10 @@ public class EventProducerTest {
 	@Test
 	public void message_SUBSCRIBE() {
 		when(this.extension.getMessageObservers(OnSubscribe.class)).thenReturn(Collections.singleton(this.observerMethod));
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("/topic/*")));
+		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("topic/*")));
 
 		final Message event = new Message(
-				Frame.builder(Command.SUBSCRIBE).destination("/topic/foo").subscription("id").build());
+				Frame.builder(Command.SUBSCRIBE).destination("topic/foo").subscription("id").build());
 
 		this.eventProducer.message(event);
 
@@ -120,8 +120,8 @@ public class EventProducerTest {
 	@Test
 	public void message_UNSUBSCRIBE() {
 		when(this.extension.getMessageObservers(OnUnsubscribe.class)).thenReturn(Collections.singleton(observerMethod));
-		when(this.observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("/topic/*")));
-		ReflectionUtil.<Map<String,String>>get(this.eventProducer, "idDestinationMap").put("id", "/topic/foo");
+		when(this.observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("topic/*")));
+		ReflectionUtil.<Map<String,String>>get(this.eventProducer, "idDestinationMap").put("id", "topic/foo");
 
 		final Message event = new Message(
 				Frame.builder(Command.UNSUBSCRIBE).subscription("id").build());
@@ -137,7 +137,7 @@ public class EventProducerTest {
 	@Test
 	public void message_DISCONNECT() {
 		when(this.extension.getMessageObservers(OnDisconnect.class)).thenReturn(Collections.singleton(observerMethod));
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("/topic/*")));
+		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("topic/*")));
 
 		final Message event = new Message(
 				Frame.builder(Command.DISCONNECT).build());

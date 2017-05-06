@@ -104,8 +104,12 @@ public class MessagingSupport {
 			type = MediaType.APPLICATION_JSON_TYPE;
 		}
 		this.log.debug("Broadcasting... [destination={}]", destination);
-		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
-		this.msgEvent.select(FROM_SERVER).fire(new Message(frame));
+		try {
+			final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
+			this.msgEvent.select(FROM_SERVER).fire(new Message(frame));
+		} catch (IOException e) {
+			this.log.warn("Unable to broadcast message! [destination=" + destination + "]", e);
+		}
 	}
 
 	/**
@@ -228,8 +232,12 @@ public class MessagingSupport {
 			type = MediaType.APPLICATION_JSON_TYPE;
 		}
 		this.log.debug("Sending... [sessionId={},destination={}]", sessionId, destination);
-		final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();
-		this.msgEvent.select(FROM_SERVER).fire(new Message(frame));
+		try {
+			final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();
+			this.msgEvent.select(FROM_SERVER).fire(new Message(frame));
+		} catch (IOException e) {
+			this.log.warn("Unable to send message! [sessionId=" + sessionId + ",destination=" + destination + "]", e);
+		}
 	}
 
 	/**
@@ -237,16 +245,15 @@ public class MessagingSupport {
 	 * @param obj
 	 * @param type
 	 * @return the object as a {@link ByteBuffer} or {@code null} if {@code obj} was {@code null}.
+	 * @throws IOException
 	 */
-	private ByteBuffer toByteBuffer(Object obj, MediaType type) {
+	private ByteBuffer toByteBuffer(Object obj, MediaType type) throws IOException {
 		if (obj == null) {
 			return null;
 		}
 		try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
 			this.serialiser.writeTo(obj, obj.getClass(), type, os);
 			return ByteBuffer.wrap(os.toByteArray());
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
 		}
 	}
 }

@@ -28,6 +28,7 @@ import javax.websocket.EndpointConfig;
 import cito.stomp.Frame;
 
 /**
+ * Handles decoding/encoding of {@link Frame}s.
  * 
  * @author Daniel Siviter
  * @since v1.0 [12 Jul 2016]
@@ -35,9 +36,6 @@ import cito.stomp.Frame;
 public class FrameEncoding implements Encoder.TextStream<Frame>, Decoder.TextStream<Frame> {
 	@Override
 	public void init(EndpointConfig config) { }
-
-	@Override
-	public void destroy() { }
 
 	@Override
 	public void encode(Frame object, Writer writer) throws EncodeException, IOException {
@@ -48,4 +46,7 @@ public class FrameEncoding implements Encoder.TextStream<Frame>, Decoder.TextStr
 	public Frame decode(Reader reader) throws DecodeException, IOException {
 		return Frame.from(reader);
 	}
+
+	@Override
+	public void destroy() { }
 }

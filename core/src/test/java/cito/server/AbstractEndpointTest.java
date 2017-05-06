@@ -16,7 +16,6 @@
  */
 package cito.server;
 
-import static cito.annotation.FromClient.FROM_CLIENT;
 import static cito.annotation.OnClose.ON_CLOSE;
 import static cito.annotation.OnError.ON_ERROR;
 import static cito.annotation.OnOpen.ON_OPEN;
@@ -89,7 +88,6 @@ public class AbstractEndpointTest {
 	public void before() {
 		when(this.beanManager.getExtension(Extension.class)).thenReturn(this.extension);
 		when(this.extension.webSocketContext()).thenReturn(this.webSocketContext);
-		when(this.messageEvent.select(FROM_CLIENT)).thenReturn(messageEvent);
 	}
 
 	@Test
@@ -134,7 +132,6 @@ public class AbstractEndpointTest {
 		verify(this.log).debug("Received message from client. [id={},principle={},command={}]", "sessionId", null, Command.MESSAGE);
 		verify(frame).getCommand();
 		verify(this.relay).fromClient(any());
-		verify(this.messageEvent).select(FROM_CLIENT);
 		verify(this.messageEvent).fire(any());
 		verifyNoMoreInteractions(session, frame);
 	}

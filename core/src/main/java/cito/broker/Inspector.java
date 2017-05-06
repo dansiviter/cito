@@ -1,4 +1,5 @@
 /*
+
  * Copyright 2016-2017 Daniel Siviter
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,36 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cito.ext;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Type;
-
-import javax.ws.rs.core.MediaType;
+package cito.broker;
 
 /**
- * 
  * @author Daniel Siviter
- * @since v1.0 [24 Aug 2016]
- * @param <T>
+ * @since v1.0 [27 Apr 2017]
  */
-public interface BodyReader<T> {
-	/**
-	 * 
-	 * @param type
-	 * @param mediaType
-	 * @return
-	 */
-	boolean isReadable(Type type, MediaType mediaType);
+public interface Inspector {
 
-	/**
-	 * 
-	 * @param type
-	 * @param mediaType
-	 * @param is
-	 * @return
-	 * @throws IOException
-	 */
-	T readFrom(Type type, MediaType mediaType, InputStream is) throws IOException;
 }

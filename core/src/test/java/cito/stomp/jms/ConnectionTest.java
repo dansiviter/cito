@@ -36,6 +36,7 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
+import javax.security.auth.login.LoginException;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 
@@ -109,7 +110,7 @@ public class ConnectionTest {
 	}
 
 	@Test
-	public void connect() throws JMSException {
+	public void connect() throws JMSException, LoginException {
 		ReflectionUtil.set(this.connection, "sessionId", null); // every other test needs it set!
 		final HeartBeatMonitor heartBeatMonitor = mock(HeartBeatMonitor.class);
 		ReflectionUtil.set(this.connection, "heartBeatMonitor", heartBeatMonitor);

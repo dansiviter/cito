@@ -17,7 +17,9 @@ package cito.event;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
@@ -32,15 +34,30 @@ import cito.stomp.Frame;
  * @author Daniel Siviter
  * @since v1.0 [25 Jan 2017]
  */
-@Dependent
+//@ApplicationScoped
 public class MessageBodyProducer {
 	/**
 	 * 
 	 * @param ip
 	 * @return
 	 */
-	@Produces @Body
-	public static Object get(InjectionPoint ip, Serialiser serialiser, Message event) {
+//	@Produces @Dependent @Body
+	public static <T> T get(InjectionPoint ip, Serialiser serialiser, Message event) {
+		final Frame frame = event.frame();
+		try (InputStream is = new ByteBufferInputStream(frame.getBody())) {
+			return serialiser.readFrom(ip.getType(), frame.contentType(), is);
+		} catch (IOException e) {
+			throw new IllegalStateException("Unable to serialise!", e);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param ip
+	 * @return
+	 */
+//	@Produces @Body
+	public static <K, V> Map<K, V> getMap(InjectionPoint ip, Serialiser serialiser, Message event) {
 		final Frame frame = event.frame();
 		try (InputStream is = new ByteBufferInputStream(frame.getBody())) {
 			return serialiser.readFrom(ip.getType(), frame.contentType(), is);

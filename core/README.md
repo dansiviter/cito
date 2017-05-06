@@ -73,22 +73,22 @@ Both `@OnAdded` and `@OnRemoved` accept a destination pattern to match. See the 
 
 ### Destination Filtering ###
 
-A number of annotations related to subscriptions can accept a destination pattern which will be filtered against. The pattern matching is based on POSIX GLOB patterns. For example, the pattern `/topic/hello.*` will match anything with the base pattern:
+A number of annotations related to subscriptions can accept a destination pattern which will be filtered against. The pattern matching is based on POSIX GLOB patterns. For example, the pattern `topic/hello.*` will match anything with the base pattern:
 
-* `/topic/hello.world` - Matches
-* `/topic/hello.another-world` - Matches
-* `/queue/hello.world` - Doesn't match!
-* `/topic/hello.world.another` - Doesn't match!
+* `topic/hello.world` - Matches
+* `topic/hello.another-world` - Matches
+* `queue/hello.world` - Doesn't match!
+* `topic/hello.world.another` - Doesn't match!
 
 See `cito.stomp.Glob` for more information.
 
 In addition to matching patterns it's also possible to use path parameters, via curly braces parenthesis (`{}`) and `@PathParam` annotation for use within the method. For example:
 
 	public void on(
-			@Observes @OnAdded("/topic/{param}.world") DestinationChanged,
+			@Observes @OnAdded("topic/{param}.world") DestinationChanged,
 			@PathParam("param") String param)
 	{
-		// for '/topic/hello.world', 'param' will be 'hello'
+		// for 'topic/hello.world', 'param' will be 'hello'
 	}
 
 See `cito.PathParser` for more information.
@@ -113,7 +113,7 @@ Any bean passed as a payload will be serialised to the `MediaType` before being 
 
 This is the simplest method of sending and will be sent to everyone:
 
-	this.support.broadcast("/topic/hello-world", MediaType.TEXT_PLAIN, "Hello");
+	this.support.broadcast("topic/hello-world", MediaType.TEXT_PLAIN, "Hello");
 
 *Warning:* As this is sent to everyone it also has inherent issues with data security so use only when necessary. 
 
@@ -123,14 +123,14 @@ This will broadcast, but to all sessions for a specific user:
 
 	final Principal user = ... // the principal representing the user
 
-	this.support.broadcastTo(user, "/topic/hello-world", MediaType.TEXT_PLAIN, "Hello");
+	this.support.broadcastTo(user, "topic/hello-world", MediaType.TEXT_PLAIN, "Hello");
 
 **Send to Session**
 
 Finally the least granular approach will only send to a specific session of a user:
 
 	final String sessionId = ... // the user session
-	this.support.sendTo(sessionId, "/topic/hello-world", MediaType.TEXT_PLAIN, "Hello");
+	this.support.sendTo(sessionId, "topic/hello-world", MediaType.TEXT_PLAIN, "Hello");
 
 
 ## Security ##
@@ -142,8 +142,8 @@ By default all destinations are permitted to all users. However, it may be essen
 		@Override
 		public void configure(SecurityRegistry registry) {
 			registry.builder().nullDestination().permitAll().build(); // important for most message types including CONNECT, DISCONNECT
-			registry.builder().matches("/topic/rate.*").principleExists().build(); // user must be logged in
-			registry.builder().matches("/topic/rate.EURUSD").roles("trader", "sales").build(); // user has roles 'trader' OR 'sales', logged in is implied
+			registry.builder().matches("topic/rate.*").principleExists().build(); // user must be logged in
+			registry.builder().matches("topic/rate.EURUSD").roles("trader", "sales").build(); // user has roles 'trader' OR 'sales', logged in is implied
 		}
 	}
 
@@ -191,7 +191,7 @@ Create GitHub Issues for these to permit voting.
 ## Message Sending Injection ##
 
 	@Inject
-	@OnSend("/topic/myTopic")
+	@OnSend("topic/myTopic")
 	private Send myTopic;
 
 Viable?

@@ -9,7 +9,7 @@
 		<version>0.1.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>core</artifactId>
-	<name>Cit&#x00D5; Core</name>
+	<name>Cit&#x00F5; Core</name>
 
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -17,6 +17,22 @@
 		<failOnMissingWebXml>false</failOnMissingWebXml>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+
+	<repositories>
+		<!-- Needed for JSON-B API -->
+		<repository>
+			<id>java.net-Public</id>
+			<name>Maven Java Net Snapshots and Releases</name>
+			<url>https://maven.java.net/content/groups/public/</url>
+		</repository>
+
+		<!-- Needed for Yasson -->
+		<repository>
+			<id>yasson-snapshots</id>
+			<name>Yasson Snapshots repository</name>
+			<url>https://repo.eclipse.org/content/repositories/yasson-snapshots</url>
+		</repository>
+	</repositories>
 
 	<dependencies>
 		<dependency>
@@ -34,11 +50,21 @@
 			<version>1.5.3</version>
 		</dependency>
 
-		<!-- TODO remove into separate library -->
+		<!-- JSON-B -->
 		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-			<version>2.7</version>
+			<groupId>javax.json.bind</groupId>
+			<artifactId>javax.json.bind-api</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse</groupId>
+			<artifactId>yasson</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish</groupId>
+			<artifactId>javax.json</artifactId>
+			<version>1.1.0-SNAPSHOT</version>
 		</dependency>
 
 

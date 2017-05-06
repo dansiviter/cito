@@ -1,4 +1,5 @@
 /*
+
  * Copyright 2016-2017 Daniel Siviter
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,31 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cito.ext.gson;
+package cito.ext;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
 import javax.ws.rs.core.MediaType;
-
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
 
 import cito.ext.BodyReader;
 import cito.ext.BodyWriter;
 
+/**
+ * {@link BodyWriter} and {@link BodyReader} for {@code application/json} type using Json-B.
+ *  
+ * @author Daniel Siviter
+ * @since v1.0 [1 May 2017]
+ */
 @ApplicationScoped
-public class GsonBodySerialiser implements BodyWriter<Object>, BodyReader<Object> {
+public class JsonBSerialiser implements BodyWriter<Object>, BodyReader<Object> {
 	@Inject
-	private Gson gson;
+	private Jsonb jsonb;
 
 	@Override
 	public boolean isReadable(Type type, MediaType mediaType) {
@@ -46,8 +49,7 @@ public class GsonBodySerialiser implements BodyWriter<Object>, BodyReader<Object
 
 	@Override
 	public Object readFrom(Type type, MediaType mediaType, InputStream is) throws IOException {
-		final JsonReader reader = new JsonReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-		return this.gson.fromJson(reader, type);
+		return this.jsonb.fromJson(is, type);
 	}
 
 	@Override
@@ -56,9 +58,20 @@ public class GsonBodySerialiser implements BodyWriter<Object>, BodyReader<Object
 	}
 
 	@Override
-	public void writeTo(Object t, Type type, MediaType mediaType, OutputStream os) throws IOException {
-		final JsonWriter writer = new JsonWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
-		this.gson.toJson(t, type, writer);
-		writer.flush();
+	public void writeTo(Object t, Type type, MediaType mediaType, OutputStream os)
+			throws IOException {
+		this.jsonb.toJson(t, type, os);
+	}
+
+
+	// --- Static Methods ---
+
+	/**
+	 * 
+	 * @return
+	 */
+	@ApplicationScoped @Produces
+	public static Jsonb create() {
+		return JsonbBuilder.create();
 	}
 }

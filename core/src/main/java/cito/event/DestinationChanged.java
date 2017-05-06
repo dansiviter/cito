@@ -44,7 +44,7 @@ public class DestinationChanged {
 	}
 
 	public boolean isTopic() {
-		return destination.startsWith("/topic/");
+		return destination.startsWith("topic/");
 	}
 
 	// --- Inner Classes ---

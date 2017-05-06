@@ -19,6 +19,8 @@ package cito.jms;
 import static java.util.Objects.requireNonNull;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javax.jms.Destination;
 import javax.jms.InvalidDestinationException;
@@ -27,6 +29,7 @@ import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.JMSProducer;
 import javax.jms.Message;
+import javax.jms.MessageListener;
 import javax.jms.Queue;
 import javax.jms.QueueRequestor;
 import javax.jms.TemporaryQueue;
@@ -77,6 +80,13 @@ public class Requestor implements AutoCloseable {
 	}
 
 	/**
+	 * @return the context
+	 */
+	public JMSContext context() {
+		return context;
+	}
+
+	/**
 	 * Sends a request and waits for a reply. The temporary topic is used for the {@code JMSReplyTo} destination; the
 	 * first reply is returned, and any following replies are discarded.
 	 *
@@ -87,7 +97,7 @@ public class Requestor implements AutoCloseable {
 	public Message request(Message message) throws JMSException {
 		message.setJMSReplyTo(this.tempDest);
 		this.producer.send(this.dest, message);
-		return consumer.receive();
+		return this.consumer.receive();
 	}
 
 	/**
@@ -101,7 +111,24 @@ public class Requestor implements AutoCloseable {
 	public Message request(Message message, int timeout, TimeUnit unit) throws JMSException {
 		message.setJMSReplyTo(this.tempDest);
 		this.producer.send(this.dest, message);
-		return consumer.receive(unit.toMillis(timeout));
+		return this.consumer.receive(unit.toMillis(timeout));
+	}
+
+	/**
+	 * 
+	 * @param message
+	 * @param consumer
+	 * @throws JMSException
+	 */
+	public void request(Message message, Consumer<Message> consumer) throws JMSException {
+		message.setJMSReplyTo(this.tempDest);
+		this.consumer.setMessageListener(new MessageListener() {
+			@Override
+			public void onMessage(Message message) {
+				consumer.accept(message);
+			}
+		});
+		this.producer.send(this.dest, message);
 	}
 
 	/**

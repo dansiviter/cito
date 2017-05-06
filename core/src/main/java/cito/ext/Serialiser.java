@@ -64,13 +64,13 @@ public class Serialiser {
 	 * @throws IOException
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public <T> void writeTo(T t, Class<?> type, MediaType mediaType, OutputStream os) throws IOException {
+	public <T> void writeTo(T t, Type type, MediaType mediaType, OutputStream os) throws IOException {
 		for (BodyWriter<?> writer : this.writers) {
 			if (writer.isWriteable(type, mediaType)) {
 				((BodyWriter) writer).writeTo(t, type, mediaType, os);
 				return;
 			}
 		}
-		throw new IOException("Unable to write!");
+		throw new IOException("Unable to write! [type=" + type + ",mediaType=" + mediaType);
 	}
 }

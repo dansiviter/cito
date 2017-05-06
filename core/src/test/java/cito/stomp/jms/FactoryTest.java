@@ -77,7 +77,7 @@ public class FactoryTest {
 	public void toDestination_queue() throws JMSException {
 		final javax.jms.Session session = mock(javax.jms.Session.class);
 
-		this.factory.toDestination(session, "/queue/foo");
+		this.factory.toDestination(session, "queue/foo");
 
 		verify(session).createQueue("foo");
 		verifyNoMoreInteractions(session);
@@ -87,7 +87,7 @@ public class FactoryTest {
 	public void toDestination_topic() throws JMSException {
 		final javax.jms.Session session = mock(javax.jms.Session.class);
 
-		this.factory.toDestination(session, "/topic/foo");
+		this.factory.toDestination(session, "topic/foo");
 
 		verify(session).createTopic("foo");
 		verifyNoMoreInteractions(session);
@@ -99,7 +99,7 @@ public class FactoryTest {
 		when(q.getQueueName()).thenReturn("foo");
 
 		final String output = this.factory.fromDestination(q);
-		assertEquals("/queue/foo", output);
+		assertEquals("queue/foo", output);
 
 		verify(q).getQueueName();
 		verifyNoMoreInteractions(q);
@@ -111,7 +111,7 @@ public class FactoryTest {
 		when(t.getTopicName()).thenReturn("foo");
 
 		final String output = this.factory.fromDestination(t);
-		assertEquals("/topic/foo", output);
+		assertEquals("topic/foo", output);
 
 		verify(t).getTopicName();
 		verifyNoMoreInteractions(t);

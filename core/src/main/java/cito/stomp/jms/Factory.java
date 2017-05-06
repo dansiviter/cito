@@ -15,7 +15,7 @@
  */
 package cito.stomp.jms;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -85,21 +85,21 @@ public class Factory {
 	/**
 	 * 
 	 * @param session
-	 * @param name
+	 * @param destination
 	 * @return
 	 * @throws JMSException
 	 */
-	public Destination toDestination(Session session, String name) throws JMSException {
-		final int separatorIndex = name.indexOf('/', 1);
-		final String type = name.substring(0, separatorIndex + 1).toLowerCase();   
-		name = name.substring(separatorIndex + 1, name.length());
+	public Destination toDestination(Session session, String destination) throws JMSException {
+		final int separatorIndex = destination.indexOf('/', 1);
+		final String type = destination.substring(0, separatorIndex + 1).toLowerCase();   
+		final String subDestination = destination.substring(separatorIndex + 1, destination.length());
 		switch (type) {
-		case "/queue/":
-			return session.createQueue(name);
-		case "/topic/":
-			return session.createTopic(name);
+		case "queue/":
+			return session.createQueue(subDestination);
+		case "topic/":
+			return session.createTopic(subDestination);
 		default:
-			throw new IllegalArgumentException("Unknown destination! [type=" + type + ",name="  + name + "]");
+			throw new IllegalArgumentException("Unknown destination! ["  + destination + "]");
 
 		}
 	}
@@ -119,10 +119,10 @@ public class Factory {
 
 		if (d instanceof Topic) {
 			final Topic topic = (Topic) d;
-			return new StringBuilder("/topic/").append(topic.getTopicName()).toString();
+			return new StringBuilder("topic/").append(topic.getTopicName()).toString();
 		}
 		final Queue queue = (Queue) d;
-		return new StringBuilder("/queue/").append(queue.getQueueName()).toString();
+		return new StringBuilder("queue/").append(queue.getQueueName()).toString();
 	}
 
 	/**

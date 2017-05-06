@@ -34,7 +34,7 @@ import cito.stomp.Command;
  * Observable {@link Message} for when a user performs a {@link Command#SUBSCRIBE} to a destination.
  * 
  * <pre>
- * 	public void on(&#064;Observes &#064;OnSubscribe("/topic/{param}.world}") MessageEvent e) {
+ * 	public void on(&#064;Observes &#064;OnSubscribe("topic/{param}.world}") MessageEvent e) {
  * 		// do something
  * 	}
  * </pre>

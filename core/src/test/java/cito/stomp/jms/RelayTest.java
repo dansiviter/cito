@@ -30,6 +30,7 @@ import javax.enterprise.event.Event;
 import javax.enterprise.inject.Instance;
 import javax.inject.Provider;
 import javax.jms.JMSException;
+import javax.security.auth.login.LoginException;
 import javax.websocket.Session;
 
 import org.junit.After;
@@ -90,7 +91,7 @@ public class RelayTest {
 	}
 
 	@Test
-	public void fromClient_CONNECT() throws JMSException {
+	public void fromClient_CONNECT() throws JMSException, LoginException {
 		final Frame frame = Frame.builder(Command.CONNECT).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build();
 		final Message msg = new Message("sessionId", frame);
 		this.relay.fromClient(msg);
@@ -104,7 +105,7 @@ public class RelayTest {
 	}
 
 	@Test
-	public void fromClient_STOMP() throws JMSException {
+	public void fromClient_STOMP() throws JMSException, LoginException {
 		final Frame frame = Frame.builder(Command.STOMP).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build();
 		final Message msg = new Message("sessionId", frame);
 		this.relay.fromClient(msg);

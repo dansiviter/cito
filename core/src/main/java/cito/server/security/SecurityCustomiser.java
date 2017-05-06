@@ -27,8 +27,8 @@ import javax.enterprise.context.Dependent;
  *		&#064;Override
  *		public void configure(SecurityRegistry registry) {
  *			registry.builder().nullDestination().permitAll(); // important for most message types including CONNECT, DISCONNECT
- *			registry.builder().matches("/topic/rate.*").principleExists().build(); // user must be logged in
- *			registry.builder().matches("/topic/rate.EURUSD").roles("trader", "sales").build(); // user has roles 'trader' OR 'sales', logged in is implied
+ *			registry.builder().matches("topic/rate.*").principleExists().build(); // user must be logged in
+ *			registry.builder().matches("topic/rate.EURUSD").roles("trader", "sales").build(); // user has roles 'trader' OR 'sales', logged in is implied
  *		}
  *	}
  * </pre>

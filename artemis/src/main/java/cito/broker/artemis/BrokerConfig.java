@@ -16,7 +16,6 @@
 package cito.broker.artemis;
 
 import static org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants.SERVER_ID_PROP_NAME;
-import static org.apache.activemq.artemis.jms.client.ActiveMQDestination.createTopicAddressFromName;
 
 import java.util.Collections;
 import java.util.Map;
@@ -117,9 +116,6 @@ public class BrokerConfig {
 		final Configuration config = new ConfigurationImpl()
 				.setSecurityEnabled(false)
 				.setPersistenceEnabled(false);
-		// convert to use JMS style topic for management
-		config.setManagementAddress(createTopicAddressFromName(config.getManagementAddress().toString()));
-		config.setManagementNotificationAddress(createTopicAddressFromName(config.getManagementNotificationAddress().toString()));
 		// default In VM Acceptor for all your ConnectionFactory needs
 		config.addAcceptorConfiguration(new TransportConfiguration(IN_VM_ACCEPTOR, params, "InVMAcceptor"));
 		return config;

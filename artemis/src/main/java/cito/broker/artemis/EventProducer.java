@@ -17,7 +17,6 @@ package cito.broker.artemis;
 
 import static cito.Util.getAnnotations;
 import static org.apache.activemq.artemis.api.core.management.ManagementHelper.HDR_NOTIFICATION_TYPE;
-import static org.apache.activemq.artemis.jms.client.ActiveMQDestination.JMS_TOPIC_ADDRESS_PREFIX;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_CREATED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_DESTROYED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.TOPIC_CREATED;
@@ -34,6 +33,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.ObserverMethod;
 import javax.inject.Inject;
@@ -60,6 +60,7 @@ import cito.annotation.OnRemoved;
 import cito.broker.DestinationChangedHolder;
 import cito.event.DestinationChanged;
 import cito.event.DestinationChanged.Type;
+import cito.jms.JmsContextHelper;
 import cito.server.Extension;
 
 /**
@@ -73,9 +74,9 @@ import cito.server.Extension;
  * @since v1.0 [2 Feb 2017]
  */
 @ApplicationScoped
-public class EventProducer implements MessageListener {
-	private static final Collection<JMSNotificationType> ALL = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED, QUEUE_CREATED,
-			QUEUE_DESTROYED);
+public class EventProducer extends JmsContextHelper implements MessageListener {
+	private static final Collection<JMSNotificationType> ALL = EnumSet.of(
+			TOPIC_CREATED, TOPIC_DESTROYED, QUEUE_CREATED, QUEUE_DESTROYED);
 	private static final Collection<JMSNotificationType> CREATED = EnumSet.of(TOPIC_CREATED, QUEUE_CREATED);
 	private static final Collection<JMSNotificationType> TOPIC = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED);
 
@@ -86,11 +87,8 @@ public class EventProducer implements MessageListener {
 	@Inject
 	private Logger log;
 	@Inject
-	private Provider<JMSContext> ctxProvider;
-	@Inject
 	private Event<cito.event.DestinationChanged> destinationEvent;
 
-	private JMSContext ctx;
 	private JMSConsumer consumer;
 
 	/**
@@ -101,30 +99,14 @@ public class EventProducer implements MessageListener {
 	/**
 	 * Connect to the broker to source events.
 	 */
-	@PostConstruct
+	@PostConstruct @Override
 	public void connect() {
 		this.log.info("Connecting to broker for sourcing destination events.");
-		this.ctx = this.ctxProvider.get();
-		final String address = this.artemisConfig.getManagementNotificationAddress().toString();
-		final Topic destination = this.ctx.createTopic(
-				address.substring(JMS_TOPIC_ADDRESS_PREFIX.length()));
-		this.consumer = this.ctx.createConsumer(destination);
-		this.ctx.setExceptionListener(this::onError);
+		super.connect();
+		final JMSContext ctx = getContext();
+		final Topic destination = ctx.createTopic(this.artemisConfig.getManagementNotificationAddress().toString());
+		this.consumer = ctx.createConsumer(destination);
 		this.consumer.setMessageListener(this);
-	}
-
-	/**
-	 * Handles errors from the broker. As we can't guarantee that we're left in an inconsistent state we'll re-attempt
-	 * connection.
-	 * 
-	 * @param e
-	 */
-	private void onError(JMSException e) {
-		this.log.error("Error occured processing destination events! Reconnecting...", e);
-		// clean up anyway
-		this.consumer.close();
-		this.ctx.close();
-		connect();
 	}
 
 	@Override
@@ -137,7 +119,7 @@ public class EventProducer implements MessageListener {
 			}
 
 			String destination = msg.getStringProperty(JMSNotificationType.MESSAGE.toString());
-			destination = (TOPIC.contains(notifType) ? "/topic/" : "/queue/") + destination;
+			destination = (TOPIC.contains(notifType) ? "topic/" : "queue/") + destination;
 			final Type type = CREATED.contains(notifType) ? Type.ADDED : Type.REMOVED;
 
 			this.log.info("Destination changed. [type={},destination={}]", type, destination);
@@ -172,12 +154,12 @@ public class EventProducer implements MessageListener {
 		}
 	}
 
-	@PreDestroy
+	@PreDestroy @Override
 	public void destroy() {
-		if (this.consumer == null) {
-			return;
+		if (this.consumer != null) {
+			this.consumer.close();
 		}
-		this.consumer.close();
+		super.destroy();
 	}
 
 	// --- Static Methods ---

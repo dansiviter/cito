@@ -15,7 +15,6 @@
  */
 package cito.server;
 
-import static cito.annotation.FromClient.FROM_CLIENT;
 import static cito.annotation.OnClose.ON_CLOSE;
 import static cito.annotation.OnError.ON_ERROR;
 import static cito.annotation.OnOpen.ON_OPEN;
@@ -88,7 +87,7 @@ public abstract class AbstractEndpoint extends Endpoint {
 			final Message event = new Message(sessionId, frame);
 			try (QuietClosable closable = ClientMessageProducer.set(event)) {
 				this.relay.fromClient(event); // due to no @Observe @Priority we need to ensure the relay gets this first
-				this.messageEvent.select(FROM_CLIENT).fire(event);
+				this.messageEvent.fire(event);
 			}
 		}
 	}

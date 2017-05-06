@@ -26,6 +26,7 @@ import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.jms.JMSException;
+import javax.security.auth.login.LoginException;
 import javax.websocket.Session;
 
 import org.slf4j.Logger;
@@ -56,9 +57,9 @@ public class Relay {
 	@Inject
 	private SecurityRegistry securityRegistry;
 	@Inject
-	private Provider<SecurityContext> securityCtx;
-	@Inject
 	private Instance<Connection> connectionInstance;
+	@Inject
+	private Provider<SecurityContext> securityCtx;
 	@Inject
 	private SystemConnection systemConn;
 
@@ -107,8 +108,8 @@ public class Relay {
 						throw new IllegalStateException("Connection already exists! [sessionId=" + sessionId + "]");
 					}
 					final Connection newConn = this.connectionInstance.get();
-					newConn.connect(evt);
 					this.connections.put(sessionId, newConn);
+					newConn.connect(evt);
 					return;
 				case DISCONNECT:
 					this.log.info("DISCONNECT recieved. Closing connection to broker. [sessionId={}]", sessionId);
@@ -125,7 +126,7 @@ public class Relay {
 				return;
 			}
 			conn.on(evt);
-		} catch (JMSException | RuntimeException e) {
+		} catch (JMSException | RuntimeException | LoginException e) {
 			this.errorHandler.onError(this, sessionId, evt.frame(), null, e);
 		}
 	}

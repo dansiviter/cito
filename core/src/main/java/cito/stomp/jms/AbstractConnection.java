@@ -97,7 +97,9 @@ public abstract class AbstractConnection implements cito.stomp.Connection {
 	public void close(CloseReason reason) throws IOException {
 		this.log.info("Closing connection. [sessionId={},code={},reason={}]", getSessionId(), reason.getCloseCode().getCode(), reason.getReasonPhrase());
 		try {
-			this.delegate.close(); // will close JMS Sessions/Producers/Consumers
+			if (this.delegate != null) {
+				this.delegate.close();
+			}
 		} catch (JMSException e) {
 			throw new IOException(e);
 		}

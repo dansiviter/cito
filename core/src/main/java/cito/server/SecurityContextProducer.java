@@ -15,6 +15,8 @@
  */
 package cito.server;
 
+import java.util.Map;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.websocket.Session;
@@ -36,6 +38,7 @@ public class SecurityContextProducer {
 	 */
 	@Produces @WebSocketScope
 	public static SecurityContext session(Session session) {
-		return (SecurityContext) session.getUserProperties().get(SecurityContext.class.getSimpleName());
+		final Map<String, Object> props = session.getUserProperties();
+		return (SecurityContext) props.get(SecurityContext.class.getSimpleName());
 	}
 }
