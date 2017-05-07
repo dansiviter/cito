@@ -26,17 +26,16 @@ import javax.enterprise.inject.Disposes;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.jms.JMSContext;
+import javax.jms.JMSRuntimeException;
 
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
 import org.apache.activemq.artemis.api.jms.JMSFactoryType;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
-import org.apache.activemq.artemis.core.server.ActiveMQServer;
-import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
-import org.apache.activemq.artemis.jms.server.JMSServerManager;
-import org.apache.activemq.artemis.jms.server.impl.JMSServerManagerImpl;
+import org.apache.activemq.artemis.jms.server.config.JMSConfiguration;
+import org.apache.activemq.artemis.jms.server.embedded.EmbeddedJMS;
 import org.slf4j.Logger;
 
 /**
@@ -53,7 +52,7 @@ public class BrokerProvider {
 
 	@Produces
 	@ApplicationScoped
-	private JMSServerManager jmsServerManager;
+	private EmbeddedJMS embeddedJMS;
 	@Produces
 	@ApplicationScoped
 	private ActiveMQConnectionFactory connectionFactory;
@@ -67,18 +66,18 @@ public class BrokerProvider {
 			this.log.info("Starting embedded broker.");
 			try {
 				this.artemisConfig = this.config.getConfiguration();
-				ActiveMQServer activeMQServer = ActiveMQServers.newActiveMQServer(this.artemisConfig, false);
-				this.jmsServerManager = new JMSServerManagerImpl(activeMQServer);
-				this.jmsServerManager.start();
+				final JMSConfiguration jmsConfig = this.config.getJmsConfig();
+				this.embeddedJMS = new EmbeddedJMS().setConfiguration(this.artemisConfig).setJmsConfiguration(jmsConfig);
+				this.embeddedJMS.start();
 			} catch (Exception e) {
-				throw new IllegalStateException("Unable to start embedded JMS", e);
+				throw new JMSRuntimeException("Unable to start embedded JMS", null, e);
 			}
 		}
 
 		try {
 			this.connectionFactory = createConnectionFactory(this.config);
 		} catch (Exception e) {
-			throw new IllegalStateException("Unable to connect to remote server", e);
+			throw new JMSRuntimeException("Unable to connect to remote server", null, e);
 		}
 	}
 
@@ -92,9 +91,9 @@ public class BrokerProvider {
 		if (this.config.startEmbeddedBroker()) {
 			this.log.info("Stopping embedded broker.");
 			try {
-				this.jmsServerManager.stop();
+				this.embeddedJMS.stop();
 			} catch (Exception e) {
-				throw new IllegalStateException("Unable to stop embedded JMS", e);
+				throw new JMSRuntimeException("Unable to stop embedded JMS", null, e);
 			}
 		}
 	}

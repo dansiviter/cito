@@ -29,6 +29,8 @@ import org.apache.activemq.artemis.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnectorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory;
+import org.apache.activemq.artemis.jms.server.config.JMSConfiguration;
+import org.apache.activemq.artemis.jms.server.config.impl.JMSConfigurationImpl;
 
 /**
  * 
@@ -41,8 +43,6 @@ public class BrokerConfig {
 	public static final String REMOTE_CONNECTOR = NettyConnectorFactory.class.getName();
 	public static final String IN_VM_ACCEPTOR = InVMAcceptorFactory.class.getName();
 	public static final String REMOTE_ACCEPTOR = NettyAcceptorFactory.class.getName();
-
-
 
 	/**
 	 * @return if present, sends a username for the connection
@@ -109,7 +109,7 @@ public class BrokerConfig {
 	}
 
 	/**
-	 * @return the configuration that will be used in the broker.
+	 * @return the configuration for usage in the broker.
 	 */
 	public Configuration getConfiguration() {
 		final Map<String, Object> params = Collections.singletonMap(SERVER_ID_PROP_NAME, "1");
@@ -120,5 +120,11 @@ public class BrokerConfig {
 		config.addAcceptorConfiguration(new TransportConfiguration(IN_VM_ACCEPTOR, params, "InVMAcceptor"));
 		return config;
 	}
-}
 
+	/**
+	 * @return the JMS configuration for usage in the broker.
+	 */
+	public JMSConfiguration getJmsConfig() {
+		return new JMSConfigurationImpl();
+	}
+}
