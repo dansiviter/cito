@@ -28,9 +28,9 @@ import org.slf4j.Logger;
  * @author Daniel Siviter
  * @since v1.0 [28 Apr 2017]
  */
-public class JmsContextHelper {
+public abstract class JmsContextHelper {
 	@Inject
-	private Logger log;
+	protected Logger log;
 	@Inject
 	private Instance<JMSContext> ctxProvider;
 

@@ -17,6 +17,7 @@ package cito.broker.artemis;
 
 import static cito.Util.getAnnotations;
 import static org.apache.activemq.artemis.api.core.management.ManagementHelper.HDR_NOTIFICATION_TYPE;
+import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.MESSAGE;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_CREATED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.QUEUE_DESTROYED;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.TOPIC_CREATED;
@@ -31,13 +32,10 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.ObserverMethod;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
@@ -49,7 +47,6 @@ import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
 import org.apache.activemq.artemis.api.core.management.NotificationType;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.jms.server.management.JMSNotificationType;
-import org.slf4j.Logger;
 
 import cito.Glob;
 import cito.PathParamProducer;
@@ -75,7 +72,7 @@ import cito.server.Extension;
  */
 @ApplicationScoped
 public class EventProducer extends JmsContextHelper implements MessageListener {
-	private static final Collection<JMSNotificationType> ALL = EnumSet.of(
+	static final Collection<JMSNotificationType> ALL = EnumSet.of(
 			TOPIC_CREATED, TOPIC_DESTROYED, QUEUE_CREATED, QUEUE_DESTROYED);
 	private static final Collection<JMSNotificationType> CREATED = EnumSet.of(TOPIC_CREATED, QUEUE_CREATED);
 	private static final Collection<JMSNotificationType> TOPIC = EnumSet.of(TOPIC_CREATED, TOPIC_DESTROYED);
@@ -84,24 +81,21 @@ public class EventProducer extends JmsContextHelper implements MessageListener {
 	private BeanManager manager;
 	@Inject
 	private Configuration artemisConfig;
-	@Inject
-	private Logger log;
-	@Inject
-	private Event<cito.event.DestinationChanged> destinationEvent;
 
 	private JMSConsumer consumer;
 
 	/**
 	 * @param init used initialise on startup of application.
 	 */
-	public void startup(@Observes @Initialized(ApplicationScoped.class) Object init) { }
+	public void startup(@Observes @Initialized(ApplicationScoped.class) Object init) {
+		connect();
+	}
 
 	/**
 	 * Connect to the broker to source events.
 	 */
-	@PostConstruct @Override
+	@PostConstruct
 	public void connect() {
-		this.log.info("Connecting to broker for sourcing destination events.");
 		super.connect();
 		final JMSContext ctx = getContext();
 		final Topic destination = ctx.createTopic(this.artemisConfig.getManagementNotificationAddress().toString());
@@ -118,14 +112,14 @@ public class EventProducer extends JmsContextHelper implements MessageListener {
 				return;
 			}
 
-			String destination = msg.getStringProperty(JMSNotificationType.MESSAGE.toString());
+			String destination = msg.getStringProperty(MESSAGE.toString());
 			destination = (TOPIC.contains(notifType) ? "topic/" : "queue/") + destination;
 			final Type type = CREATED.contains(notifType) ? Type.ADDED : Type.REMOVED;
 
 			this.log.info("Destination changed. [type={},destination={}]", type, destination);
 			final cito.event.DestinationChanged evt = new cito.event.DestinationChanged(type, destination);
 			try (QuietClosable c = DestinationChangedHolder.set(evt)) {
-				this.destinationEvent.fire(evt);
+				on(evt);
 			}
 		} catch (JMSException | RuntimeException e) {
 			this.log.error("Unable to process notification!", e);
@@ -133,20 +127,19 @@ public class EventProducer extends JmsContextHelper implements MessageListener {
 	}
 
 	/**
-	 * 
-	 * @param msg
+	 * @param evt
 	 */
-	public void message(@Observes DestinationChanged msg) {
+	private void on(@Observes DestinationChanged evt) {
 		final Extension extension = this.manager.getExtension(Extension.class);
 
-		final String destination = msg.getDestination();
-		switch (msg.getType()) {
+		final String destination = evt.getDestination();
+		switch (evt.getType()) {
 		case ADDED: {
-			notify(OnAdded.class, extension.getDestinationObservers(OnAdded.class), destination, msg);
+			notify(OnAdded.class, extension.getDestinationObservers(OnAdded.class), destination, evt);
 			break;
 		}
 		case REMOVED: {
-			notify(OnRemoved.class, extension.getDestinationObservers(OnRemoved.class), destination, msg);
+			notify(OnRemoved.class, extension.getDestinationObservers(OnRemoved.class), destination, evt);
 			break;
 		}
 		default:

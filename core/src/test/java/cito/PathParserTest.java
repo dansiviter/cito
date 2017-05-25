@@ -88,8 +88,17 @@ public class PathParserTest {
 	}
 
 	@Test
+	public void parse_static() {
+		final Result result = PathParser.parse("/queue/{param1}", "/queue/first");
+		assertTrue(result.isSuccess());
+		assertEquals("first", result.get("param1"));
+	}
+
+	@Test
 	public void equality() {
 		final PathParser parser0 = new PathParser("/{param}");
+		assertTrue(parser0.equals(parser0));
+
 		final PathParser parser1 = new PathParser("/{param}");
 		assertTrue(parser0.equals(parser1));
 		assertEquals(parser0.hashCode(), parser1.hashCode());
@@ -99,5 +108,11 @@ public class PathParserTest {
 		final PathParser parser2 = new PathParser("/{anotherParam}");
 		assertFalse(parser0.equals(parser2));
 		assertNotEquals(parser0.hashCode(), parser2.hashCode());
+	}
+
+	@Test
+	public void toString_() {
+		final PathParser parser = new PathParser("path/*");
+		assertEquals("cito.PathParser@" +  Integer.toHexString(parser.hashCode()) + "[path/*]", parser.toString());
 	}
 }

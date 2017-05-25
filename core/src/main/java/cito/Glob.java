@@ -100,7 +100,7 @@ public class Glob {
 			switch (c) {
 			case BACKSLASH:
 				if (++i >= len) {
-					new PatternSyntaxException("Missing escaped character", glob, i);
+					throw new PatternSyntaxException("Missing escaped character", glob, i);
 				}
 				regex.append(c).append(glob.charAt(i));
 				continue;
@@ -127,7 +127,10 @@ public class Glob {
 				hasWildcard = true;
 				continue;
 			case ',':
-				regex.append(curlyOpen > 0 ? '|' : c);
+				if (curlyOpen > 0) {
+					throw new PatternSyntaxException("Invalid comma", glob, i);
+				}
+				regex.append(c);
 				continue;
 			case '}':
 				if (curlyOpen > 0) {
@@ -139,7 +142,7 @@ public class Glob {
 				break;
 			case '[':
 				if (setOpen > 0) {
-					new PatternSyntaxException("Unclosed character class", glob, i);
+					throw new PatternSyntaxException("Unclosed character class", glob, i);
 				}
 				setOpen++;
 				hasWildcard = true;
@@ -164,10 +167,10 @@ public class Glob {
 		}
 
 		if (setOpen > 0) {
-			new PatternSyntaxException("Unclosed character class", glob, len);
+			throw new PatternSyntaxException("Unclosed character class", glob, len);
 		}
 		if (curlyOpen > 0) {
-			new PatternSyntaxException("Unclosed group", glob, len);
+			throw new PatternSyntaxException("Unclosed group", glob, len);
 		}
 		this.compiled = Pattern.compile(regex.toString());
 	}

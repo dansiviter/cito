@@ -16,14 +16,12 @@
  */
 package cito;
 
-
 import static org.apache.deltaspike.core.api.provider.BeanProvider.getContextualReference;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.enterprise.context.Dependent;
@@ -48,11 +46,13 @@ import cito.io.ByteBufferInputStream;
 import cito.stomp.Frame;
 
 /**
+ * An extension to process {@link Body} annotations for injection of deserialised values.
+ * 
  * @author Daniel Siviter
  * @since v1.0 [3 May 2017]
  */
 public class BodyProducerExtension implements Extension {
-	List<Bean<?>> found = new ArrayList<>();
+	private final List<Bean<?>> found = new ArrayList<>();
 
 	/**
 	 * 
@@ -72,34 +72,36 @@ public class BodyProducerExtension implements Extension {
 	 */
 	public void addBeans(@Observes final AfterBeanDiscovery abd, BeanManager beanManager) {
 		this.found.forEach(abd::addBean);
+		this.found.clear();
 	}
 
 	/**
 	 * 
 	 * @param ip
-	 * @param bm
+	 * @param beanManager
 	 * @return
 	 */
-	private <T> Bean<T> createBeanAdapter(InjectionPoint ip, BeanManager bm) {
-		final Class<T> rawType = ReflectionUtils.getRawType(ip.getType());
-		final ContextualLifecycle<T> lifecycleAdapter = new BodyLifecycle(ip.getType(), bm);
-		final BeanBuilder<T> beanBuilder = new BeanBuilder<T>(bm)
+	private <T> Bean<T> createBeanAdapter(InjectionPoint ip, BeanManager beanManager) {
+		final Type type = ip.getType();
+		final Class<T> rawType = ReflectionUtils.getRawType(type);
+		final ContextualLifecycle<T> lifecycleAdapter = new BodyLifecycle<T>(type, beanManager);
+		final BeanBuilder<T> beanBuilder = new BeanBuilder<T>(beanManager)
 				.readFromType(new AnnotatedTypeBuilder<T>().readFromType(rawType).create())
-				.beanClass(BodyProducerExtension.class) // see https://issues.jboss.org/browse/WELD-2165
+				.beanClass(Body.class) // see https://issues.jboss.org/browse/WELD-2165
 				.name(ip.getMember().getName())
 				.qualifiers(ip.getQualifiers())
 				.beanLifecycle(lifecycleAdapter)
-//				.injectionPoints(Collections.singleton(ip))
-				.scope(Dependent.class) //the instance (or proxy) returned by spring shouldn't bootContainer proxied
+				.scope(Dependent.class)
 				.passivationCapable(false)
 				.alternative(false)
 				.nullable(true)
-				.id("BodyBean#" + ip.getType().toString());
-
-		beanBuilder.addType(ip.getType()); //java.lang.Object needs to be present (as type) in any case
-
+				.id("BodyBean#" + type.toString())
+				.addType(type); //java.lang.Object needs to be present (as type) in any case
 		return beanBuilder.create();
 	}
+
+
+	// --- Inner Classes ---
 
 	/**
 	 * 

@@ -24,6 +24,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Member;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.InjectionPoint;
@@ -57,6 +59,23 @@ public class LogProducerTest {
 		verify(ip).getBean();
 		verify(bean).getBeanClass();
 		verifyNoMoreInteractions(ip, bean);
+	}
+
+	@Test
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void logger_injectionPoint_noBean() {
+		final InjectionPoint ip = mock(InjectionPoint.class);
+		final Member member = mock(Member.class);
+		when(ip.getMember()).thenReturn(member);
+		when(member.getDeclaringClass()).thenReturn((Class) LogProducerTest.class);
+
+		final Logger log = LogProducer.logger(ip);
+		assertEquals("NOP", log.getName());
+
+		verify(ip).getBean();
+		verify(ip).getMember();
+		verify(member).getDeclaringClass();
+		verifyNoMoreInteractions(ip, member);
 	}
 
 	@Test

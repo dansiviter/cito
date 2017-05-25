@@ -20,8 +20,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 
 /**
@@ -31,6 +34,9 @@ import org.junit.Test;
  * @since v1.0 [22 Sep 2016]
  */
 public class GlobTest {
+	@Rule
+	public ExpectedException exception = ExpectedException.none();
+
 	@Test
 	public void go() {
 		assertFalse(Glob.matches("/foo.bar/??/blagh", null));
@@ -64,6 +70,8 @@ public class GlobTest {
 		assertTrue(Glob.matches("/foo.bar/??/blagh", "/foo.bar/bl/blagh"));
 		assertFalse(Glob.matches("/foo.bar/??/blagh", "/foo.bar/b/blagh"));
 		assertTrue(Glob.matches("/foo.bar/??/blagh", "/foo.bar/bl/blagh"));
+
+		assertTrue(Glob.matches("/foo.bar,blagh", "/foo.bar,blagh"));
 	}
 
 	@Test
@@ -83,6 +91,30 @@ public class GlobTest {
 	@Test
 	public void capture_hypen() {
 		assertTrue(Glob.matches("/foo.bar/{hello}/blagh", "/foo.bar/hello-world/blagh"));
+	}
+
+	@Test
+	public void invalidComma() {
+		this.exception.expect(PatternSyntaxException.class);
+		this.exception.expectMessage("Invalid comma");
+
+		Glob.matches("/foo.{bar,blagh}", "/foo.bar");
+	}
+
+	@Test
+	public void uncloseGroup() {
+		this.exception.expect(PatternSyntaxException.class);
+		this.exception.expectMessage("Unclosed group");
+
+		Glob.matches("/foo.{bar", "/foo.bar");
+	}
+
+	@Test
+	public void uncloseOpen() {
+		this.exception.expect(PatternSyntaxException.class);
+		this.exception.expectMessage("Unclosed character class");
+
+		Glob.matches("/foo.[bar", "/foo.bar");
 	}
 
 	@Test

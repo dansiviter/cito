@@ -15,9 +15,9 @@
  */
 package cito.annotation;
 
-import java.util.Objects;
-
-import javax.enterprise.util.AnnotationLiteral;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
+import static org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvider.of;
 
 /**
  * 
@@ -25,12 +25,16 @@ import javax.enterprise.util.AnnotationLiteral;
  * @since v1.0 [19 Jul 2016]
  */
 public enum Qualifiers { ;
+	private static final OnConnected ON_CONNECTED_LITERAL = of(OnConnected.class);
+	private static final OnDisconnect ON_DISCONNECT_LITERAL = of(OnDisconnect.class);
+
+
 	/**
 	 * 
 	 * @return
 	 */
 	public static OnConnected onConnected() {
-		return new OnConnectedLiteral();
+		return ON_CONNECTED_LITERAL;
 	}
 
 	/**
@@ -38,7 +42,7 @@ public enum Qualifiers { ;
 	 * @return
 	 */
 	public static OnDisconnect onDisconnect() {
-		return new OnDisconnectLiteral();
+		return ON_DISCONNECT_LITERAL;
 	}
 
 	/**
@@ -47,7 +51,7 @@ public enum Qualifiers { ;
 	 * @return
 	 */
 	public static OnSubscribe onSubscribe(String value) {
-		return new OnSubscribeLiteral(value == null ? "" : value);
+		return of(OnSubscribe.class, value == null ? emptyMap() : singletonMap("value", value));
 	}
 
 	/**
@@ -56,7 +60,7 @@ public enum Qualifiers { ;
 	 * @return
 	 */
 	public static OnUnsubscribe onUnsubscribe(String value) {
-		return new OnUnsubscribeLiteral(value == null ? "" : value);
+		return of(OnUnsubscribe.class, value == null ? emptyMap() : singletonMap("value", value));
 	}
 
 	/**
@@ -65,133 +69,7 @@ public enum Qualifiers { ;
 	 * @return
 	 */
 	public static OnSend onSend(String value) {
-		return new OnSendLiteral(value == null ? "" : value);
-	}
-
-
-	// --- Inner Classes ---
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [12 Jul 2016]
-	 */
-	private static class OnConnectedLiteral extends AnnotationLiteral<OnConnected> implements OnConnected {
-		private static final long serialVersionUID = 7181578239085215334L;
-	}
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [12 Jul 2016]
-	 */
-	private static class OnDisconnectLiteral extends AnnotationLiteral<OnDisconnect> implements OnDisconnect {
-		private static final long serialVersionUID = 5499212867196812308L;
-	}
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [12 Jul 2016]
-	 */
-	private static class OnSubscribeLiteral extends AnnotationLiteral<OnSubscribe> implements OnSubscribe {
-		private static final long serialVersionUID = 6498352376982414158L;
-
-		private final String value;
-
-		public OnSubscribeLiteral(String value) {
-			this.value = value;
-		}
-
-		@Override
-		public String value() {
-			return value;
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hashCode(this.value);
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (!super.equals(obj) || getClass() != obj.getClass())
-				return false;
-			OnSubscribeLiteral other = (OnSubscribeLiteral) obj;
-			return Objects.equals(value, other.value);
-		}
-	}
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [12 Jul 2016]
-	 */
-	private static class OnUnsubscribeLiteral extends AnnotationLiteral<OnUnsubscribe> implements OnUnsubscribe {
-		private static final long serialVersionUID = -1338083530350484474L;
-
-		private final String value;
-
-		public OnUnsubscribeLiteral(String value) {
-			this.value = value;
-		}
-
-		@Override
-		public String value() {
-			return value;
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hashCode(this.value);
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (!super.equals(obj) || getClass() != obj.getClass())
-				return false;
-			OnUnsubscribeLiteral other = (OnUnsubscribeLiteral) obj;
-			return Objects.equals(value, other.value);
-		}
-	}
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [12 Jul 2016]
-	 */
-	private static class OnSendLiteral extends AnnotationLiteral<OnSend> implements OnSend {
-		private static final long serialVersionUID = 6498352376982414158L;
-
-		private final String value;
-
-		public OnSendLiteral(String value) {
-			this.value = value;
-		}
-
-		@Override
-		public String value() {
-			return value;
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hashCode(this.value);
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (!super.equals(obj) || getClass() != obj.getClass())
-				return false;
-			OnSendLiteral other = (OnSendLiteral) obj;
-			return Objects.equals(value, other.value);
-		}
+		return of(OnSend.class, value == null ? emptyMap() : singletonMap("value", value));
 	}
 }
 
