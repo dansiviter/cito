@@ -17,6 +17,8 @@ package cito.server;
 
 import java.security.Principal;
 
+import javax.annotation.Nonnull;
+
 import cito.annotation.WebSocketScope;
 
 /**
@@ -32,7 +34,7 @@ public interface SecurityContext {
 	 * has not been authenticated, the method returns null.
 	 *
 	 * @return a {@code Principal} containing the name of the user making this request; {@code null} if the user has
-	 * not been authenticated
+	 * not been authenticated.
 	 * @throws java.lang.IllegalStateException if called outside the scope of a websocket session.
 	 */
 	Principal getUserPrincipal();
@@ -41,10 +43,10 @@ public interface SecurityContext {
 	 * Returns a boolean indicating whether the authenticated user is included in the specified logical "role". If the
 	 * user has not been authenticated, the method returns {@code false}.
 	 *
-	 * @param role a {@code String} specifying the name of the role
+	 * @param role a {@code String} specifying the name of the role.
 	 * @return a {@code boolean} indicating whether the user making the request belongs to a given role; {@code false}
-	 * if the user has not been authenticated
+	 * if the user has not been authenticated.
 	 * @throws java.lang.IllegalStateException if called outside the scope of a websocket session.
 	 */
-	boolean isUserInRole(String role);
+	boolean isUserInRole(@Nonnull String role);
 }
