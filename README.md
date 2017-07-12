@@ -11,9 +11,9 @@ To achieve that it leverages JEE7 technology stack to ensure ease of integration
 For usage information see the individual projects:
 
 * [Core](/core) - The crux of the technology,
-* [Artemis](/artemis) - Connects to a Apache ActiveMQ Artemis broker implementation either embedded or remotely,
+* [Artemis](/artemis) - Connects to a Apache ActiveMQ Artemis broker implementation for either embedded or remote deployment,
 * [WebSocket](/websocket) - A basic WebSocket endpoint for those who don't need graceful fallback and browser compatibility,
-* [SockJS](/sockjs) - A SockJS based endpoint to provide a high level of compatibility with legacy browsers and assist with piping data through corporate firewalls. **In development!**
+* [SockJS](/sockjs) - A SockJS based endpoint to provide a high level of compatibility with legacy browsers and assist with piping data through corporate firewalls.
 * [Bill of Materials](/bom) - A importable POM to assist with aligning version of modules and upgrades.
 
 
