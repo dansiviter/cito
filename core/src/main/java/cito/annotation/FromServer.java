@@ -22,7 +22,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
 
 /**
@@ -34,18 +33,4 @@ import javax.inject.Qualifier;
 @Qualifier
 @Target({ PARAMETER, FIELD })
 @Retention(RUNTIME)
-public @interface FromServer { 
-	public static final FromServer FROM_SERVER = new FromServerLiteral();
-
-
-	// --- Inner Classes ---
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [19 Jul 2016]
-	 */
-	public static class FromServerLiteral extends AnnotationLiteral<FromServer> implements FromServer {
-		private static final long serialVersionUID = 1133434815775889010L;
-	}
-}
+public @interface FromServer { }

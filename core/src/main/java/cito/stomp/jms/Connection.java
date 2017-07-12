@@ -15,15 +15,14 @@
  */
 package cito.stomp.jms;
 
+import static cito.Strings.isBlank;
 import static cito.Util.isNullOrEmpty;
 import static cito.stomp.Headers.ACCEPT_VERSION;
 
 import java.io.IOException;
-import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -31,21 +30,21 @@ import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Event;
+import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.jms.JMSException;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import javax.websocket.CloseReason;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.deltaspike.core.api.provider.BeanProvider;
+
 import cito.annotation.FromBroker;
 import cito.event.Message;
+import cito.server.JaasSecurityContext;
 import cito.server.SecurityContext;
+import cito.server.SecurityContextProducer;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Frame.HeartBeat;
@@ -71,7 +70,9 @@ public class Connection extends AbstractConnection {
 	@Inject @FromBroker
 	private Event<Message> brokerMessageEvent;
 	@Inject
-	private Provider<SecurityContext> securityCtx;
+	private Provider<javax.websocket.Session> wsSession;
+	@Inject
+	private BeanManager beanManager;
 
 	private HeartBeatMonitor heartBeatMonitor;
 	private String sessionId;
@@ -174,16 +175,16 @@ public class Connection extends AbstractConnection {
 			connected.heartbeat(HEARTBEAT_READ_DEFAULT, HEARTBEAT_WRITE_DEFAULT);
 		}
 
-		final String login = msg.frame().getFirstHeader(Headers.LOGIN);
+		String login = msg.frame().getFirstHeader(Headers.LOGIN);
 		final String passcode = msg.frame().getFirstHeader(Headers.PASSCODE);
 
-		// perform login if Principal doesn't already exist
-		if (login != null && this.securityCtx.get().getUserPrincipal() == null) {
-			final LoginContext loginContext = new LoginContext("AppRealm", new CallbackHandler(login, passcode));
-			loginContext.login();
-
-			final Set<Principal> principals = loginContext.getSubject().getPrincipals();
-			System.out.println(principals);
+		SecurityContext securityCtx = SecurityContextProducer.securityCtx(this.wsSession.get());
+		if (isBlank(login) && securityCtx != null && securityCtx.getUserPrincipal() != null) {
+			login = securityCtx.getUserPrincipal().getName();
+		} else if (!isBlank(login) && securityCtx == null) { // perform login if security context doesn't already exist
+			final JaasSecurityContext jaasSecurityContext = BeanProvider.getDependent(this.beanManager, JaasSecurityContext.class).get();
+			jaasSecurityContext.login(login, passcode.toCharArray());
+			SecurityContextProducer.set(this.wsSession.get(), jaasSecurityContext);
 		}
 
 		createDelegate(login, passcode);
@@ -339,41 +340,5 @@ public class Connection extends AbstractConnection {
 	public void close(CloseReason reason) throws IOException {
 		super.close(reason);
 		this.heartBeatMonitor.close();
-	}
-
-
-	// --- Inner Classes ---
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [3 May 2017]
-	 */
-	private class CallbackHandler implements javax.security.auth.callback.CallbackHandler {
-		private final String login;
-		private final char[] passcode;
-
-		/**
-		 * 
-		 * @param login
-		 * @param passcode
-		 */
-		public CallbackHandler(String login, String passcode) {
-			this.login = login;
-			this.passcode = passcode != null ? passcode.toCharArray() : null;
-		}
-
-		@Override
-		public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-			for (Callback callback : callbacks) {
-				if (callback instanceof NameCallback) {
-					((NameCallback) callback).setName(this.login);
-				} else if (callback instanceof PasswordCallback) {
-					((PasswordCallback) callback).setPassword(this.passcode);
-				} else {
-					throw new UnsupportedCallbackException(callback, "Unrecognized Callback");
-				}
-			}
-		}
 	}
 }

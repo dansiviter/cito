@@ -21,7 +21,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
 
 /**
@@ -32,18 +31,4 @@ import javax.inject.Qualifier;
 @Qualifier
 @Target(PARAMETER)
 @Retention(RUNTIME)
-public @interface OnError { 
-	public static final OnError ON_ERROR = new OnErrorLiteral();
-
-
-	// --- Inner Classes ---
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [19 Jul 2016]
-	 */
-	public static class OnErrorLiteral extends AnnotationLiteral<OnError> implements OnError {
-		private static final long serialVersionUID = -2764506588497003639L;
-	}
-}
+public @interface OnError { }

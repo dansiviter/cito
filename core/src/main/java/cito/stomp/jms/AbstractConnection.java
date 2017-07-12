@@ -26,6 +26,7 @@ import javax.jms.JMSException;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 
+import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.slf4j.Logger;
 
 import cito.event.Message;
@@ -46,6 +47,11 @@ public abstract class AbstractConnection implements cito.stomp.Connection {
 	protected ConnectionFactory connectionFactory;
 	@Inject
 	protected Factory factory;
+
+	@ConfigProperty(name = "cito.guest.login", defaultValue = "guest")
+	private String guestLogin;
+	@ConfigProperty(name = "cito.guest.password", defaultValue = "guest")
+	private String guestPasscode;
 
 	private javax.jms.Connection delegate;
 
@@ -68,9 +74,8 @@ public abstract class AbstractConnection implements cito.stomp.Connection {
 		if (login != null) {
 			this.delegate = this.connectionFactory.createConnection(login, passcode);
 		} else {
-			this.delegate = this.connectionFactory.createConnection();
+			this.delegate = this.connectionFactory.createConnection(this.guestLogin, this.guestPasscode);
 		}
-
 		final String sessionId = getSessionId();
 		this.log.info("Starting JMS connection... [sessionId={}]", sessionId);
 		this.delegate.setClientID(sessionId);

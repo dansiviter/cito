@@ -61,8 +61,8 @@ public class SerialiserTest {
 		final MediaType mediaType = MediaType.APPLICATION_JSON_TYPE;
 		@SuppressWarnings("unchecked")
 		final BodyReader<SerialiserTest> reader = mock(BodyReader.class);
-		@SuppressWarnings("rawtypes")
-		final Iterator iterator = asList(reader).iterator();
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		final Iterator<BodyReader<?>> iterator = (Iterator) asList(reader).iterator();
 		when(readers.iterator()).thenReturn(iterator);
 		when(reader.isReadable(SerialiserTest.class, mediaType)).thenReturn(true);
 		when(reader.readFrom(SerialiserTest.class, mediaType, is)).thenReturn(this);
@@ -82,8 +82,8 @@ public class SerialiserTest {
 		final MediaType mediaType = MediaType.APPLICATION_JSON_TYPE;
 		@SuppressWarnings("unchecked")
 		final BodyWriter<SerialiserTest> writer = mock(BodyWriter.class);
-		@SuppressWarnings("rawtypes")
-		final Iterator iterator = asList(writer).iterator();
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		final Iterator<BodyWriter<?>> iterator = (Iterator) asList(writer).iterator();
 		when(writers.iterator()).thenReturn(iterator);
 		when(writer.isWriteable(SerialiserTest.class, mediaType)).thenReturn(true);
 

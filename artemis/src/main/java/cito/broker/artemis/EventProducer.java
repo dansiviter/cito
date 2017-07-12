@@ -129,7 +129,7 @@ public class EventProducer extends JmsContextHelper implements MessageListener {
 	/**
 	 * @param evt
 	 */
-	private void on(@Observes DestinationChanged evt) {
+	private void on(DestinationChanged evt) {
 		final Extension extension = this.manager.getExtension(Extension.class);
 
 		final String destination = evt.getDestination();

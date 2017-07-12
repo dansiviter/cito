@@ -9,7 +9,7 @@
 	<artifactId>artemis</artifactId>
 
 	<properties>
-		<apache-artemis.version>2.0.0</apache-artemis.version>
+		<apache-artemis.version>2.1.0</apache-artemis.version>
 	</properties>
 
 	<dependencies>

@@ -17,7 +17,10 @@ package cito.stomp.jms;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.jms.JMSException;
+
+import org.apache.deltaspike.core.api.config.ConfigProperty;
 
 import cito.event.Message;
 import cito.stomp.Frame;
@@ -29,7 +32,11 @@ import cito.stomp.Frame;
  */
 @ApplicationScoped
 public class SystemConnection extends AbstractConnection {
-	static final String SESSION_ID = "$Y$TEM";
+	static final String SESSION_ID = "$Y$T3M";
+
+	@Inject
+	@ConfigProperty(name = "cito.system.password", defaultValue = "Pa$$w0rd")
+	private String passcode;
 
 	private Session session;
 
@@ -44,7 +51,7 @@ public class SystemConnection extends AbstractConnection {
 	@PostConstruct
 	public void init() {
 		try {
-			createDelegate(null, null);
+			createDelegate(SESSION_ID, this.passcode);
 		} catch (JMSException e) {
 			throw new IllegalStateException("Unable to create system connection!", e);
 		}

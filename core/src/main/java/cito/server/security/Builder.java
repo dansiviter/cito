@@ -16,7 +16,9 @@
 package cito.server.security;
 
 import static cito.Util.requireNonEmpty;
+import static java.util.Collections.singletonMap;
 import static java.util.Collections.unmodifiableList;
+import static org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvider.of;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -32,9 +34,6 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 
 import cito.Glob;
-import cito.annotation.DenyAllLiteral;
-import cito.annotation.PermitAllLiteral;
-import cito.annotation.RolesAllowedLiteral;
 import cito.server.SecurityContext;
 import cito.stomp.Command;
 import cito.stomp.Frame;
@@ -46,6 +45,9 @@ import cito.stomp.Headers;
  * @since v1.0 [19 Oct 2016]
  */
 public class Builder {
+	static final PermitAll PERMIT_ALL = of(PermitAll.class);
+	static final DenyAll DENY_ALL = of(DenyAll.class);
+
 	private final SecurityRegistry registry;
 	private final List<FrameMatcher> frameMatchers = new ArrayList<>();
 	private final List<SecurityMatcher> securityMatchers = new ArrayList<>();
@@ -106,7 +108,7 @@ public class Builder {
 	 * @return
 	 */
 	public Builder roles(String... roles) {
-		return matches(new SecurityAnnotationMatcher(new RolesAllowedLiteral(roles)));
+		return matches(new SecurityAnnotationMatcher(of(RolesAllowed.class, singletonMap("value", roles))));
 	}
 
 	/**
@@ -114,7 +116,7 @@ public class Builder {
 	 * @return
 	 */
 	public Builder permitAll() {
-		return matches(new SecurityAnnotationMatcher(new PermitAllLiteral()));
+		return matches(new SecurityAnnotationMatcher(PERMIT_ALL));
 	}
 
 	/**
@@ -122,7 +124,7 @@ public class Builder {
 	 * @return
 	 */
 	public Builder denyAll() {
-		return matches(new SecurityAnnotationMatcher(new DenyAllLiteral()));
+		return matches(new SecurityAnnotationMatcher(DENY_ALL));
 	}
 
 	/**
@@ -141,6 +143,18 @@ public class Builder {
 		final Limitation limitation = new Limitation(this.frameMatchers, this.securityMatchers);
 		this.registry.register(limitation);
 		return limitation;
+	}
+
+
+	// --- Static Methods ---
+
+	/**
+	 * 
+	 * @param roles
+	 * @return
+	 */
+	public static RolesAllowed createRolesAllowed(String... roles) {
+		return of(RolesAllowed.class, singletonMap("value", roles));
 	}
 
 

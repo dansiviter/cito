@@ -18,47 +18,58 @@ package cito.sockjs;
 
 import java.io.IOException;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
+import javax.websocket.server.ServerEndpointConfig;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Daniel Siviter
  * @since v1.0 [24 Feb 2017]
  */
 public class WebSocketEndpoint extends Endpoint {
-	private ServletContext servletCtx;
+	private static final Logger LOG = LoggerFactory.getLogger(WebSocketEndpoint.class);
+
 	private Servlet servlet;
 	private Endpoint delegate;
+	private WebSocketSession session;
 
 	@Override
 	public void onOpen(Session session, EndpointConfig endpointConfig) {
-		this.servletCtx = (ServletContext) endpointConfig.getUserProperties().get(ServletContext.class.getSimpleName());
-		this.servlet = (Servlet) this.servletCtx.getAttribute(Servlet.class.getName());
+		LOG.info("Opening session. [id={}]", session.getId());
+		final WebSocketConfigurer configurer = (WebSocketConfigurer) ((ServerEndpointConfig) endpointConfig).getConfigurator();
+		this.servlet = configurer.getServlet();
+
 		try {
 			this.delegate = this.servlet.getConfig().createEndpoint();
+			LOG.info("Created delegate endpoint. [id={},delegate={}]", session.getId(), this.delegate);
 		} catch (ServletException e) {
-			this.servletCtx.log("Unable to create delegate!", e);
+			LOG.error("Unable to create delegate!", e);
 			try {
 				session.close();
 			} catch (IOException e1) {
-				this.servletCtx.log("Unable to close session!", e);
+				LOG.warn("Unable to close session!", e);
 			}
 			return;
 		}
-		this.delegate.onOpen(session, endpointConfig);
+		this.session = new WebSocketSession(session);
+		this.delegate.onOpen(this.session.sendOpen(), endpointConfig);
 	}
 
 	@Override
 	public void onError(Session session, Throwable thr) {
-		this.delegate.onError(session, thr);
+		LOG.error("Error. [id={}]", session.getId(), thr);
+		this.delegate.onError(this.session, thr);
 	}
 
 	@Override
 	public void onClose(Session session, CloseReason closeReason) {
-		this.delegate.onClose(session, closeReason);
+		LOG.error("Closing. [id={},reason={}]", session.getId(), closeReason);
+		this.delegate.onClose(this.session, closeReason);
 	}
 }

@@ -20,7 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import javax.servlet.Servlet;
+//import javax.servlet.Servlet;
 import javax.servlet.ServletContainerInitializer;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -85,18 +85,17 @@ public class Initialiser implements ServletContainerInitializer {
 	private static void initialise(Config config, ServletContext servletCtx) throws ServletException {
 		final String name = config.name();
 		final String path = config.path();
-		LOG.info("Initialising SockJS. [name={},path={}]", name, path);
+		LOG.info("Initialising SockJS. [name={},path={},servletContext={}]", name, path, servletCtx);
 
-		final cito.sockjs.Servlet servlet = new cito.sockjs.Servlet(config);
-		servletCtx.setAttribute(Servlet.class.getName(), servlet);
+		final Servlet servlet = new Servlet(config);
 		addServlet(servletCtx, "sockjs-" + name, servlet, String.format("/%s/*", path));
 
 		final ServerContainer serverContainer = (ServerContainer) servletCtx.getAttribute(ServerContainer.class.getName());
 		try {
 			serverContainer.addEndpoint(createConfig(
-					config, config.endpointClass(),		String.format("/%s/websocket", path)).build());
+					servlet, config, config.endpointClass(),		String.format("/%s/websocket", path)).build());
 			serverContainer.addEndpoint(createConfig(
-					config, WebSocketEndpoint.class, 	String.format("/%s/{server}/{session}/websocket", path)).build());
+					servlet, config, WebSocketEndpoint.class, 	String.format("/%s/{server}/{session}/websocket", path)).build());
 			servlet.setWebSocketSupported(true);
 		} catch (DeploymentException e) {
 			LOG.warn("Unable to deploy WebSockets!", e);
@@ -137,12 +136,12 @@ public class Initialiser implements ServletContainerInitializer {
 	 * @param path
 	 * @return
 	 */
-	public static ServerEndpointConfig.Builder createConfig(Config customiser, Class<? extends Endpoint> endpointClass, String path) {
+	public static ServerEndpointConfig.Builder createConfig(Servlet servlet, Config customiser, Class<? extends Endpoint> endpointClass, String path) {
 		return ServerEndpointConfig.Builder
 				.create(endpointClass, path)
 				.decoders(customiser.decoders())
 				.encoders(customiser.encoders())
-				.configurator(new WebSocketConfigurer(customiser.serverEndpointConfigurator()))
+				.configurator(new WebSocketConfigurer(servlet, customiser.serverEndpointConfigurator()))
 				.extensions(customiser.extensions())
 				.subprotocols(customiser.subprotocols());
 	}

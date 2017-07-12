@@ -16,24 +16,22 @@
 package cito.sockjs;
 
 import java.io.IOException;
+import java.net.URI;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedTransferQueue;
-import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
-import javax.websocket.MessageHandler;
-import javax.websocket.MessageHandler.Partial;
-import javax.websocket.MessageHandler.Whole;
 import javax.websocket.RemoteEndpoint.Basic;
 
 import org.slf4j.Logger;
@@ -44,13 +42,11 @@ import org.slf4j.LoggerFactory;
  * @author Daniel Siviter
  * @since v1.0 [3 Jan 2017]
  */
-public class ServletSession extends SessionAdapter {
+public class ServletSession extends AbstractSession {
 	protected static final String FRAME_DELIMITER = "\n";
 
-	private final Set<MessageHandlerWrapper> messageHandlers = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	private final LinkedTransferQueue<String> frameQueue = new LinkedTransferQueue<>();
 
-	private final Logger log = LoggerFactory.getLogger(ServletSession.class);
 	private final Servlet servlet;
 	private final HttpServletRequest instigatingReq;
 	private final Endpoint endpoint;
@@ -101,37 +97,6 @@ public class ServletSession extends SessionAdapter {
 	}
 
 	@Override
-	public void addMessageHandler(MessageHandler handler) throws IllegalStateException {
-		this.messageHandlers.add(new MessageHandlerWrapper(handler, null));
-	}
-
-	@Override
-	public <T> void addMessageHandler(Class<T> clazz, Partial<T> handler) {
-		this.messageHandlers.add(new MessageHandlerWrapper(handler, clazz));
-	}
-
-	@Override
-	public <T> void addMessageHandler(Class<T> clazz, Whole<T> handler) {
-		this.messageHandlers.add(new MessageHandlerWrapper(handler, clazz));
-	}
-
-	Set<MessageHandlerWrapper> getMessageHandlerWrappers() {
-		return messageHandlers;
-	}
-
-	@Override
-	public Set<MessageHandler> getMessageHandlers() {
-		return getMessageHandlerWrappers().stream().map(MessageHandlerWrapper::handler).collect(Collectors.toSet());
-	}
-
-	@Override
-	public void removeMessageHandler(MessageHandler handler) {
-		if (!this.messageHandlers.removeIf(h -> h.handler == handler)) {
-			throw new IllegalArgumentException("Handler was unknown to the session!");
-		}
-	}
-
-	@Override
 	public Basic getBasicRemote() {
 		if (this.basic == null) {
 			this.basic = createBasic();
@@ -142,6 +107,11 @@ public class ServletSession extends SessionAdapter {
 	@Override
 	public boolean isSecure() {
 		return this.instigatingReq.isSecure();
+	}
+
+	@Override
+	public URI getRequestURI() {
+		return URI.create(this.instigatingReq.getRequestURI());
 	}
 
 	@Override
@@ -157,6 +127,13 @@ public class ServletSession extends SessionAdapter {
 	@Override
 	public Principal getUserPrincipal() {
 		return this.instigatingReq.getUserPrincipal();
+	}
+
+	@Override
+	public Map<String, List<String>> getRequestParameterMap() {
+		final Map<String, List<String>> paramMap = new HashMap<>();
+		this.instigatingReq.getParameterMap().forEach((k, v) -> paramMap.put(k, Arrays.asList(v)));
+		return Collections.unmodifiableMap(paramMap);
 	}
 
 	@Override
@@ -253,28 +230,6 @@ public class ServletSession extends SessionAdapter {
 
 
 	// --- Inner Classes ---
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [14 Feb 2017]
-	 */
-	public static class MessageHandlerWrapper {
-		public final MessageHandler handler;
-		public final Class<?> clazz;
-
-		private MessageHandlerWrapper(MessageHandler handler, Class<?> clazz) {
-			this.handler = handler;
-			this.clazz = clazz;
-		}
-
-		/**
-		 * @return the handler
-		 */
-		public MessageHandler handler() {
-			return handler;
-		}
-	}
 
 	/**
 	 * 

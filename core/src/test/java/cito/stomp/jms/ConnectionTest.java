@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -26,11 +27,13 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.inject.Provider;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -83,6 +86,10 @@ public class ConnectionTest {
 	private ScheduledExecutorService scheduler;
 	@Mock
 	private Event<Message> brokerMessageEvent;
+	@Mock
+	private Provider<javax.websocket.Session> wsSessionProvider;
+	@Mock
+	private javax.websocket.Session wsSession;
 
 	@InjectMocks
 	private Connection connection;
@@ -114,14 +121,19 @@ public class ConnectionTest {
 		ReflectionUtil.set(this.connection, "sessionId", null); // every other test needs it set!
 		final HeartBeatMonitor heartBeatMonitor = mock(HeartBeatMonitor.class);
 		ReflectionUtil.set(this.connection, "heartBeatMonitor", heartBeatMonitor);
-		final Message messageEvent = new Message("ABC123", Frame.connect("myhost.com", "1.0").build());
+		final Frame frame = Frame.connect("myhost.com", "1.0").build();
+		final Message messageEvent = new Message("ABC123", frame);
 		final javax.jms.Connection jmsConnection = mock(javax.jms.Connection.class);
-		when(this.connectionFactory.createConnection()).thenReturn(jmsConnection);
+		when(this.connectionFactory.createConnection(anyString(), anyString())).thenReturn(jmsConnection);
+		when(this.wsSessionProvider.get()).thenReturn(this.wsSession);
+		when(this.wsSession.getUserProperties()).thenReturn(Collections.emptyMap());
 
 		this.connection.connect(messageEvent);
 
 		verify(this.log).info("Connecting... [sessionId={}]", "ABC123");
-		verify(this.connectionFactory).createConnection();
+		verify(this.wsSessionProvider).get();
+		verify(this.wsSession).getUserProperties();
+		verify(this.connectionFactory).createConnection(null, null);
 		verify(heartBeatMonitor).resetSend();
 		verify(this.log).info("Starting JMS connection... [sessionId={}]", "ABC123");
 		verify(jmsConnection).setClientID("ABC123");
@@ -414,6 +426,8 @@ public class ConnectionTest {
 				this.connectionFactory,
 				this.factory,
 				this.scheduler,
-				this.brokerMessageEvent);
+				this.brokerMessageEvent,
+				this.wsSessionProvider,
+				this.wsSession);
 	}
 }

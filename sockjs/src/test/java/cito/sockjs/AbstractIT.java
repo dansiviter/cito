@@ -43,6 +43,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
 
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -97,8 +98,29 @@ public abstract class AbstractIT {
 	 * @param type
 	 * @return
 	 */
+	protected UriBuilder uri(EndpointType type) {
+		return UriBuilder.fromUri(this.deploymenUri).path(type.name().toLowerCase());
+	}
+
+	/**
+	 * 
+	 * @param type
+	 * @param server
+	 * @param session
+	 * @param handler
+	 * @return
+	 */
+	protected UriBuilder uri(EndpointType type, String server, String session, String handler) {
+		return UriBuilder.fromUri(this.deploymenUri).path(type.name().toLowerCase()).path(server).path(session).path(handler);
+	}
+
+	/**
+	 * 
+	 * @param type
+	 * @return
+	 */
 	protected WebTarget target(EndpointType type) {
-		return client().target(this.deploymenUri).path(type.name().toLowerCase());
+		return client().target(uri(type));
 	}
 
 	/**
@@ -118,7 +140,7 @@ public abstract class AbstractIT {
 	 * @return
 	 */
 	protected WebTarget target(EndpointType type, String server, String session, String handler) {
-		return target(type).path(server).path(session).path(handler);
+		return client().target(uri(type, server, session, handler));
 	}
 
 	/**

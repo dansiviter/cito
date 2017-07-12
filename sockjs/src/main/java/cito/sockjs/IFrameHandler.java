@@ -4,6 +4,7 @@ import static cito.sockjs.HashUtil.md5;
 import static cito.sockjs.Headers.CACHE_CONTROL;
 import static cito.sockjs.Headers.EXPIRES;
 import static cito.sockjs.Headers.E_TAG;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

@@ -21,7 +21,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
 
 /**
@@ -32,18 +31,4 @@ import javax.inject.Qualifier;
 @Qualifier
 @Target(PARAMETER)
 @Retention(RUNTIME)
-public @interface OnOpen { 
-	public static final OnOpen ON_OPEN = new OnOpenLiteral();
-
-
-	// --- Inner Classes ---
-
-	/**
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [19 Jul 2016]
-	 */
-	public static class OnOpenLiteral extends AnnotationLiteral<OnOpen> implements OnOpen {
-		private static final long serialVersionUID = 3720802781401347308L;
-	}
-}
+public @interface OnOpen { }

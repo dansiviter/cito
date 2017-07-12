@@ -16,6 +16,9 @@
  */
 package cito.server.security;
 
+import static cito.server.security.Builder.DENY_ALL;
+import static cito.server.security.Builder.PERMIT_ALL;
+import static cito.server.security.Builder.createRolesAllowed;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -40,9 +43,6 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import cito.ReflectionUtil;
-import cito.annotation.DenyAllLiteral;
-import cito.annotation.PermitAllLiteral;
-import cito.annotation.RolesAllowedLiteral;
 import cito.server.SecurityContext;
 import cito.server.security.Builder.NullDestinationMatcher;
 import cito.server.security.Builder.PrincipalMatcher;
@@ -182,7 +182,7 @@ public class BuilderTest {
 	@Test
 	public void securityAnnotationMatcher_rolesAllowed() {
 		when(this.context.isUserInRole("that")).thenReturn(true);
-		final SecurityAnnotationMatcher matcher = new SecurityAnnotationMatcher(new RolesAllowedLiteral("this", "that"));
+		final SecurityAnnotationMatcher matcher = new SecurityAnnotationMatcher(createRolesAllowed("this", "that"));
 
 		assertTrue(matcher.permitted(this.context));
 
@@ -192,7 +192,7 @@ public class BuilderTest {
 
 	@Test
 	public void securityAnnotationMatcher_rolesAllowed_false() {
-		final SecurityAnnotationMatcher matcher = new SecurityAnnotationMatcher(new RolesAllowedLiteral("this", "that"));
+		final SecurityAnnotationMatcher matcher = new SecurityAnnotationMatcher(createRolesAllowed("this", "that"));
 
 		assertFalse(matcher.permitted(this.context));
 
@@ -202,14 +202,14 @@ public class BuilderTest {
 
 	@Test
 	public void securityAnnotationMatcher_permitAll() {
-		final SecurityAnnotationMatcher matcher = new SecurityAnnotationMatcher(new PermitAllLiteral());
+		final SecurityAnnotationMatcher matcher = new SecurityAnnotationMatcher(PERMIT_ALL);
 
 		assertTrue(matcher.permitted(this.context));
 	}
 
 	@Test
 	public void securityAnnotationMatcher_denyAll() {
-		final SecurityAnnotationMatcher matcher = new SecurityAnnotationMatcher(new DenyAllLiteral());
+		final SecurityAnnotationMatcher matcher = new SecurityAnnotationMatcher(DENY_ALL);
 
 		assertFalse(matcher.permitted(this.context));
 	}

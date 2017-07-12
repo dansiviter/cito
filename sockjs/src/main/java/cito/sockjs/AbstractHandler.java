@@ -15,15 +15,11 @@
  */
 package cito.sockjs;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.Pipe;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -34,22 +30,17 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.websocket.MessageHandler;
 import javax.ws.rs.core.HttpHeaders;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cito.sockjs.ServletSession.MessageHandlerWrapper;
-
 /**
  * @author Daniel Siviter
  * @since v1.0 [12 Feb 2017]
  */
 public abstract class AbstractHandler {
-	protected static final Charset UTF_8 = StandardCharsets.UTF_8;
-
 	protected static final String CORS_ORIGIN = "Access-Control-Allow-Origin";
 	protected static final String CORS_CREDENTIALS = "Access-Control-Allow-Credentials";
 	protected static final String CORS_REQUEST_HEADERS = "Access-Control-Request-Headers";
@@ -114,48 +105,6 @@ public abstract class AbstractHandler {
 	 */
 	protected abstract void handle(HttpAsyncContext async)
 			throws ServletException, IOException;
-
-	/**
-	 * 
-	 * @param session
-	 * @param text
-	 * @throws IOException 
-	 */
-	@SuppressWarnings("unchecked")
-	protected void send(ServletSession session, String text) throws IOException {
-		Reader reader = null;
-
-		for (MessageHandlerWrapper h : session.getMessageHandlerWrappers()) {
-			if (h.handler() instanceof MessageHandler.Whole) {
-				if (h.clazz == String.class) {
-					((MessageHandler.Whole<String>) h.handler()).onMessage(text);
-					continue;
-				}
-
-				if (h.clazz == Reader.class) {
-					if (reader == null) {
-						reader = new StringReader(text);
-					}
-					((MessageHandler.Whole<Reader>) h.handler()).onMessage(reader);
-					reader.mark(0);
-					reader.reset();
-					continue;
-				}
-
-				if (h.clazz == ByteBuffer.class || h.clazz == InputStream.class) {
-					this.log.warn("Binary types not supported! [{}]", h.getClass());
-					continue;
-				}
-
-				this.log.warn("Decoder types not supported yet! [{}]", h.getClass());
-			} else if (h.handler() instanceof MessageHandler.Partial) {
-				this.log.warn("Partial types not supported yet! [{}]", h.getClass());
-			}
-		}
-		if (reader != null) {
-			reader.close();
-		}
-	}
 
 	/**
 	 * 

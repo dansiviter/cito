@@ -17,6 +17,7 @@
 package cito.sockjs;
 
 import static java.nio.channels.Channels.newReader;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -102,8 +103,6 @@ public class JsonPSendHandler extends AbstractSessionHandler {
 
 				final List<String> data = formData.get("d");
 
-				System.out.println("data: " + data);
-				
 				if (data == null || data.isEmpty()) {
 					this.log.warn("No data!");
 					sendNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Payload expected.");
@@ -142,7 +141,7 @@ public class JsonPSendHandler extends AbstractSessionHandler {
 					break;
 				case VALUE_STRING:
 					final String value = parser.getString();
-					send(session, StringEscapeUtils.unescapeJson(value));
+					session.forwardMessage(StringEscapeUtils.unescapeJson(value));
 					continue;
 				default:
 					throw new JsonException("Only Array Start/End and String expected!");

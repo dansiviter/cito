@@ -110,6 +110,34 @@ public class Inspector extends JmsContextHelper implements cito.broker.Inspector
 
 	/**
 	 * 
+	 * @param connectionId
+	 * @return
+	 * @throws JMSException
+	 */
+	public Set<Session> getSessions(String connectionId) throws JMSException {
+		return withRequestor(r -> {
+			final Message req = r.context().createMessage();
+			if (connectionId != null) {
+				putOperationInvocation(req, BROKER, "listSessionsAsJSON", connectionId);
+			} else {
+				putOperationInvocation(req, BROKER, "listAllConsumersAsJSON");
+			}
+			final Message res = r.request(req, 1, TimeUnit.MINUTES);
+			final Set<Session> results = new HashSet<>();
+			getResults(res).forEach(e -> {
+				final JsonObject obj = (JsonObject) e;
+				results.add(new Session(
+						obj.getString("sessionID"),
+						obj.getJsonNumber("creationTime").longValue(),
+						obj.getJsonNumber("consumerCount").intValue(),
+						obj.getString("principal")));
+			});
+			return results;
+		});
+	}
+
+	/**
+	 * 
 	 * @param queue
 	 * @return
 	 * @throws JMSException
@@ -174,11 +202,11 @@ public class Inspector extends JmsContextHelper implements cito.broker.Inspector
 	 * @since v1.0 [28 Apr 2017]
 	 */
 	public static class Connection {
-		private final long creationTime;
-		private final int sessionCount;
-		private final String implementation;
-		private final String connectionID;
-		private final String clientAddress;
+		public final long creationTime;
+		public final int sessionCount;
+		public final String implementation;
+		public final String connectionID;
+		public final String clientAddress;
 
 		public Connection(long creationTime, int sessionCount, String implementation, String connectionID, String clientAddress) {
 			this.creationTime = creationTime;
@@ -195,14 +223,14 @@ public class Inspector extends JmsContextHelper implements cito.broker.Inspector
 	 * @since v1.0 [28 Apr 2017]
 	 */
 	public static class Consumer {
-		private final String filter;
-		private final String queueName;
-		private final long creationTime;
-		private final int deliveringCount;
-		private final int consumerID;
-		private final boolean browseOnly;
-		private final String connectionID;
-		private final String sessionID;
+		public final String filter;
+		public final String queueName;
+		public final long creationTime;
+		public final int deliveringCount;
+		public final int consumerID;
+		public final boolean browseOnly;
+		public final String connectionID;
+		public final String sessionID;
 
 		public Consumer(
 				String filter,
@@ -222,6 +250,21 @@ public class Inspector extends JmsContextHelper implements cito.broker.Inspector
 			this.browseOnly = browseOnly;
 			this.connectionID = connectionID;
 			this.sessionID = sessionID;
+		}
+	}
+
+
+	public static class Session {
+		public final String sessionId;
+		public final long creationTime;
+		public final int consumerCount;
+		public final String principal;
+
+		public Session(String sessionId, long creationTime, int consumerCount, String principal) {
+			this.sessionId = sessionId;
+			this.creationTime = creationTime;
+			this.consumerCount = consumerCount;
+			this.principal = principal;
 		}
 	}
 }

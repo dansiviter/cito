@@ -15,9 +15,6 @@
  */
 package cito.server;
 
-import static cito.annotation.OnClose.ON_CLOSE;
-import static cito.annotation.OnError.ON_ERROR;
-import static cito.annotation.OnOpen.ON_OPEN;
 import static cito.server.Extension.webSocketContext;
 
 import javax.enterprise.event.Event;
@@ -26,15 +23,21 @@ import javax.inject.Inject;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
+import javax.websocket.OnClose;
+import javax.websocket.OnError;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
 import javax.websocket.Session;
 
 import org.slf4j.Logger;
 
 import cito.QuietClosable;
 import cito.annotation.FromClient;
+import cito.annotation.Qualifiers;
 import cito.event.ClientMessageProducer;
 import cito.event.Message;
 import cito.scope.WebSocketContext;
+import cito.server.ws.WebSocketConfigurator;
 import cito.stomp.Frame;
 import cito.stomp.jms.Relay;
 
@@ -59,6 +62,7 @@ public abstract class AbstractEndpoint extends Endpoint {
 	@Inject
 	private Event<Throwable> errorEvent;
 
+	@OnOpen
 	@Override
 	public void onOpen(Session session, EndpointConfig config) {
 		final String httpSessionId = session.getRequestParameterMap().get("httpSessionId").get(0);
@@ -66,12 +70,11 @@ public abstract class AbstractEndpoint extends Endpoint {
 				session.getId(),
 				httpSessionId,
 				session.getUserPrincipal());
-		// remove instances associated with 'httpSessionId' to avoid bloating
-		final SecurityContext securityCtx = (SecurityContext) config.getUserProperties().remove(httpSessionId);
-		session.getUserProperties().put(SecurityContext.class.getSimpleName(), securityCtx);
+		final SecurityContext securityCtx = WebSocketConfigurator.removeSecurityContext(config.getUserProperties(), httpSessionId);
+		SecurityContextProducer.set(session, securityCtx);
 		try (QuietClosable c = webSocketContext(this.beanManager).activate(session)) {
 			this.registry.register(session);
-			this.sessionEvent.select(ON_OPEN).fire(session);
+			this.sessionEvent.select(Qualifiers.onOpen()).fire(session);
 		}
 	}
 
@@ -80,6 +83,7 @@ public abstract class AbstractEndpoint extends Endpoint {
 	 * @param session
 	 * @param frame
 	 */
+	@OnMessage
 	public void message(Session session, Frame frame) {
 		final String sessionId = session.getId();
 		this.log.debug("Received message from client. [id={},principle={},command={}]", sessionId, session.getUserPrincipal(), frame.getCommand());
@@ -92,22 +96,24 @@ public abstract class AbstractEndpoint extends Endpoint {
 		}
 	}
 
+	@OnError
 	@Override
 	public void onError(Session session, Throwable cause) {
 		this.log.warn("WebSocket error. [id={},principle={}]", session.getId(), session.getUserPrincipal(), cause);
 		try (QuietClosable c = webSocketContext(this.beanManager).activate(session)) {
 			this.registry.unregister(session);
-			this.errorEvent.select(ON_ERROR).fire(cause);
+			this.errorEvent.select(Qualifiers.onError()).fire(cause);
 		}
 	}
 
+	@OnClose
 	@Override
 	public void onClose(Session session, CloseReason reason) {
 		this.log.info("WebSocket connection closed. [id={},principle={},code={},reason={}]", session.getId(), session.getUserPrincipal(), reason.getCloseCode(), reason.getReasonPhrase());
 		final WebSocketContext ctx = Extension.webSocketContext(this.beanManager);
 		try (QuietClosable c = ctx.activate(session)) {
 			this.registry.unregister(session);
-			this.sessionEvent.select(ON_CLOSE).fire(session);
+			this.sessionEvent.select(Qualifiers.onClose()).fire(session);
 		}
 		ctx.dispose(session);
 	}

@@ -1,4 +1,5 @@
 /*
+
  * Copyright 2016-2017 Daniel Siviter
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,16 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cito.annotation;
-
-import javax.annotation.security.DenyAll;
-import javax.enterprise.util.AnnotationLiteral;
+package cito;
 
 /**
+ * String utilities.
  * 
  * @author Daniel Siviter
- * @since v1.0 [30 Aug 2016]
+ * @since v1.0 [8 Jul 2017]
  */
-public class DenyAllLiteral extends AnnotationLiteral<DenyAll> implements DenyAll {
-	private static final long serialVersionUID = -2619507648848832423L;
+public enum Strings { ;
+
+	public static boolean isEmpty(final CharSequence seq) {
+		return seq == null || seq.length() == 0;
+	}
+
+	public static boolean isBlank(final CharSequence seq) {
+		int strLen;
+		if (seq == null || (strLen = seq.length()) == 0) {
+			return true;
+		}
+		for (int i = 0; i < strLen; i++) {
+			if (Character.isWhitespace(seq.charAt(i)) == false) {
+				return false;
+			}
+		}
+		return true;
+	}
 }

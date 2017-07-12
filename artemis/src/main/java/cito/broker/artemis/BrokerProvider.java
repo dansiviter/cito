@@ -49,6 +49,8 @@ public class BrokerProvider {
 	private Logger log;
 	@Inject
 	private BrokerConfig config;
+	@Inject
+	private EmbeddedJmsCustomiser customiser;
 
 	@Produces
 	@ApplicationScoped
@@ -68,6 +70,7 @@ public class BrokerProvider {
 				this.artemisConfig = this.config.getConfiguration();
 				final JMSConfiguration jmsConfig = this.config.getJmsConfig();
 				this.embeddedJMS = new EmbeddedJMS().setConfiguration(this.artemisConfig).setJmsConfiguration(jmsConfig);
+				this.customiser.customise(embeddedJMS);
 				this.embeddedJMS.start();
 			} catch (Exception e) {
 				throw new JMSRuntimeException("Unable to start embedded JMS", null, e);
@@ -131,10 +134,25 @@ public class BrokerProvider {
 				connectionFactory = ActiveMQJMSClient.createConnectionFactoryWithoutHA(JMSFactoryType.CF, new TransportConfiguration(config.getConnectorFactory(), params));
 			}
 		}
-		if (config.hasAuthentication()) {
+		if (config.isSecurityEnabled()) {
 			connectionFactory.setUser(config.getUsername());
 			connectionFactory.setPassword(config.getPassword());
 		}
 		return connectionFactory.disableFinalizeChecks();
+	}
+
+
+	// --- Inner Classes ---
+
+	/**
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [28 May 2017]
+	 */
+	@ApplicationScoped
+	public static class EmbeddedJmsCustomiser {
+		public EmbeddedJMS customise(EmbeddedJMS embeddedJMS) {
+			return embeddedJMS;
+		}
 	}
 }

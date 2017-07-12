@@ -15,6 +15,8 @@
  */
 package cito.server.ws;
 
+import java.util.Map;
+
 import javax.servlet.http.HttpSession;
 import javax.websocket.HandshakeResponse;
 import javax.websocket.server.HandshakeRequest;
@@ -33,7 +35,30 @@ public class WebSocketConfigurator extends Configurator {
 	@Override
 	public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
 		final HttpSession httpSession = (HttpSession) request.getHttpSession();
+		if (request.getUserPrincipal() == null) {
+			return;
+		}
+
 		final SecurityContext securityCtx = new WebSocketSecurityContext(request);
-		sec.getUserProperties().put(httpSession.getId(), securityCtx);
+		sec.getUserProperties().put(key(httpSession.getId()), securityCtx);
+	}
+
+	/**
+	 * 
+	 * @param httpSessionId
+	 * @return
+	 */
+	private static String key(String httpSessionId) {
+		return SecurityContext.class.getSimpleName().concat(httpSessionId);
+	}
+
+	/**
+	 * 
+	 * @param userProperties
+	 * @param httpSessionId
+	 * @return
+	 */
+	public static SecurityContext removeSecurityContext(Map<String, Object> userProperties, String httpSessionId) {
+		return (SecurityContext) userProperties.remove(key(httpSessionId));
 	}
 }

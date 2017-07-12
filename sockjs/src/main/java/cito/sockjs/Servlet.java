@@ -82,6 +82,8 @@ public class Servlet implements javax.servlet.Servlet {
 		this.handers.put(HTMLFILE, new HtmlFileHandler(this).init());
 		this.handers.put(JSONP, new JsonPHandler(this).init());
 		this.handers.put(JSONP_SEND, new JsonPSendHandler(this).init());
+
+		this.scheduler.scheduleWithFixedDelay(this::cleanupSessions, 5, 5, TimeUnit.SECONDS);
 	}
 
 	@Override
@@ -170,7 +172,6 @@ public class Servlet implements javax.servlet.Servlet {
 	protected ServletSession getSession(HttpServletRequest req) throws ServletException {
 		final String sessionId = Util.session(this.config, req);
 		final ServletSession session = this.sessions.get(sessionId);
-		this.scheduler.scheduleWithFixedDelay(this::cleanupSessions, 5, 5, TimeUnit.SECONDS);
 		return session;
 	}
 
@@ -237,15 +238,14 @@ public class Servlet implements javax.servlet.Servlet {
 	 * 
 	 */
 	private void cleanupSessions() {
-		this.log.info("Cleaning up inactive sessions!");
-
+		this.log.info("Cleaning up inactive sessions. [count={}]", this.sessions.size());
 		this.sessions.forEach((k, v) -> {
 			final String id = v.getId();
-			if (v.activeTime().isBefore(LocalDateTime.now().plus(5, ChronoUnit.SECONDS))) {
+			if (v.isOpen() && v.activeTime().isBefore(LocalDateTime.now().plus(5, ChronoUnit.SECONDS))) {
 				try {
 					v.close();
 				} catch (IOException e) {
-					log.warn("Error closing session! [" + id + "]", e);
+					this.log.warn("Error closing session! [" + id + "]", e);
 				}
 			}
 		});

@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
@@ -31,6 +32,7 @@ import org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory;
 import org.apache.activemq.artemis.jms.server.config.JMSConfiguration;
 import org.apache.activemq.artemis.jms.server.config.impl.JMSConfigurationImpl;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
 
 /**
  * 
@@ -39,6 +41,10 @@ import org.apache.activemq.artemis.jms.server.config.impl.JMSConfigurationImpl;
  */
 @ApplicationScoped
 public class BrokerConfig {
+	@Inject
+	@ConfigProperty(name = "cito.system.password", defaultValue = "Pa$$w0rd")
+	private String password;
+
 	public static final String IN_VM_CONNECTOR = InVMConnectorFactory.class.getName();
 	public static final String REMOTE_CONNECTOR = NettyConnectorFactory.class.getName();
 	public static final String IN_VM_ACCEPTOR = InVMAcceptorFactory.class.getName();
@@ -48,14 +54,14 @@ public class BrokerConfig {
 	 * @return if present, sends a username for the connection
 	 */
 	public String getUsername() {
-		return null;
+		return "$Y$T3M";
 	}
 
 	/**
 	 * @return the password for the connection.  If username is set, password must be set
 	 */
 	public String getPassword() {
-		return null;
+		return this.password;
 	}
 
 	/**
@@ -102,9 +108,9 @@ public class BrokerConfig {
 	}
 
 	/**
-	 * @return whether or not the authentication parameters should be used
+	 * @return whether or not security is enabled in the broker.
 	 */
-	public boolean hasAuthentication() {
+	public boolean isSecurityEnabled() {
 		return false;
 	}
 
@@ -114,7 +120,7 @@ public class BrokerConfig {
 	public Configuration getConfiguration() {
 		final Map<String, Object> params = Collections.singletonMap(SERVER_ID_PROP_NAME, "1");
 		final Configuration config = new ConfigurationImpl()
-				.setSecurityEnabled(false)
+				.setSecurityEnabled(isSecurityEnabled())
 				.setPersistenceEnabled(false);
 		// default In VM Acceptor for all your ConnectionFactory needs
 		config.addAcceptorConfiguration(new TransportConfiguration(IN_VM_ACCEPTOR, params, "InVMAcceptor"));

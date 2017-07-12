@@ -15,7 +15,7 @@
  */
 package cito.server;
 
-import static cito.annotation.FromServer.FROM_SERVER;
+import static cito.annotation.Qualifiers.fromServer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
@@ -75,7 +75,7 @@ public class SupportTest {
 
 	@Before
 	public void before() {
-		when(msgEvent.select(FROM_SERVER)).thenReturn(this.msgEvent);
+		when(msgEvent.select(fromServer())).thenReturn(this.msgEvent);
 	}
 
 	@Test
@@ -207,7 +207,7 @@ public class SupportTest {
 
 	@After
 	public void after() {
-		verify(this.msgEvent, atLeastOnce()).select(FROM_SERVER);
+		verify(this.msgEvent, atLeastOnce()).select(fromServer());
 		verifyNoMoreInteractions(this.log, this.msgEvent, this.registry, this.serialiser, this.principal);
 	}
 

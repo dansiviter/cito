@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import javax.jms.Destination;
 import javax.jms.InvalidDestinationException;

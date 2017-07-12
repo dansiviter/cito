@@ -79,16 +79,22 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	public void registerMessageEvent(@Observes ProcessObserverMethod<Message, ?> e, BeanManager beanManager) {
 		final ObserverMethod<Message> method = e.getObserverMethod();
 		for (Annotation a : method.getObservedQualifiers()) {
-			if (a instanceof OnConnected)
+			if (a instanceof OnConnected) {
 				registerMessageObserver(OnConnected.class, method);
-			if (a instanceof OnSend)
+//				e.veto(); //  CDI 2.0
+			} else if (a instanceof OnSend) {
 				registerMessageObserver(OnSend.class, method);
-			if (a instanceof OnSubscribe)
+//				e.veto(); //  CDI 2.0
+			} else if (a instanceof OnSubscribe) {
 				registerMessageObserver(OnSubscribe.class, method);
-			if (a instanceof OnUnsubscribe)
+//				e.veto(); //  CDI 2.0
+			} else if (a instanceof OnUnsubscribe) {
 				registerMessageObserver(OnUnsubscribe.class, method);
-			if (a instanceof OnDisconnect)
+//				e.veto(); //  CDI 2.0
+			} else if (a instanceof OnDisconnect) {
 				registerMessageObserver(OnDisconnect.class, method);
+//				e.veto(); //  CDI 2.0
+			}
 		}
 	}
 
@@ -163,8 +169,7 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * getBeans must not be invoked earlier than this phase to reduce randomness
 	 * caused by Beans no being fully registered yet.
 	 */
-	public void initialiseContexts(@Observes AfterDeploymentValidation adv, BeanManager beanManager)
-	{
+	public void initialiseContexts(@Observes AfterDeploymentValidation adv, BeanManager beanManager) {
 		final WebSocketSessionHolder sessionHolder = BeanProvider.getContextualReference(beanManager, WebSocketSessionHolder.class, false);
 		this.webSocketContext.init(sessionHolder);
 	}

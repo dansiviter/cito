@@ -16,6 +16,8 @@
  */
 package cito;
 
+import static java.util.Collections.singletonMap;
+import static org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvider.of;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -31,7 +33,6 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import org.junit.Test;
 
 import cito.annotation.PathParam;
-import cito.annotation.PathParamLiteral;
 import cito.event.DestinationChanged;
 import cito.event.Message;
 import cito.stomp.Frame;
@@ -88,7 +89,7 @@ public class PathParamProducerTest {
 		when(frame.destination()).thenReturn("/here");
 		final Annotated annotated = mock(Annotated.class);
 		when(ip.getAnnotated()).thenReturn(annotated);
-		when(annotated.getAnnotation(PathParam.class)).thenReturn(new PathParamLiteral("there"));
+		when(annotated.getAnnotation(PathParam.class)).thenReturn(createPathParam("there"));
 
 		final String param = PathParamProducer.pathParam(ip, parser, msg, dc);
 		assertEquals("here", param);
@@ -110,7 +111,7 @@ public class PathParamProducerTest {
 		when(frame.destination()).thenReturn("/here");
 		final Annotated annotated = mock(Annotated.class);
 		when(ip.getAnnotated()).thenReturn(annotated);
-		when(annotated.getAnnotation(PathParam.class)).thenReturn(new PathParamLiteral("there"));
+		when(annotated.getAnnotation(PathParam.class)).thenReturn(createPathParam("there"));
 
 		final String param = PathParamProducer.pathParam(ip, parser, msg, null);
 		assertEquals("here", param);
@@ -130,7 +131,7 @@ public class PathParamProducerTest {
 		when(dc.getDestination()).thenReturn("/here");
 		final Annotated annotated = mock(Annotated.class);
 		when(ip.getAnnotated()).thenReturn(annotated);
-		when(annotated.getAnnotation(PathParam.class)).thenReturn(new PathParamLiteral("there"));
+		when(annotated.getAnnotation(PathParam.class)).thenReturn(createPathParam("there"));
 
 		final String param = PathParamProducer.pathParam(ip, parser, null, dc);
 		assertEquals("here", param);
@@ -139,5 +140,9 @@ public class PathParamProducerTest {
 		verify(ip).getAnnotated();
 		verify(annotated).getAnnotation(PathParam.class);
 		verifyNoMoreInteractions(ip, dc, annotated);
+	}
+
+	private static PathParam createPathParam(String value) {
+		return of(PathParam.class, singletonMap("value", value));
 	}
 }

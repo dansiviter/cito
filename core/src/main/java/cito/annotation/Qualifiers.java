@@ -25,16 +25,21 @@ import static org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvide
  * @since v1.0 [19 Jul 2016]
  */
 public enum Qualifiers { ;
-	private static final OnConnected ON_CONNECTED_LITERAL = of(OnConnected.class);
-	private static final OnDisconnect ON_DISCONNECT_LITERAL = of(OnDisconnect.class);
-
+	private static final OnConnected ON_CONNECTED = of(OnConnected.class);
+	private static final OnDisconnect ON_DISCONNECT = of(OnDisconnect.class);
+	private static final OnOpen ON_OPEN = of(OnOpen.class);
+	private static final OnError ON_ERROR = of(OnError.class);
+	private static final OnClose ON_CLOSE = of(OnClose.class);
+	private static final FromBroker FROM_BROKER = of(FromBroker.class);
+	private static final FromClient FROM_CLIENT = of(FromClient.class);
+	private static final FromServer FROM_SERVER = of(FromServer.class);
 
 	/**
 	 * 
 	 * @return
 	 */
 	public static OnConnected onConnected() {
-		return ON_CONNECTED_LITERAL;
+		return ON_CONNECTED;
 	}
 
 	/**
@@ -42,7 +47,7 @@ public enum Qualifiers { ;
 	 * @return
 	 */
 	public static OnDisconnect onDisconnect() {
-		return ON_DISCONNECT_LITERAL;
+		return ON_DISCONNECT;
 	}
 
 	/**
@@ -70,6 +75,54 @@ public enum Qualifiers { ;
 	 */
 	public static OnSend onSend(String value) {
 		return of(OnSend.class, value == null ? emptyMap() : singletonMap("value", value));
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public static OnOpen onOpen() {
+		return ON_OPEN;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public static OnError onError() {
+		return ON_ERROR;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public static OnClose onClose() {
+		return ON_CLOSE;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public static FromBroker fromBroker() {
+		return FROM_BROKER;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public static FromClient fromClient() {
+		return FROM_CLIENT;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public static FromServer fromServer() {
+		return FROM_SERVER;
 	}
 }
 

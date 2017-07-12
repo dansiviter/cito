@@ -71,11 +71,11 @@ public class SystemConnectionTest {
 	@Test
 	public void init() throws JMSException {
 		final Connection jmsConnection = Mockito.mock(Connection.class);
-		when(this.connectionFactory.createConnection()).thenReturn(jmsConnection);
+		when(this.connectionFactory.createConnection(SESSION_ID, null)).thenReturn(jmsConnection);
 
 		this.connection.init();
 
-		verify(this.connectionFactory).createConnection();
+		verify(this.connectionFactory).createConnection(SESSION_ID, null);
 		verify(this.log).info("Starting JMS connection... [sessionId={}]", SESSION_ID);
 		verify(jmsConnection).setClientID(SESSION_ID);
 		verify(jmsConnection).start();

@@ -16,37 +16,66 @@
  */
 package cito.sockjs;
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.net.URI;
+
+import javax.websocket.ClientEndpointConfig;
+import javax.websocket.DeploymentException;
+import javax.websocket.Session;
+
+import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 
 /**
  * @author Daniel Siviter
  * @since v1.0 [1 Mar 2017]
  */
-public class RawWebSocketIT {
+public class RawWebSocketIT extends AbstractWebSocketIT {
 	/**
 	 * Test the streaming transport.
+	 * @throws DeploymentException 
 	 */
 	@Test
 	@RunAsClient
-	public void transport() throws IOException {
-//        ws = WebSocket8Client(base_url + '/websocket')
-//        ws.send(u'Hello world!\uffff')
-//        self.assertEqual(ws.recv(), u'Hello world!\uffff')
-//        ws.close()
+	public void transport() throws IOException, DeploymentException {
+		final URI path = uri(EndpointType.ECHO).path("websocket").build();
+		final ClientEndpointConfig config = ClientEndpointConfig.Builder.create().build();
+
+		final ClientEndpoint endpoint = new ClientEndpoint();
+		try (Session session = this.container.connectToServer(endpoint, config, path)) {
+			session.getBasicRemote().sendText("Hello world!\uffff");
+			assertEquals("Hello world!\uffff", endpoint.get());
+		}
 	}
 	
 	/**
 	 * Test the closing of transport.
+	 * @throws DeploymentException 
 	 */
 	@Test
 	@RunAsClient
-	public void close() throws IOException {
-//        ws = WebSocket8Client(close_base_url + '/websocket')
-//        with self.assertRaises(ws.ConnectionClosedException):
-//            ws.recv()
-//        ws.close()
+	public void close() throws IOException, DeploymentException {
+		final URI path = uri(EndpointType.CLOSE).path("websocket").build();
+		final ClientEndpointConfig config = ClientEndpointConfig.Builder.create().build();
+
+		final ClientEndpoint endpoint = new ClientEndpoint();
+		try (Session session = this.container.connectToServer(endpoint, config, path)) {
+			assertNull(endpoint.get());
+			assertTrue(endpoint.wasClosed());
+		}
+	}
+
+
+	// --- Static Methods ---
+
+	@Deployment
+	public static WebArchive createDeployment() {
+		return createWebArchive();
 	}
 }

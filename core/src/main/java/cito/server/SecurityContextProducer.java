@@ -31,14 +31,30 @@ import cito.annotation.WebSocketScope;
  */
 @ApplicationScoped
 public class SecurityContextProducer {
+	private static final String KEY = SecurityContext.class.getName();
+
 	/**
 	 * 
-	 * @param session
 	 * @return
 	 */
 	@Produces @WebSocketScope
-	public static SecurityContext session(Session session) {
+	public static SecurityContext securityCtx(Session session) {
 		final Map<String, Object> props = session.getUserProperties();
-		return (SecurityContext) props.get(SecurityContext.class.getSimpleName());
+		return (SecurityContext) props.get(KEY);
+	}
+
+	/**
+	 * 
+	 * @param securityCtx
+	 * @return
+	 */
+	public static void set(Session session, SecurityContext securityCtx) {
+		final SecurityContext old = securityCtx(session);
+		if (old != null) {
+			throw new IllegalStateException("Already set!");
+		}
+		if (securityCtx != null) {
+			session.getUserProperties().put(KEY, securityCtx);
+		}
 	}
 }
