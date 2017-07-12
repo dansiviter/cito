@@ -25,10 +25,7 @@ public interface QuietClosable extends AutoCloseable {
 	/**
 	 * A no-operation version of {@link QuietClosable}.
 	 */
-	public static final QuietClosable NOOP = new QuietClosable() {
-		@Override
-		public void close() { }
-	};
+	public static final QuietClosable NOOP = () -> {};
 
 	@Override
 	public void close();

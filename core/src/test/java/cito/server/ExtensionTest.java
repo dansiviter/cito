@@ -92,7 +92,7 @@ public class ExtensionTest {
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onConnected()));
 
-		this.extension.registerMessageEvent(processObserverMethod, beanManager);
+		this.extension.registerMessageEvent(processObserverMethod);
 
 		assertEquals(observerMethod, getMessageObservers(this.extension).get(OnConnected.class).iterator().next());
 
@@ -109,7 +109,7 @@ public class ExtensionTest {
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSend("")));
 
-		this.extension.registerMessageEvent(processObserverMethod, beanManager);
+		this.extension.registerMessageEvent(processObserverMethod);
 
 		assertEquals(observerMethod, getMessageObservers(this.extension).get(OnSend.class).iterator().next());
 
@@ -126,7 +126,7 @@ public class ExtensionTest {
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("")));
 
-		this.extension.registerMessageEvent(processObserverMethod, beanManager);
+		this.extension.registerMessageEvent(processObserverMethod);
 
 		assertEquals(observerMethod, getMessageObservers(this.extension).get(OnSubscribe.class).iterator().next());
 
@@ -143,7 +143,7 @@ public class ExtensionTest {
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("")));
 
-		this.extension.registerMessageEvent(processObserverMethod, beanManager);
+		this.extension.registerMessageEvent(processObserverMethod);
 
 		assertEquals(observerMethod, getMessageObservers(this.extension).get(OnUnsubscribe.class).iterator().next());
 
@@ -160,7 +160,7 @@ public class ExtensionTest {
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onDisconnect()));
 
-		this.extension.registerMessageEvent(processObserverMethod, beanManager);
+		this.extension.registerMessageEvent(processObserverMethod);
 
 		assertEquals(observerMethod, getMessageObservers(this.extension).get(OnDisconnect.class).iterator().next());
 

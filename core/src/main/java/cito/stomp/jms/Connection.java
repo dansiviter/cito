@@ -30,7 +30,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Event;
-import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.jms.JMSException;
@@ -71,8 +70,6 @@ public class Connection extends AbstractConnection {
 	private Event<Message> brokerMessageEvent;
 	@Inject
 	private Provider<javax.websocket.Session> wsSession;
-	@Inject
-	private BeanManager beanManager;
 
 	private HeartBeatMonitor heartBeatMonitor;
 	private String sessionId;
@@ -145,13 +142,13 @@ public class Connection extends AbstractConnection {
 			throw new IllegalStateException("Already connected!");
 		}
 
-		this.log.info("Connecting... [sessionId={}]", msg.sessionId());
-
 		if (isNullOrEmpty(msg.sessionId())) {
 			throw new IllegalArgumentException("Session ID cannot be null!");
 		}
-
 		this.sessionId = msg.sessionId();
+	
+		this.log.info("Connecting... [sessionId={}]", sessionId);
+	
 		String version = null;
 		final Collection<String> clientSupportedVersion = Arrays.asList(msg.frame().getFirstHeader(ACCEPT_VERSION).split(","));
 		for (int i = SUPPORTED_VERSIONS.length - 1; i >= 0; i--) {

@@ -86,7 +86,9 @@ public class Relay {
 	 * @param evt
 	 */
 	public void fromServer(@Observes @FromServer Message evt) {
-		this.log.debug("Message event from server. [sessionId={},command={}]", evt.sessionId(), evt.frame().getCommand());
+		if (this.log.isDebugEnabled()) {
+			this.log.debug("Message event from server. [sessionId={},command={}]", evt.sessionId(), evt.frame().getCommand());
+		}
 		on(evt);
 	}
 

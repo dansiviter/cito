@@ -48,11 +48,6 @@ public class DestinationChangedHolder {
 			throw new IllegalStateException("Already set!");
 		}
 		HOLDER.set(e);
-		return new QuietClosable() {
-			@Override
-			public void close() {
-				HOLDER.remove();
-			}
-		};
+		return () -> HOLDER.remove();
 	}
 }

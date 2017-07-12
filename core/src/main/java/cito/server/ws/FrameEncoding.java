@@ -35,7 +35,9 @@ import cito.stomp.Frame;
  */
 public class FrameEncoding implements Encoder.TextStream<Frame>, Decoder.TextStream<Frame> {
 	@Override
-	public void init(EndpointConfig config) { }
+	public void init(EndpointConfig config) {
+		// nothing to initialise
+	}
 
 	@Override
 	public void encode(Frame object, Writer writer) throws EncodeException, IOException {
@@ -48,5 +50,7 @@ public class FrameEncoding implements Encoder.TextStream<Frame>, Decoder.TextStr
 	}
 
 	@Override
-	public void destroy() { }
+	public void destroy() {
+		// nothing to destroy
+	}
 }

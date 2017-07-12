@@ -16,6 +16,8 @@
  */
 package cito;
 
+import static java.lang.Character.isWhitespace;
+
 /**
  * String utilities.
  * 
@@ -34,7 +36,7 @@ public enum Strings { ;
 			return true;
 		}
 		for (int i = 0; i < strLen; i++) {
-			if (Character.isWhitespace(seq.charAt(i)) == false) {
+			if (!isWhitespace(seq.charAt(i))) {
 				return false;
 			}
 		}

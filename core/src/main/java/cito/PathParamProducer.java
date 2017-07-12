@@ -58,12 +58,7 @@ public class PathParamProducer {
 			throw new IllegalStateException("Already set!");
 		}
 		HOLDER.set(parser);
-		return new QuietClosable() {
-			@Override
-			public void close() {
-				HOLDER.remove();
-			}
-		};
+		return () -> HOLDER.remove();
 	}
 
 	/**
@@ -81,7 +76,7 @@ public class PathParamProducer {
 	 * @return
 	 */
 	public static PathParser pathParser(String path) {
-		return PARSERS.computeIfAbsent(path, (k) -> PathParser.create(path));
+		return PARSERS.computeIfAbsent(path, k -> PathParser.create(path));
 	}
 
 	/**

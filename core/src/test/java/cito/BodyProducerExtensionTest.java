@@ -111,7 +111,7 @@ public class BodyProducerExtensionTest {
 		final List<Bean<?>> found = ReflectionUtil.get(this.extension, "found");
 		found.add(bean);
 
-		this.extension.addBeans(abd, this.beanManager);
+		this.extension.addBeans(abd);
 
 		assertTrue(found.isEmpty());
 

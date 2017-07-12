@@ -70,7 +70,7 @@ public class BodyProducerExtension implements Extension {
 	 * @param abd
 	 * @param beanManager
 	 */
-	public void addBeans(@Observes final AfterBeanDiscovery abd, BeanManager beanManager) {
+	public void addBeans(@Observes final AfterBeanDiscovery abd) {
 		this.found.forEach(abd::addBean);
 		this.found.clear();
 	}
@@ -135,6 +135,8 @@ public class BodyProducerExtension implements Extension {
 		}
 
 		@Override
-		public void destroy(Bean<T> bean, T instance, CreationalContext<T> creationalContext) { }
+		public void destroy(Bean<T> bean, T instance, CreationalContext<T> creationalContext) {
+			// body is a bean so no need to destroy 
+		}
 	}
 }

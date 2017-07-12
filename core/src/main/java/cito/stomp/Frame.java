@@ -242,7 +242,6 @@ public class Frame {
 		}
 
 		writer.append(getCommand().name()).append(LINE_FEED);
-		// FIXME need to ensure this orders in same order as it came in (case insensitive LinkedHashMap?)
 		for (Entry<String, List<String>> e : getHeaders().entrySet()) {
 			for (String value : e.getValue()) {
 				writer.append(e.getKey()).append(':').append(value).append(LINE_FEED);
@@ -258,9 +257,6 @@ public class Frame {
 		writer.append(NULL);
 	}
 
-	/**
-	 * FIXME only rough implementation, may not conform to spec yet
-	 */
 	@Override
 	public String toString() {
 		try (StringWriter writer = new StringWriter()) {
@@ -413,10 +409,8 @@ public class Frame {
 	 */
 	public static Builder connnected(@Nonnull String version, @Nonnull String session, @Nonnull String server) {
 		final Builder builder = builder(CONNECTED).header(VERSION, version);
-		if (session != null)
-			builder.header(SESSION, session);
-		if (server != null)
-			builder.header(SERVER, server);
+		builder.header(SESSION, requireNonNull(session));
+		builder.header(SERVER, requireNonNull(server));
 		return builder;
 	}
 
@@ -589,7 +583,7 @@ public class Frame {
 		 * @throws IllegalArgumentException if the command type does not accept a body or {@code body} is {@code null}.
 		 */
 		public Builder body(MediaType contentType, @Nonnull String body) {
-			return body(contentType, UTF_8.encode(body));
+			return body(contentType, UTF_8.encode(requireNonNull(body)));
 		}
 
 		/**
@@ -603,7 +597,7 @@ public class Frame {
 			if (!this.command.body()) {
 				throw new IllegalArgumentException(this.command + " does not accept a body!");
 			}
-			this.body = body;
+			this.body = requireNonNull(body);
 			return contentType == null ? this : header(CONTENT_TYPE, contentType.toString());
 		}
 
@@ -618,9 +612,9 @@ public class Frame {
 			}
 
 			if (this.command == Command.MESSAGE) { // why is MESSAGE so special?!
-				header(Headers.SUBSCRIPTION, id);
+				header(Headers.SUBSCRIPTION, requireNonNull(id));
 			} else {
-				header(ID, id);
+				header(ID, requireNonNull(id));
 			}
 
 			return this;

@@ -15,6 +15,7 @@
  */
 package cito.stomp.jms;
 
+import javax.annotation.Nonnull;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
@@ -45,15 +46,16 @@ public class ErrorHandler {
 	 * @param relay
 	 * @param sessionId
 	 * @param cause
+	 * @param msg
 	 * @param e
 	 */
-	public void onError(Relay relay, String sessionId, Frame cause, String msg, Exception e) {
+	public void onError(@Nonnull Relay relay, @Nonnull String sessionId, @Nonnull Frame cause, String msg, Exception e) {
 		this.log.warn("Error while processing frame! [sessionId={},frame.command={}]", sessionId, cause.getCommand(), e);
 		final Builder error = Frame.error();
-		if (cause != null && cause.containsHeader(Headers.RECIEPT)) {
+		if (cause.containsHeader(Headers.RECIEPT)) {
 			error.recieptId(cause.receipt());
 		}
-		if (msg == null) {
+		if (msg == null && e != null) {
 			msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
 		}
 		error.body(MediaType.TEXT_PLAIN_TYPE, msg);

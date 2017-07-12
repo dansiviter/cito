@@ -43,24 +43,24 @@ public enum Util { ;
 	 * @return
 	 */
 	public static <T> T getFirst(Collection<T> t) {
-		return t != null && t.size() > 0 ? t.iterator().next() : null;
+		return t == null || t.isEmpty() ? null : t.iterator().next();
 	}
 
 	/**
 	 * 
-	 * @param t
-	 * @return
+	 * @param s character sequence to check.
+	 * @return {@code true} if the given sequence is NOT {@code null} and is the empty string.
 	 */
 	public static boolean isEmpty(CharSequence s) {
 		return s != null && s.length() == 0;
 	}
 
 	/**
-	 * @param s the string to check.
-	 * @return {@code true} if the given string is {@code null} or is the empty string.
+	 * @param s character sequence to check.
+	 * @return {@code true} if the given sequence is {@code null} or is the empty string.
 	 */
-	public static boolean isNullOrEmpty(String s) {
-		return s == null || s.isEmpty();
+	public static boolean isNullOrEmpty(CharSequence s) {
+		return s == null || s.length() == 0;
 	}
 
 	/**

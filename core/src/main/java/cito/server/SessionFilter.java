@@ -15,9 +15,10 @@
  */
 package cito.server;
 
+import static java.util.Collections.singletonMap;
+import static java.util.Collections.unmodifiableMap;
+
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.FilterChain;
@@ -62,11 +63,9 @@ public class SessionFilter extends HttpFilter {
 
 		SessionRequestWrapper(HttpServletRequest request) {
 			super(request);
-
-			@SuppressWarnings("unchecked")
-			final Map<String, String[]> parameterMap = new HashMap<>(request.getParameterMap());
-			parameterMap.put("httpSessionId", new String[] { request.getSession(true).getId() });
-			this.parameterMap = Collections.unmodifiableMap(parameterMap);
+			this.parameterMap = unmodifiableMap(singletonMap(
+					"httpSessionId", new String[] { request.getSession(true).getId() }
+			));
 		}
 
 		@Override

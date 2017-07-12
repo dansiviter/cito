@@ -76,7 +76,7 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param e
 	 * @param beanManager
 	 */
-	public void registerMessageEvent(@Observes ProcessObserverMethod<Message, ?> e, BeanManager beanManager) {
+	public void registerMessageEvent(@Observes ProcessObserverMethod<Message, ?> e) {
 		final ObserverMethod<Message> method = e.getObserverMethod();
 		for (Annotation a : method.getObservedQualifiers()) {
 			if (a instanceof OnConnected) {
@@ -127,7 +127,7 @@ public class Extension implements javax.enterprise.inject.spi.Extension {
 	 * @param e
 	 * @param beanManager
 	 */
-	public void registerDestinationEvent(@Observes ProcessObserverMethod<DestinationChanged, ?> e, BeanManager beanManager) {
+	public void registerDestinationEvent(@Observes ProcessObserverMethod<DestinationChanged, ?> e) {
 		final ObserverMethod<DestinationChanged> method = e.getObserverMethod();
 		for (Annotation a : method.getObservedQualifiers()) {
 			if (a instanceof OnAdded)

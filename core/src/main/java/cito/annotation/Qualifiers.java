@@ -25,6 +25,8 @@ import static org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvide
  * @since v1.0 [19 Jul 2016]
  */
 public enum Qualifiers { ;
+	private static final String VALUE = "value";
+
 	private static final OnConnected ON_CONNECTED = of(OnConnected.class);
 	private static final OnDisconnect ON_DISCONNECT = of(OnDisconnect.class);
 	private static final OnOpen ON_OPEN = of(OnOpen.class);
@@ -56,7 +58,7 @@ public enum Qualifiers { ;
 	 * @return
 	 */
 	public static OnSubscribe onSubscribe(String value) {
-		return of(OnSubscribe.class, value == null ? emptyMap() : singletonMap("value", value));
+		return of(OnSubscribe.class, value == null ? emptyMap() : singletonMap(VALUE, value));
 	}
 
 	/**
@@ -65,7 +67,7 @@ public enum Qualifiers { ;
 	 * @return
 	 */
 	public static OnUnsubscribe onUnsubscribe(String value) {
-		return of(OnUnsubscribe.class, value == null ? emptyMap() : singletonMap("value", value));
+		return of(OnUnsubscribe.class, value == null ? emptyMap() : singletonMap(VALUE, value));
 	}
 
 	/**
@@ -74,7 +76,7 @@ public enum Qualifiers { ;
 	 * @return
 	 */
 	public static OnSend onSend(String value) {
-		return of(OnSend.class, value == null ? emptyMap() : singletonMap("value", value));
+		return of(OnSend.class, value == null ? emptyMap() : singletonMap(VALUE, value));
 	}
 
 	/**
