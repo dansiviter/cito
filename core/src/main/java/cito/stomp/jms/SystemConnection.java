@@ -32,10 +32,11 @@ import cito.stomp.Frame;
  */
 @ApplicationScoped
 public class SystemConnection extends AbstractConnection {
-	static final String SESSION_ID = "$Y$T3M";
+	public static final String SESSION_ID = "$Y$T3M";
+	public static final String DEFAULT_PASSWORD = "Pa$$w0rd";
 
 	@Inject
-	@ConfigProperty(name = "cito.system.password", defaultValue = "Pa$$w0rd")
+	@ConfigProperty(name = "cito.system.password", defaultValue = DEFAULT_PASSWORD)
 	private String passcode;
 
 	private Session session;

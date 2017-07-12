@@ -34,6 +34,8 @@ import org.apache.activemq.artemis.jms.server.config.JMSConfiguration;
 import org.apache.activemq.artemis.jms.server.config.impl.JMSConfigurationImpl;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 
+import cito.stomp.jms.SystemConnection;
+
 /**
  * 
  * @author Daniel Siviter
@@ -42,7 +44,7 @@ import org.apache.deltaspike.core.api.config.ConfigProperty;
 @ApplicationScoped
 public class BrokerConfig {
 	@Inject
-	@ConfigProperty(name = "cito.system.password", defaultValue = "Pa$$w0rd")
+	@ConfigProperty(name = "cito.system.password", defaultValue = SystemConnection.DEFAULT_PASSWORD)
 	private String password;
 
 	public static final String IN_VM_CONNECTOR = InVMConnectorFactory.class.getName();
@@ -54,7 +56,7 @@ public class BrokerConfig {
 	 * @return if present, sends a username for the connection
 	 */
 	public String getUsername() {
-		return "$Y$T3M";
+		return SystemConnection.SESSION_ID;
 	}
 
 	/**

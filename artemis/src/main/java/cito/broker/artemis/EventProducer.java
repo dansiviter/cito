@@ -95,6 +95,7 @@ public class EventProducer extends JmsContextHelper implements MessageListener {
 	 * Connect to the broker to source events.
 	 */
 	@PostConstruct
+	@Override
 	public void connect() {
 		super.connect();
 		final JMSContext ctx = getContext();
@@ -134,14 +135,12 @@ public class EventProducer extends JmsContextHelper implements MessageListener {
 
 		final String destination = evt.getDestination();
 		switch (evt.getType()) {
-		case ADDED: {
+		case ADDED:
 			notify(OnAdded.class, extension.getDestinationObservers(OnAdded.class), destination, evt);
 			break;
-		}
-		case REMOVED: {
+		case REMOVED:
 			notify(OnRemoved.class, extension.getDestinationObservers(OnRemoved.class), destination, evt);
 			break;
-		}
 		default:
 			break;
 		}

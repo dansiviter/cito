@@ -39,6 +39,7 @@ import org.apache.activemq.artemis.api.core.JsonUtil;
 import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.Configuration;
 
+import cito.broker.Inspector;
 import cito.jms.JmsContextHelper;
 import cito.jms.Requestor;
 
@@ -47,7 +48,7 @@ import cito.jms.Requestor;
  * @since v1.0 [28 Apr 2017]
  */
 @ApplicationScoped
-public class Inspector extends JmsContextHelper implements cito.broker.Inspector {
+public class ArtemisInspector extends JmsContextHelper implements Inspector {
 
 	@Inject
 	private Configuration artemisConfig;
