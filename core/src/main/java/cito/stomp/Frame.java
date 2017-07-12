@@ -603,9 +603,6 @@ public class Frame {
 			if (!this.command.body()) {
 				throw new IllegalArgumentException(this.command + " does not accept a body!");
 			}
-			if (body == null) {
-				throw new IllegalArgumentException("'body' cannot be null!");
-			}
 			this.body = body;
 			return contentType == null ? this : header(CONTENT_TYPE, contentType.toString());
 		}
