@@ -20,7 +20,7 @@ import static cito.sockjs.EventSourceHandler.EVENTSOURCE;
 import static cito.sockjs.XhrSendHandler.XHR_SEND;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,7 +38,6 @@ import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.internal.matchers.GreaterThan;
 
 /**
  * Unit test for {@link HtmlFileHandler}.
@@ -78,7 +77,7 @@ public class HtmlFileIT extends AbstractIT {
 		try (BufferedReader reader = toReader(res.readEntity(InputStream.class))) {
 			final String d = readTill(reader, "</script>");
 			assertEquals(HTML_FILE, d.trim());
-			assertThat(d.length(), new GreaterThan<Integer>(1024));
+			assertTrue(d.length() > 1024);
 			assertEquals("<script>\np(\"o\");\n</script>\n", readTill(reader, "</script>"));
 
 			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 

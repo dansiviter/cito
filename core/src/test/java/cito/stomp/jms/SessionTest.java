@@ -32,7 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import cito.ReflectionUtil;
 import cito.stomp.Frame;
@@ -84,7 +84,6 @@ public class SessionTest {
 	public void send_message() throws JMSException, IOException {
 		ReflectionUtil.set(this.session, "producer", this.producer);
 		final Frame frame = mock(Frame.class);
-		when(frame.destination()).thenReturn("/here");
 		final Message message = mock(Message.class);
 		when(this.factory.toFrame(message, "subscriptionId")).thenReturn(frame);
 		when(this.delegate.getAcknowledgeMode()).thenReturn(javax.jms.Session.AUTO_ACKNOWLEDGE);
@@ -104,7 +103,6 @@ public class SessionTest {
 	public void send_message_ack() throws JMSException, IOException {
 		ReflectionUtil.set(this.session, "producer", this.producer);
 		final Frame frame = mock(Frame.class);
-		when(frame.destination()).thenReturn("/here");
 		final Message message = mock(Message.class);
 		when(this.factory.toFrame(message, "subscriptionId")).thenReturn(frame);
 		when(this.delegate.getAcknowledgeMode()).thenReturn(javax.jms.Session.CLIENT_ACKNOWLEDGE);

@@ -16,7 +16,7 @@
 package cito.server;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -30,7 +30,6 @@ import java.util.Set;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
@@ -42,7 +41,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import cito.ReflectionUtil;
 import cito.annotation.OnConnected;
@@ -183,11 +182,8 @@ public class ExtensionTest {
 	}
 
 	@Test
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void registerContexts() {
 		final AfterBeanDiscovery afterBeanDiscovery = mock(AfterBeanDiscovery.class);
-		final AnnotatedType annotatedType = mock(AnnotatedType.class);
-		when(this.beanManager.createAnnotatedType(any())).thenReturn(annotatedType);
 
 		this.extension.registerContexts(afterBeanDiscovery, this.beanManager);
 

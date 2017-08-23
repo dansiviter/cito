@@ -21,12 +21,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 
+import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.ws.rs.core.MediaType;
+
+import org.slf4j.Logger;
 
 import cito.ext.BodyReader;
 import cito.ext.BodyWriter;
@@ -40,7 +44,11 @@ import cito.ext.BodyWriter;
 @ApplicationScoped
 public class JsonBSerialiser implements BodyWriter<Object>, BodyReader<Object> {
 	@Inject
-	private Jsonb jsonb;
+	private Logger log;
+	@Inject
+	private Instance<Jsonb> jsonb;
+
+	private volatile Jsonb instance;
 
 	@Override
 	public boolean isReadable(Type type, MediaType mediaType) {
@@ -49,7 +57,7 @@ public class JsonBSerialiser implements BodyWriter<Object>, BodyReader<Object> {
 
 	@Override
 	public Object readFrom(Type type, MediaType mediaType, InputStream is) throws IOException {
-		return this.jsonb.fromJson(is, type);
+		return getJsonb().fromJson(is, type);
 	}
 
 	@Override
@@ -58,9 +66,33 @@ public class JsonBSerialiser implements BodyWriter<Object>, BodyReader<Object> {
 	}
 
 	@Override
-	public void writeTo(Object t, Type type, MediaType mediaType, OutputStream os)
-			throws IOException {
-		this.jsonb.toJson(t, type, os);
+	public void writeTo(Object t, Type type, MediaType mediaType, OutputStream os) throws IOException {
+		getJsonb().toJson(t, type, os);
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	private Jsonb getJsonb() {
+		if (this.jsonb.isUnsatisfied()) {
+			if (this.instance == null) {
+				this.instance = JsonbBuilder.create();
+			}
+			return this.instance;
+		}
+		return this.jsonb.get();
+	}
+
+	@PreDestroy
+	public void destroy() {
+		if (this.instance != null) {
+			try {
+				this.instance.close();
+			} catch (Exception e) {
+				this.log.warn("Unable to close Jsonb!", e);
+			}
+		}
 	}
 
 

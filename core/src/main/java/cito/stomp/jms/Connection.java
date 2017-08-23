@@ -30,6 +30,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Event;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.jms.JMSException;
@@ -70,6 +71,8 @@ public class Connection extends AbstractConnection {
 	private Event<Message> brokerMessageEvent;
 	@Inject
 	private Provider<javax.websocket.Session> wsSession;
+	@Inject
+	private Instance<SecurityContext> securityCtx;
 
 	private HeartBeatMonitor heartBeatMonitor;
 	private String sessionId;
@@ -175,10 +178,9 @@ public class Connection extends AbstractConnection {
 		String login = msg.frame().getFirstHeader(Headers.LOGIN);
 		final String passcode = msg.frame().getFirstHeader(Headers.PASSCODE);
 
-		SecurityContext securityCtx = SecurityContextProducer.securityCtx(this.wsSession.get());
-		if (isBlank(login) && securityCtx != null && securityCtx.getUserPrincipal() != null) {
-			login = securityCtx.getUserPrincipal().getName();
-		} else if (!isBlank(login) && securityCtx == null) { // perform login if security context doesn't already exist
+		if (isBlank(login) && !this.securityCtx.isUnsatisfied()) {
+			login = this.securityCtx.get().getUserPrincipal().getName();
+		} else if (!isBlank(login) && this.securityCtx.isUnsatisfied()) { // perform login if security context doesn't already exist
 			final JaasSecurityContext jaasSecurityContext = BeanProvider.getDependent(this.beanManager, JaasSecurityContext.class).get();
 			jaasSecurityContext.login(login, passcode.toCharArray());
 			SecurityContextProducer.set(this.wsSession.get(), jaasSecurityContext);

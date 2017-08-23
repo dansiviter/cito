@@ -15,23 +15,23 @@
  */
 package cito.stomp.jms;
 
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.enterprise.event.Event;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Provider;
 import javax.jms.ConnectionFactory;
@@ -51,11 +51,12 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
 import cito.event.Message;
+import cito.server.SecurityContext;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Headers;
@@ -90,6 +91,8 @@ public class ConnectionTest {
 	private Provider<javax.websocket.Session> wsSessionProvider;
 	@Mock
 	private javax.websocket.Session wsSession;
+	@Mock
+	private Instance<SecurityContext> securityCtx;
 
 	@InjectMocks
 	private Connection connection;
@@ -124,15 +127,13 @@ public class ConnectionTest {
 		final Frame frame = Frame.connect("myhost.com", "1.0").build();
 		final Message messageEvent = new Message("ABC123", frame);
 		final javax.jms.Connection jmsConnection = mock(javax.jms.Connection.class);
-		when(this.connectionFactory.createConnection(anyString(), anyString())).thenReturn(jmsConnection);
-		when(this.wsSessionProvider.get()).thenReturn(this.wsSession);
-		when(this.wsSession.getUserProperties()).thenReturn(Collections.emptyMap());
+		when(this.connectionFactory.createConnection(null, null)).thenReturn(jmsConnection);
+		when(this.securityCtx.isUnsatisfied()).thenReturn(true);
 
 		this.connection.connect(messageEvent);
 
 		verify(this.log).info("Connecting... [sessionId={}]", "ABC123");
-		verify(this.wsSessionProvider).get();
-		verify(this.wsSession).getUserProperties();
+		verify(this.securityCtx).isUnsatisfied();
 		verify(this.connectionFactory).createConnection(null, null);
 		verify(heartBeatMonitor).resetSend();
 		verify(this.log).info("Starting JMS connection... [sessionId={}]", "ABC123");
@@ -428,6 +429,7 @@ public class ConnectionTest {
 				this.scheduler,
 				this.brokerMessageEvent,
 				this.wsSessionProvider,
-				this.wsSession);
+				this.wsSession,
+				this.securityCtx);
 	}
 }

@@ -215,7 +215,7 @@ public abstract class AbstractIT {
 		assertEquals(Status.NO_CONTENT, res.getStatusInfo());
 		assertThat("'max-age' must be large, one year (31536000) is best", res.getHeaderString(HttpHeaders.CACHE_CONTROL), regEx("public, max-age=[1-9][0-9]{6,}"));
 		assertNotNull(res.getHeaderString(HttpHeaders.EXPIRES));
-		assertThat(Long.parseLong(res.getHeaderString("access-control-max-age")), new GreaterThan<>(1000000L));
+		assertTrue(Long.parseLong(res.getHeaderString("access-control-max-age")) > 1_000_000L);
 		final StringJoiner joiner = new StringJoiner(", ");
 		Arrays.asList(allowedMethods).forEach(joiner::add);
 		assertEquals(res.getHeaderString("Access-Control-Allow-Methods"), joiner.toString());

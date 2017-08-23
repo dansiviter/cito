@@ -70,6 +70,9 @@ public class BrokerProvider {
 				this.artemisConfig = this.config.getConfiguration();
 				final JMSConfiguration jmsConfig = this.config.getJmsConfig();
 				this.embeddedJMS = new EmbeddedJMS().setConfiguration(this.artemisConfig).setJmsConfiguration(jmsConfig);
+				if (!this.config.isSecurityEnabled()) {
+					this.embeddedJMS.setSecurityManager(NoopSecurityManager.INSTANCE);
+				}
 				this.customiser.customise(embeddedJMS);
 				this.embeddedJMS.start();
 			} catch (Exception e) {

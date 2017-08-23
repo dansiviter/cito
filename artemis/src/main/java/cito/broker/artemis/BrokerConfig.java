@@ -110,7 +110,10 @@ public class BrokerConfig {
 	}
 
 	/**
+	 * Note: security is actually enabled at all times, however a false value will set a no-op security manager.
+	 * 
 	 * @return whether or not security is enabled in the broker.
+	 * @see BrokerProvider#init()
 	 */
 	public boolean isSecurityEnabled() {
 		return false;
@@ -121,9 +124,7 @@ public class BrokerConfig {
 	 */
 	public Configuration getConfiguration() {
 		final Map<String, Object> params = Collections.singletonMap(SERVER_ID_PROP_NAME, "1");
-		final Configuration config = new ConfigurationImpl()
-				.setSecurityEnabled(isSecurityEnabled())
-				.setPersistenceEnabled(false);
+		final Configuration config = new ConfigurationImpl().setPersistenceEnabled(false);
 		// default In VM Acceptor for all your ConnectionFactory needs
 		config.addAcceptorConfiguration(new TransportConfiguration(IN_VM_ACCEPTOR, params, "InVMAcceptor"));
 		return config;

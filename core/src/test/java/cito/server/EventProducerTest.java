@@ -32,7 +32,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import cito.ReflectionUtil;
 import cito.annotation.OnConnected;
@@ -42,8 +42,6 @@ import cito.annotation.OnSubscribe;
 import cito.annotation.OnUnsubscribe;
 import cito.annotation.Qualifiers;
 import cito.event.Message;
-import cito.server.EventProducer;
-import cito.server.Extension;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 
@@ -137,8 +135,7 @@ public class EventProducerTest {
 	@Test
 	public void message_DISCONNECT() {
 		when(this.extension.getMessageObservers(OnDisconnect.class)).thenReturn(Collections.singleton(observerMethod));
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("topic/*")));
-
+	
 		final Message event = new Message(
 				Frame.builder(Command.DISCONNECT).build());
 

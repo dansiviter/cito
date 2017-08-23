@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
@@ -116,7 +116,6 @@ public class SystemConnectionTest {
 
 		final Message msg = mock(Message.class);
 		final Session session = mock(Session.class);
-		when(this.factory.toSession(this.connection, false, javax.jms.Session.AUTO_ACKNOWLEDGE)).thenReturn(session);
 		when(msg.sessionId()).thenReturn("another");
 
 		this.connection.on(msg);

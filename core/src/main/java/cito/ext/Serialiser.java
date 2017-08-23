@@ -26,9 +26,12 @@ import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 
 /**
+ * Performs [de]serialisation of beans.
  * 
  * @author Daniel Siviter
  * @since v1.0 [24 Aug 2016]
+ * @see BodyReader
+ * @see BodyWriter
  */
 @ApplicationScoped
 public class Serialiser {
@@ -52,7 +55,7 @@ public class Serialiser {
 				return (T) reader.readFrom(type, mediaType, is);
 			}
 		}
-		throw new IOException("Unable to read!");
+		throw new IOException("Unable to read! [type=" + type + ",mediaType=" + mediaType + "]");
 	}
 
 	/**
@@ -71,6 +74,6 @@ public class Serialiser {
 				return;
 			}
 		}
-		throw new IOException("Unable to write! [type=" + type + ",mediaType=" + mediaType);
+		throw new IOException("Unable to write! [type=" + type + ",mediaType=" + mediaType + "]");
 	}
 }

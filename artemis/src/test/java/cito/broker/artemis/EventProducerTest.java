@@ -20,9 +20,9 @@ import static java.util.Collections.singletonMap;
 import static org.apache.activemq.artemis.api.core.management.ManagementHelper.HDR_NOTIFICATION_TYPE;
 import static org.apache.activemq.artemis.jms.server.management.JMSNotificationType.MESSAGE;
 import static org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvider.of;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -49,7 +49,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
@@ -160,7 +160,7 @@ public class EventProducerTest {
 
 		verify(this.message).getStringProperty(MESSAGE.toString());
 		verify(this.message).getStringProperty(HDR_NOTIFICATION_TYPE.toString());
-		verify(this.log).info(eq("Destination changed. [type={},destination={}]"), any(JMSNotificationType.class), anyString());
+		verify(this.log).info(eq("Destination changed. [type={},destination={}]"), eq(type), anyString());
 		verify(this.beanManager).getExtension(Extension.class);
 		verify(extension).getDestinationObservers(cls);
 		verify(observerMethod).getObservedQualifiers();
@@ -183,7 +183,7 @@ public class EventProducerTest {
 
 		verify(this.message).getStringProperty(MESSAGE.toString());
 		verify(this.message).getStringProperty(HDR_NOTIFICATION_TYPE.toString());
-		verify(this.log).info(eq("Destination changed. [type={},destination={}]"), any(JMSNotificationType.class), anyString());
+		verify(this.log).info(eq("Destination changed. [type={},destination={}]"), eq(Type.ADDED), anyString());
 		verify(this.beanManager).getExtension(Extension.class);
 		verify(extension).getDestinationObservers(OnAdded.class);
 		verify(observerMethod).getObservedQualifiers();

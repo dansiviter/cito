@@ -22,10 +22,12 @@ import java.lang.reflect.Type;
 import javax.ws.rs.core.MediaType;
 
 /**
+ * Performs deserialisation of a stream to an object.
  * 
  * @author Daniel Siviter
  * @since v1.0 [24 Aug 2016]
  * @param <T>
+ * @see Serialiser
  */
 public interface BodyReader<T> {
 	/**

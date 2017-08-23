@@ -8,7 +8,7 @@
 	</parent>
 	<artifactId>sockjs</artifactId>
 	<name>Cit&#x00F5; SockJS</name>
-	<description>SockJS implementation of Cit&#x00D5; to promote interoperability with browsers, graceful fallback and HTTP proxy passthrough.</description>
+	<description>SockJS implementation of Cit&#x00F5; to promote interoperability with browsers, graceful fallback and HTTP proxy passthrough.</description>
 
 	<dependencies>
 		<dependency>
