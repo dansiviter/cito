@@ -88,6 +88,9 @@ public class JaasSecurityContext implements SecurityContext {
 	@Override
 	public boolean isUserInRole(String role) {
 		final Group roles = getRolesFromSubject(getSubject());
+		if (roles == null) {
+			return false;
+		}
 		for (Principal principal : Collections.list(roles.members())) {
 			if (role.equals(principal.getName())) {
 				return true;

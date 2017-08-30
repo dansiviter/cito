@@ -55,6 +55,9 @@ public class ErrorHandler {
 		if (cause.containsHeader(Headers.RECIEPT)) {
 			error.recieptId(cause.receipt());
 		}
+		if (msg == null && e == null) {
+			throw new IllegalStateException("Either 'msg' or 'e' must not be null!");
+		}
 		if (msg == null && e != null) {
 			msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
 		}
