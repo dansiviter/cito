@@ -320,7 +320,7 @@ public class Connection extends AbstractConnection {
 	 * @throws Exception
 	 */
 	private void sendReceipt(@Nonnull Frame frame)  {
-		final String receiptId = frame.getFirstHeader(Headers.RECIEPT);
+		final String receiptId = frame.getFirstHeader(Headers.RECEIPT);
 		if (receiptId != null) {
 			sendToClient(Frame.receipt(receiptId).build());
 		}

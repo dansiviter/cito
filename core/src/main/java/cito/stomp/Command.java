@@ -31,7 +31,7 @@ public enum Command {
 	ERROR,
 	MESSAGE,
 	NACK,
-	RECIEPT,
+	RECEIPT,
 	SEND,
 	STOMP,
 	SUBSCRIBE,
@@ -43,7 +43,7 @@ public enum Command {
 	 * @return
 	 */
 	public boolean server() {
-		return this == CONNECTED || this == ERROR || this == MESSAGE || this == RECIEPT;
+		return this == CONNECTED || this == ERROR || this == MESSAGE || this == RECEIPT;
 	}
 
 	/**

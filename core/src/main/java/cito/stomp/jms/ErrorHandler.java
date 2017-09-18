@@ -52,8 +52,8 @@ public class ErrorHandler {
 	public void onError(@Nonnull Relay relay, @Nonnull String sessionId, @Nonnull Frame cause, String msg, Exception e) {
 		this.log.warn("Error while processing frame! [sessionId={},frame.command={}]", sessionId, cause.getCommand(), e);
 		final Builder error = Frame.error();
-		if (cause.containsHeader(Headers.RECIEPT)) {
-			error.recieptId(cause.receipt());
+		if (cause.containsHeader(Headers.RECEIPT)) {
+			error.receiptId(cause.receipt());
 		}
 		if (msg == null && e == null) {
 			throw new IllegalStateException("Either 'msg' or 'e' must not be null!");

@@ -18,7 +18,7 @@ package cito.stomp;
 import static cito.stomp.Command.CONNECT;
 import static cito.stomp.Command.CONNECTED;
 import static cito.stomp.Command.DISCONNECT;
-import static cito.stomp.Command.RECIEPT;
+import static cito.stomp.Command.RECEIPT;
 import static cito.stomp.Command.SEND;
 import static cito.stomp.Headers.ACCEPT_VERSION;
 import static cito.stomp.Headers.CONTENT_TYPE;
@@ -26,7 +26,7 @@ import static cito.stomp.Headers.DESTINATION;
 import static cito.stomp.Headers.HOST;
 import static cito.stomp.Headers.ID;
 import static cito.stomp.Headers.MESSAGE_ID;
-import static cito.stomp.Headers.RECIEPT_ID;
+import static cito.stomp.Headers.RECEIPT_ID;
 import static cito.stomp.Headers.SERVER;
 import static cito.stomp.Headers.SESSION;
 import static cito.stomp.Headers.SUBSCRIPTION;
@@ -183,7 +183,7 @@ public class Frame {
 	 * @return
 	 */
 	public int receipt() {
-		return Integer.parseInt(getFirstHeader(Headers.RECIEPT));
+		return Integer.parseInt(getFirstHeader(Headers.RECEIPT));
 	}
 
 	/**
@@ -191,7 +191,7 @@ public class Frame {
 	 * @return
 	 */
 	public int receiptId() {
-		return Integer.parseInt(getFirstHeader(Headers.RECIEPT_ID));
+		return Integer.parseInt(getFirstHeader(Headers.RECEIPT_ID));
 	}
 
 	/**
@@ -430,7 +430,7 @@ public class Frame {
 	 * @return
 	 */
 	public static Builder receipt(@Nonnull String receiptId) {
-		return builder(RECIEPT).header(RECIEPT_ID, receiptId);
+		return builder(RECEIPT).header(RECEIPT_ID, receiptId);
 	}
 
 	/**
@@ -641,20 +641,20 @@ public class Frame {
 
 		/**
 		 * 
-		 * @param recieptId
+		 * @param receiptId
 		 * @return
 		 */
-		public Builder reciept(int recieptId) {
-			return header(Headers.RECIEPT, Integer.toString(recieptId));
+		public Builder receipt(int receiptId) {
+			return header(Headers.RECEIPT, Integer.toString(receiptId));
 		}
 
 		/**
 		 * 
-		 * @param recieptId
+		 * @param receiptId
 		 * @return
 		 */
-		public Builder recieptId(int recieptId) {
-			return header(Headers.RECIEPT_ID, Integer.toString(recieptId));
+		public Builder receiptId(int receiptId) {
+			return header(Headers.RECEIPT_ID, Integer.toString(receiptId));
 		}
 
 		/**
@@ -700,8 +700,8 @@ public class Frame {
 				assertExists(MESSAGE_ID);
 				assertExists(SUBSCRIPTION);
 				break;
-			case RECIEPT:
-				assertExists(RECIEPT_ID);
+			case RECEIPT:
+				assertExists(RECEIPT_ID);
 				break;
 			case SEND:
 				assertExists(DESTINATION);

@@ -150,7 +150,7 @@ public class Client implements Connection {
 		case MESSAGE:
 			System.out.println("MESSAGE recieved!");
 			break;
-		case RECIEPT:
+		case RECEIPT:
 			this.receipts.get(frame.receiptId()).complete(frame);
 			break;
 		case ERROR:
@@ -214,7 +214,7 @@ public class Client implements Connection {
 	throws IOException, InterruptedException, ExecutionException, TimeoutException
 	{
 		final int receiptId = this.receiptId.incrementAndGet();
-		sendToClient(Frame.send(destination, contentType, body).reciept(receiptId).build());
+		sendToClient(Frame.send(destination, contentType, body).receipt(receiptId).build());
 		onReceipt(receiptId, timeout, unit, fn);
 	}
 
@@ -229,9 +229,9 @@ public class Client implements Connection {
 	 */
 	public void disconnect(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
 		try {
-			final int recieptId = this.receiptId.incrementAndGet();
-			sendToClient(Frame.disconnect().reciept(recieptId).build());
-			awaitReceipt(recieptId, timeout, unit);
+			final int receiptId = this.receiptId.incrementAndGet();
+			sendToClient(Frame.disconnect().receipt(receiptId).build());
+			awaitReceipt(receiptId, timeout, unit);
 			close(new CloseReason(CloseCodes.NORMAL_CLOSURE, null));
 		} catch (IOException e) {
 			LOG.error("Unable to close!", e);

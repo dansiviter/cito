@@ -25,7 +25,7 @@ import static cito.stomp.Command.DISCONNECT;
 import static cito.stomp.Command.ERROR;
 import static cito.stomp.Command.MESSAGE;
 import static cito.stomp.Command.NACK;
-import static cito.stomp.Command.RECIEPT;
+import static cito.stomp.Command.RECEIPT;
 import static cito.stomp.Command.SEND;
 import static cito.stomp.Command.STOMP;
 import static cito.stomp.Command.SUBSCRIBE;
@@ -113,7 +113,7 @@ public class FrameTest {
 				CONNECTED,
 				DISCONNECT,
 				NACK,
-				RECIEPT,
+				RECEIPT,
 				STOMP,
 				SUBSCRIBE,
 				UNSUBSCRIBE
