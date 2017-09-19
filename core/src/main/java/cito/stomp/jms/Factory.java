@@ -15,6 +15,19 @@
  */
 package cito.stomp.jms;
 
+import static cito.stomp.Header.Standard.CONTENT_LENGTH;
+import static cito.stomp.Header.Standard.CONTENT_TYPE;
+import static cito.stomp.Header.Standard.CORRELATION_ID;
+import static cito.stomp.Header.Standard.DESTINATION;
+import static cito.stomp.Header.Standard.EXPIRATION_TIME;
+import static cito.stomp.Header.Standard.MESSAGE_ID;
+import static cito.stomp.Header.Standard.PRORITY;
+import static cito.stomp.Header.Standard.REDELIVERED;
+import static cito.stomp.Header.Standard.REPLY_TO;
+import static cito.stomp.Header.Standard.SESSION;
+import static cito.stomp.Header.Standard.SUBSCRIPTION;
+import static cito.stomp.Header.Standard.TIMESTAMP;
+import static cito.stomp.Header.Standard.TYPE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
@@ -42,11 +55,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
-import cito.collections.LinkedCaseInsensitiveMap;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Frame.Builder;
-import cito.stomp.Headers;
+import cito.stomp.Header;
 
 /**
  * Factory for creating both JMS and STOMP artifacts.
@@ -56,12 +68,12 @@ import cito.stomp.Headers;
  */
 @ApplicationScoped
 public class Factory {
-	private static final Set<String> IGNORE_HEADERS;
+	private static final Set<Header> IGNORE_HEADERS;
 
 	static {
-		final Set<String> ignore = new HashSet<>();
-		ignore.add(Headers.DESTINATION);
-		ignore.add(Headers.CONTENT_LENGTH);
+		final Set<Header> ignore = new HashSet<>();
+		ignore.add(DESTINATION);
+		ignore.add(CONTENT_LENGTH);
 		IGNORE_HEADERS = Collections.unmodifiableSet(ignore);
 	}
 
@@ -134,7 +146,7 @@ public class Factory {
 	 */
 	public Message toMessage(Session session, Frame frame) throws JMSException {
 		final Message msg;
-		if (frame.containsHeader(Headers.CONTENT_LENGTH)) {
+		if (frame.contains(CONTENT_LENGTH)) {
 			final ByteBuffer buf = frame.getBody();
 			byte[] bytes = new byte[buf.remaining()];
 			buf.get(bytes);
@@ -157,10 +169,10 @@ public class Factory {
 	 * @throws JMSException
 	 */
 	public Frame toFrame(Message message, String subscriptionId) throws IOException, JMSException {
-		Builder frame = Frame.builder(Command.MESSAGE).header(Headers.SUBSCRIPTION, subscriptionId);
+		Builder frame = Frame.builder(Command.MESSAGE).header(SUBSCRIPTION, subscriptionId);
 		copyHeaders(message, frame);
 
-		final String contentType = message.getStringProperty(Headers.CONTENT_TYPE);
+		final String contentType = message.getStringProperty(CONTENT_TYPE.value());
 		final ByteBuffer buf;
 		if (message instanceof TextMessage) {
 			final TextMessage msg = (TextMessage) message;
@@ -169,7 +181,7 @@ public class Factory {
 			final BytesMessage msg = (BytesMessage) message;
 			byte[] data = new byte[(int) msg.getBodyLength()];
 			msg.readBytes(data);
-			frame.header(Headers.CONTENT_LENGTH, Integer.toString(data.length));
+			frame.header(CONTENT_LENGTH, Integer.toString(data.length));
 			buf = ByteBuffer.wrap(data);
 		} else {
 			throw new IllegalArgumentException("Unexpected type! [" + message.getClass() + "]");
@@ -186,26 +198,26 @@ public class Factory {
 	 * @throws JMSException
 	 */
 	private void copyHeaders(Message message, Builder frame) throws IOException, JMSException {
-		frame.header(Headers.DESTINATION, fromDestination(message.getJMSDestination()));
-		frame.header(Headers.MESSAGE_ID, message.getJMSMessageID());
+		frame.header(DESTINATION, fromDestination(message.getJMSDestination()));
+		frame.header(MESSAGE_ID, message.getJMSMessageID());
 
 		if (message.getJMSCorrelationID() != null) {
-			frame.header(Headers.CORRELATION_ID, message.getJMSCorrelationID());
+			frame.header(CORRELATION_ID, message.getJMSCorrelationID());
 		}
-		frame.header(Headers.EXPIRATION_TIME, Long.toString(message.getJMSExpiration()));
+		frame.header(EXPIRATION_TIME, Long.toString(message.getJMSExpiration()));
 
 		if (message.getJMSRedelivered()) {
-			frame.header(Headers.REDELIVERED, "true");
+			frame.header(REDELIVERED, "true");
 		}
-		frame.header(Headers.PRORITY, Integer.toString(message.getJMSPriority()));
+		frame.header(PRORITY, Integer.toString(message.getJMSPriority()));
 
 		if (message.getJMSReplyTo() != null) {
-			frame.header(Headers.REPLY_TO, fromDestination(message.getJMSReplyTo()));
+			frame.header(REPLY_TO, fromDestination(message.getJMSReplyTo()));
 		}
-		frame.header(Headers.TIMESTAMP, Long.toString(message.getJMSTimestamp()));
+		frame.header(TIMESTAMP, Long.toString(message.getJMSTimestamp()));
 
 		if (message.getJMSType() != null) {
-			frame.header(Headers.TYPE, message.getJMSType());
+			frame.header(TYPE, message.getJMSType());
 		}
 
 		@SuppressWarnings("unchecked")
@@ -223,27 +235,27 @@ public class Factory {
 	 * @throws JMSException
 	 */
 	private void copyHeaders(Session session, Frame frame, Message msg) throws JMSException {
-		final MultivaluedMap<String, String> headers = new MultivaluedHashMap<>(new LinkedCaseInsensitiveMap<>());
+		final MultivaluedMap<Header, String> headers = new MultivaluedHashMap<>();
 		headers.putAll(frame.getHeaders());
 
-		msg.setJMSCorrelationID(removeAndGetFirst(headers, Headers.CORRELATION_ID));
+		msg.setJMSCorrelationID(removeAndGetFirst(headers, CORRELATION_ID));
 
-		final String type = removeAndGetFirst(headers, Headers.TYPE);
+		final String type = removeAndGetFirst(headers, TYPE);
 		if (type != null) {
 			msg.setJMSType(type);
 		}
 
-		String replyTo = removeAndGetFirst(headers, Headers.REPLY_TO);
+		String replyTo = removeAndGetFirst(headers, REPLY_TO);
 		if (replyTo != null) {
 			msg.setJMSReplyTo(toDestination(session, replyTo));
 		}
 
-		final String sessionId = removeAndGetFirst(headers, Headers.SESSION);
+		final String sessionId = removeAndGetFirst(headers, SESSION);
 		if (sessionId != null)
 			msg.setStringProperty("session", sessionId);
 
 		// now the general headers
-		for (Entry<String, List<String>> e : frame.getHeaders().entrySet()) {
+		for (Entry<Header, List<String>> e : frame.getHeaders().entrySet()) {
 			if (IGNORE_HEADERS.contains(e.getKey()))
 				continue;
 			msg.setStringProperty(toJmsKey(e.getKey()), e.getValue().get(0));
@@ -256,21 +268,21 @@ public class Factory {
 	/**
 	 * 
 	 * @param map
-	 * @param key
+	 * @param header
 	 * @return
 	 */
-	private static String removeAndGetFirst(MultivaluedMap<String, String> map, String key) {
-		final List<String> values = map.remove(key);
+	private static String removeAndGetFirst(MultivaluedMap<Header, String> map, Header header) {
+		final List<String> values = map.remove(header);
 		return values != null && !values.isEmpty() ? values.get(0) : null;
 	}
 
 	/**
 	 * 
-	 * @param key
+	 * @param header
 	 * @return
 	 */
-	public static String toJmsKey(String key) {
-		return key.replace("-", "_HYPHEN_").replace(".", "_DOT_");
+	public static String toJmsKey(Header header) {
+		return header.value().replace("-", "_HYPHEN_").replace(".", "_DOT_");
 	}
 
 	/**
@@ -278,7 +290,7 @@ public class Factory {
 	 * @param key
 	 * @return
 	 */
-	public static String toStompKey(String key) {
-		return key.replace("_HYPHEN_", "-").replace("_DOT_", ".");
+	public static Header toStompKey(String key) {
+		return Header.valueOf(key.replace("_HYPHEN_", "-").replace("_DOT_", "."));
 	}
 }

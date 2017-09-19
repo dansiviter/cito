@@ -48,9 +48,6 @@ import javax.ws.rs.core.MediaType;
 
 import org.junit.Test;
 
-import cito.stomp.Command;
-import cito.stomp.Frame;
-
 /**
  * Defines a STOMP frame
  * 
@@ -69,13 +66,13 @@ public class FrameTest {
 		assertEquals(2, frame.getHeaders().size());
 
 		// ensure header order is maintained
-		final Iterator<Entry<String, List<String>>> itr = frame.getHeaders().entrySet().iterator();
-		final Entry<String, List<String>> header2 = itr.next();
-		assertEquals("header2", header2.getKey());
+		final Iterator<Entry<Header, List<String>>> itr = frame.getHeaders().entrySet().iterator();
+		final Entry<Header, List<String>> header2 = itr.next();
+		assertEquals("header2", header2.getKey().value());
 		assertEquals(1, header2.getValue().size());
 		assertEquals("value", header2.getValue().get(0));
-		final Entry<String, List<String>> header1 = itr.next();
-		assertEquals("header1", header1.getKey());
+		final Entry<Header, List<String>> header1 = itr.next();
+		assertEquals("header1", header1.getKey().value());
 		assertEquals(2, header1.getValue().size());
 		assertEquals("value2", header1.getValue().get(0));
 		assertEquals("value1", header1.getValue().get(1));
@@ -87,7 +84,7 @@ public class FrameTest {
 		Frame frame = Frame.from("ACK\nheader1:value\n\n" + NULL);
 		assertEquals(Command.ACK, frame.getCommand());
 		assertEquals(1, frame.getHeaders().size());
-		final List<String> header1 = frame.getHeaders("header1");
+		final List<String> header1 = frame.get(Header.valueOf("header1"));
 		assertEquals(1, header1.size());
 		assertEquals("value", header1.get(0));
 		assertNull(frame.getBody());
@@ -96,7 +93,7 @@ public class FrameTest {
 	@Test
 	public void toString_() {
 		final Frame frame0 = Frame.message("/here", "sub-0", "123", MediaType.TEXT_PLAIN_TYPE, "body").build();
-		assertEquals("MESSAGE\ndestination:/here\nmessage-id:123\ncontent-type:text/plain\nsubscription:sub-0\n\nbody" + NULL, frame0.toString());
+		assertEquals("MESSAGE\ndestination:/here\nsubscription:sub-0\nmessage-id:123\ncontent-type:text/plain\n\nbody" + NULL, frame0.toString());
 
 		final Frame frame1 = Frame.send("/there", MediaType.TEXT_PLAIN_TYPE, "body").build();
 		assertEquals("SEND\ndestination:/there\ncontent-type:text/plain\n\nbody" + NULL, frame1.toString());

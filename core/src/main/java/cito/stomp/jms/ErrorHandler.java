@@ -27,7 +27,7 @@ import cito.annotation.FromServer;
 import cito.event.Message;
 import cito.stomp.Frame;
 import cito.stomp.Frame.Builder;
-import cito.stomp.Headers;
+import cito.stomp.Header;
 
 /**
  * 
@@ -52,7 +52,7 @@ public class ErrorHandler {
 	public void onError(@Nonnull Relay relay, @Nonnull String sessionId, @Nonnull Frame cause, String msg, Exception e) {
 		this.log.warn("Error while processing frame! [sessionId={},frame.command={}]", sessionId, cause.getCommand(), e);
 		final Builder error = Frame.error();
-		if (cause.containsHeader(Headers.RECEIPT)) {
+		if (cause.contains(Header.Standard.RECEIPT)) {
 			error.receiptId(cause.receipt());
 		}
 		if (msg == null && e == null) {

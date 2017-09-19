@@ -15,24 +15,23 @@
  */
 package cito.stomp;
 
-import static cito.stomp.Command.CONNECT;
-import static cito.stomp.Command.CONNECTED;
-import static cito.stomp.Command.DISCONNECT;
-import static cito.stomp.Command.RECEIPT;
-import static cito.stomp.Command.SEND;
-import static cito.stomp.Headers.ACCEPT_VERSION;
-import static cito.stomp.Headers.CONTENT_TYPE;
-import static cito.stomp.Headers.DESTINATION;
-import static cito.stomp.Headers.HOST;
-import static cito.stomp.Headers.ID;
-import static cito.stomp.Headers.MESSAGE_ID;
-import static cito.stomp.Headers.RECEIPT_ID;
-import static cito.stomp.Headers.SERVER;
-import static cito.stomp.Headers.SESSION;
-import static cito.stomp.Headers.SUBSCRIPTION;
-import static cito.stomp.Headers.TRANSACTION;
-import static cito.stomp.Headers.VERSION;
+import static cito.stomp.Header.Standard.ACCEPT_VERSION;
+import static cito.stomp.Header.Standard.CONTENT_LENGTH;
+import static cito.stomp.Header.Standard.CONTENT_TYPE;
+import static cito.stomp.Header.Standard.DESTINATION;
+import static cito.stomp.Header.Standard.HOST;
+import static cito.stomp.Header.Standard.ID;
+import static cito.stomp.Header.Standard.MESSAGE_ID;
+import static cito.stomp.Header.Standard.RECEIPT;
+import static cito.stomp.Header.Standard.RECEIPT_ID;
+import static cito.stomp.Header.Standard.SERVER;
+import static cito.stomp.Header.Standard.SESSION;
+import static cito.stomp.Header.Standard.SUBSCRIPTION;
+import static cito.stomp.Header.Standard.TRANSACTION;
+import static cito.stomp.Header.Standard.VERSION;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNull;
 
 import java.io.BufferedReader;
@@ -43,6 +42,9 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -52,11 +54,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
 
-import cito.collections.LinkedCaseInsensitiveMap;
-import cito.collections.UnmodifiableMultivaluedMap;
+import cito.stomp.Header.Standard;
 
 /**
  * Defines a STOMP frame
@@ -70,10 +69,10 @@ public class Frame {
 
 	public static final char NULL = '\u0000';
 	static final char LINE_FEED = '\n';
-	public static final Frame HEART_BEAT = new Frame(Command.HEARTBEAT, new MultivaluedHashMap<>(0), null);
+	public static final Frame HEART_BEAT = new Frame(Command.HEARTBEAT, new HashMap<>(0), null);
 
 	private final Command command;
-	private final MultivaluedMap<String, String> headers;
+	private final Map<Header, List<String>> headers;
 	private final ByteBuffer body;
 
 	/**
@@ -81,7 +80,7 @@ public class Frame {
 	 * @param command
 	 * @param headers
 	 */
-	Frame(@Nonnull Command command, @Nonnull MultivaluedMap<String, String> headers) {
+	Frame(@Nonnull Command command, @Nonnull Map<Header, List<String>> headers) {
 		this(command, headers, null);
 	}
 
@@ -91,9 +90,11 @@ public class Frame {
 	 * @param headers
 	 * @param body
 	 */
-	Frame(@Nonnull Command command, @Nonnull MultivaluedMap<String, String> headers, ByteBuffer body) {
+	Frame(@Nonnull Command command, @Nonnull Map<Header, List<String>> headers, ByteBuffer body) {
 		this.command = requireNonNull(command);
-		this.headers = new UnmodifiableMultivaluedMap<>(requireNonNull(headers));
+		final Map<Header, List<String>> tmpHeaders = new LinkedHashMap<>(headers);
+		tmpHeaders.entrySet().forEach(e -> e.setValue(unmodifiableList(e.getValue())));
+		this.headers = unmodifiableMap(tmpHeaders);
 		this.body = body != null ? body.asReadOnlyBuffer() : null;
 	}
 
@@ -117,7 +118,7 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public MultivaluedMap<String, String> getHeaders() {
+	public Map<Header, List<String>> getHeaders() {
 		return headers;
 	}
 
@@ -131,33 +132,38 @@ public class Frame {
 
 	/**
 	 * 
-	 * @param key
+	 * @param header
 	 * @return
 	 */
-	public boolean containsHeader(String key) {
-		return getHeaders(key) != null;
+	public boolean contains(Header header) {
+		return get(header) != null;
 	}
 
 	/**
 	 * 
-	 * @param key
+	 * @param header
 	 * @return
 	 */
-	public List<String> getHeaders(String key) {
-		return getHeaders().get(key);
+	public List<String> get(Header header) {
+		return getHeaders().get(header);
 	}
 
 	/**
 	 * 
-	 * @param key
+	 * @param header
 	 * @return
 	 */
-	public String getFirstHeader(String key) {
-		return getHeaders().getFirst(key);
+	public String getFirst(@Nonnull Header header) {
+		final List<String> values = get(header);
+		return values != null && values.size() > 0 ? values.get(0) : null;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public String destination() {
-		return getFirstHeader(DESTINATION);
+		return getFirst(DESTINATION);
 	}
 
 	/**
@@ -165,7 +171,7 @@ public class Frame {
 	 * @return
 	 */
 	public int contentLength() {
-		final String contentLength = getFirstHeader(Headers.CONTENT_LENGTH);
+		final String contentLength = getFirst(CONTENT_LENGTH);
 		return contentLength != null ? Integer.parseInt(contentLength) : -1;
 	}
 
@@ -174,7 +180,7 @@ public class Frame {
 	 * @return
 	 */
 	public MediaType contentType() {
-		final String contentType = getFirstHeader(Headers.CONTENT_TYPE);
+		final String contentType = getFirst(CONTENT_TYPE);
 		return contentType != null ? MediaType.valueOf(contentType) : null;
 	}
 
@@ -183,7 +189,7 @@ public class Frame {
 	 * @return
 	 */
 	public int receipt() {
-		return Integer.parseInt(getFirstHeader(Headers.RECEIPT));
+		return Integer.parseInt(getFirst(RECEIPT));
 	}
 
 	/**
@@ -191,7 +197,7 @@ public class Frame {
 	 * @return
 	 */
 	public int receiptId() {
-		return Integer.parseInt(getFirstHeader(Headers.RECEIPT_ID));
+		return Integer.parseInt(getFirst(RECEIPT_ID));
 	}
 
 	/**
@@ -200,9 +206,9 @@ public class Frame {
 	 */
 	public String subscription() {
 		if (this.command == Command.MESSAGE) { // why is MESSAGE so special?!
-			return getFirstHeader(Headers.SUBSCRIPTION);
+			return getFirst(SUBSCRIPTION);
 		}
-		return getFirstHeader(ID);
+		return getFirst(ID);
 	}
 
 	/**
@@ -210,7 +216,7 @@ public class Frame {
 	 * @return
 	 */
 	public HeartBeat heartBeat() {
-		final String heartBeat = getFirstHeader(Headers.HEART_BEAT);
+		final String heartBeat = getFirst(Standard.HEART_BEAT);
 		return heartBeat != null ? new HeartBeat(heartBeat) : null;
 	}
 
@@ -219,7 +225,7 @@ public class Frame {
 	 * @return
 	 */
 	public String transaction() {
-		return getFirstHeader(TRANSACTION);
+		return getFirst(TRANSACTION);
 	}
 
 	/**
@@ -227,7 +233,7 @@ public class Frame {
 	 * @return
 	 */
 	public String session() {
-		return getFirstHeader(SESSION);
+		return getFirst(SESSION);
 	}
 
 	/**
@@ -242,9 +248,9 @@ public class Frame {
 		}
 
 		writer.append(getCommand().name()).append(LINE_FEED);
-		for (Entry<String, List<String>> e : getHeaders().entrySet()) {
+		for (Entry<Header, List<String>> e : getHeaders().entrySet()) {
 			for (String value : e.getValue()) {
-				writer.append(e.getKey()).append(':').append(value).append(LINE_FEED);
+				writer.append(e.getKey().value()).append(':').append(value).append(LINE_FEED);
 			}
 		}
 
@@ -305,14 +311,14 @@ public class Frame {
 
 		final Command command = Command.valueOf(firstLine);
 
-		final MultivaluedMap<String, String> headers = new MultivaluedHashMap<>(new LinkedCaseInsensitiveMap<>());
+		final Map<Header, List<String>> headers = new LinkedHashMap<>();
 
 		String headerLine;
 		while (!(headerLine = reader.readLine()).isEmpty() && !Character.toString(NULL).equals(headerLine)) {
 			final String[] tokens = headerLine.split(":");
-			List<String> values = headers.get(tokens[0]);
+			List<String> values = headers.get(Header.valueOf(tokens[0]));
 			if (values == null) {
-				headers.put(tokens[0], values = new ArrayList<>());
+				headers.put(Header.valueOf(tokens[0]), values = new ArrayList<>());
 			}
 			values.add(tokens[1]);
 		}
@@ -335,7 +341,7 @@ public class Frame {
 	 * @return
 	 */
 	public static Builder connect(@Nonnull String host, @Nonnull String... acceptVersion) {
-		return builder(CONNECT).header(HOST, host).header(ACCEPT_VERSION, acceptVersion);
+		return builder(Command.CONNECT).header(HOST, host).header(ACCEPT_VERSION, acceptVersion);
 	}
 
 	/**
@@ -343,7 +349,7 @@ public class Frame {
 	 * @return
 	 */
 	public static Builder disconnect() {
-		return builder(DISCONNECT);
+		return builder(Command.DISCONNECT);
 	}
 
 	/**
@@ -385,7 +391,7 @@ public class Frame {
 	 * @return
 	 */
 	public static Builder send(@Nonnull String destination, MediaType contentType, @Nonnull ByteBuffer body) {
-		return builder(SEND).destination(destination).body(contentType, body);
+		return builder(Command.SEND).destination(destination).body(contentType, body);
 	}
 
 	/**
@@ -396,7 +402,7 @@ public class Frame {
 	 * @return
 	 */
 	public static Builder send(@Nonnull String destination, MediaType contentType, @Nonnull String body) {
-		return builder(SEND).destination(destination).body(contentType, body);
+		return builder(Command.SEND).destination(destination).body(contentType, body);
 	}
 
 	/**
@@ -408,7 +414,7 @@ public class Frame {
 	 * @return
 	 */
 	public static Builder connnected(@Nonnull String version, @Nonnull String session, @Nonnull String server) {
-		final Builder builder = builder(CONNECTED).header(VERSION, version);
+		final Builder builder = builder(Command.CONNECTED).header(VERSION, version);
 		builder.header(SESSION, requireNonNull(session));
 		builder.header(SERVER, requireNonNull(server));
 		return builder;
@@ -430,7 +436,7 @@ public class Frame {
 	 * @return
 	 */
 	public static Builder receipt(@Nonnull String receiptId) {
-		return builder(RECEIPT).header(RECEIPT_ID, receiptId);
+		return builder(Command.RECEIPT).header(RECEIPT_ID, receiptId);
 	}
 
 	/**
@@ -471,7 +477,7 @@ public class Frame {
 	 */
 	public static class Builder {
 		private final Command command;
-		private final MultivaluedMap<String, String> headers = new MultivaluedHashMap<>(new LinkedCaseInsensitiveMap<>());
+		private final Map<Header, List<String>> headers = new LinkedHashMap<>();
 		private ByteBuffer body;
 
 		/**
@@ -482,7 +488,7 @@ public class Frame {
 		private Builder(@Nonnull Builder builder) {
 			this(builder.command);
 
-			for (Entry<String, List<String>> e : builder.headers.entrySet()) {
+			for (Entry<Header, List<String>> e : builder.headers.entrySet()) {
 				headers.put(e.getKey(),  new ArrayList<>(e.getValue()));
 			}
 			this.body = builder.body;
@@ -496,7 +502,7 @@ public class Frame {
 		private Builder(@Nonnull Frame frame) {
 			this(frame.getCommand());
 
-			for (Entry<String, List<String>> e : frame.getHeaders().entrySet()) {
+			for (Entry<Header, List<String>> e : frame.getHeaders().entrySet()) {
 				headers.put(e.getKey(),  new ArrayList<>(e.getValue()));
 			}
 			this.body = frame.getBody();
@@ -513,11 +519,11 @@ public class Frame {
 
 		/**
 		 * 
-		 * @param key
+		 * @param header
 		 * @param values
 		 * @return
 		 */
-		public Builder header(@Nonnull String key, @Nonnull String... values) {
+		public Builder header(@Nonnull Header header, @Nonnull String... values) {
 			if (values == null || values.length == 0)
 				throw new IllegalArgumentException("'values' cannot be null or empty!");
 
@@ -526,7 +532,11 @@ public class Frame {
 				joiner.add(v);
 			}
 
-			this.headers.putSingle(key, joiner.toString());
+			List<String> valueList = this.headers.get(header);
+			if (valueList == null) {
+				this.headers.put(header, valueList = new ArrayList<>());
+			}
+			valueList.add(joiner.toString());
 			return this;
 		}
 
@@ -535,8 +545,8 @@ public class Frame {
 		 * @param headers
 		 * @return
 		 */
-		public Builder headers(Map<String, String> headers) {
-			for (Entry<String, String> e : headers.entrySet()) {
+		public Builder headers(Map<Header, String> headers) {
+			for (Entry<Header, String> e : headers.entrySet()) {
 				header(e.getKey(), e.getValue());
 			}
 			return this;
@@ -572,7 +582,7 @@ public class Frame {
 		 * @return
 		 */
 		public Builder session(@Nonnull String session) {
-			header(Headers.SESSION, session);
+			header(SESSION, session);
 			return this;
 		}
 
@@ -612,7 +622,7 @@ public class Frame {
 			}
 
 			if (this.command == Command.MESSAGE) { // why is MESSAGE so special?!
-				header(Headers.SUBSCRIPTION, requireNonNull(id));
+				header(SUBSCRIPTION, requireNonNull(id));
 			} else {
 				header(ID, requireNonNull(id));
 			}
@@ -627,7 +637,7 @@ public class Frame {
 		 * @return
 		 */
 		public Builder heartbeat(@Nonnull int outgoing, @Nonnull int incoming) {
-			return header(Headers.HEART_BEAT, Integer.toString(outgoing), Integer.toString(incoming));
+			return header(Standard.HEART_BEAT, Integer.toString(outgoing), Integer.toString(incoming));
 		}
 
 		/**
@@ -645,7 +655,7 @@ public class Frame {
 		 * @return
 		 */
 		public Builder receipt(int receiptId) {
-			return header(Headers.RECEIPT, Integer.toString(receiptId));
+			return header(RECEIPT, Integer.toString(receiptId));
 		}
 
 		/**
@@ -654,7 +664,7 @@ public class Frame {
 		 * @return
 		 */
 		public Builder receiptId(int receiptId) {
-			return header(Headers.RECEIPT_ID, Integer.toString(receiptId));
+			return header(RECEIPT_ID, Integer.toString(receiptId));
 		}
 
 		/**
@@ -664,7 +674,7 @@ public class Frame {
 			if (!this.headers.containsKey(MESSAGE_ID) && this.command == Command.MESSAGE) {
 				String messageId = Long.toString(MESSAGE_ID_COUNTER.getAndIncrement());
 				if (this.headers.containsKey(SESSION))
-					messageId = this.headers.getFirst(SESSION).concat("-").concat(messageId);
+					messageId = this.headers.get(SESSION).get(0).concat("-").concat(messageId);
 				messageId(messageId);
 			}
 		}
@@ -718,11 +728,11 @@ public class Frame {
 
 		/**
 		 * 
-		 * @param key
+		 * @param header
 		 */
-		private void assertExists(String key) {
-			if (!this.headers.containsKey(key))
-				throw new AssertionError("Not set! [" + key + "]");
+		private void assertExists(Header header) {
+			if (!this.headers.containsKey(header))
+				throw new AssertionError("Not set! [" + header + "]");
 		}
 
 		/**
@@ -732,8 +742,8 @@ public class Frame {
 			derive();
 			verify();
 
-			final MultivaluedMap<String, String> headers = new MultivaluedHashMap<>(new LinkedCaseInsensitiveMap<>());
-			for (Entry<String, List<String>> e : this.headers.entrySet()) {
+			final Map<Header, List<String>> headers = new LinkedHashMap<>();
+			for (Entry<Header, List<String>> e : this.headers.entrySet()) {
 				headers.put(e.getKey(),  new ArrayList<>(e.getValue()));
 			}
 			return new Frame(this.command, headers, this.body);

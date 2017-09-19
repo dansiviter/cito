@@ -15,7 +15,6 @@
  */
 package cito.stomp.jms;
 
-import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -59,7 +58,7 @@ import cito.event.Message;
 import cito.server.SecurityContext;
 import cito.stomp.Command;
 import cito.stomp.Frame;
-import cito.stomp.Headers;
+import cito.stomp.Header.Standard;
 import cito.stomp.HeartBeatMonitor;
 
 /**
@@ -199,7 +198,7 @@ public class ConnectionTest {
 		final javax.jms.Message msg = mock(javax.jms.Message.class);
 		ReflectionUtil.get(this.connection, "ackMessages", Map.class).put("1", msg);
 
-		this.connection.on(new Message("ABC123", Frame.builder(Command.ACK).header(Headers.ID, "1").build()));
+		this.connection.on(new Message("ABC123", Frame.builder(Command.ACK).header(Standard.ID, "1").build()));
 
 		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ACK);
 		verify(msg).acknowledge();
@@ -210,7 +209,7 @@ public class ConnectionTest {
 	public void on_ACK_noExist() {
 		IllegalStateException expected = null;
 		try {
-			this.connection.on(new Message("ABC123", Frame.builder(Command.ACK).header(Headers.ID, "1").build()));
+			this.connection.on(new Message("ABC123", Frame.builder(Command.ACK).header(Standard.ID, "1").build()));
 		} catch (IllegalStateException e) {
 			expected = e;                                                                                                                
 		}
@@ -224,7 +223,7 @@ public class ConnectionTest {
 		final javax.jms.Message msg = mock(javax.jms.Message.class);
 		ReflectionUtil.get(this.connection, "ackMessages", Map.class).put("1", msg);
 
-		this.connection.on(new Message("ABC123", Frame.builder(Command.NACK).header(Headers.ID, "1").build()));
+		this.connection.on(new Message("ABC123", Frame.builder(Command.NACK).header(Standard.ID, "1").build()));
 
 		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.NACK);
 		verify(this.log).warn("NACK recieved, but no JMS equivalent! [{}]", "1");
@@ -235,7 +234,7 @@ public class ConnectionTest {
 	public void on_NACK_noExist() {
 		IllegalStateException expected = null;
 		try {
-			this.connection.on(new Message("ABC123", Frame.builder(Command.NACK).header(Headers.ID, "1").build()));
+			this.connection.on(new Message("ABC123", Frame.builder(Command.NACK).header(Standard.ID, "1").build()));
 		} catch (IllegalStateException e) {
 			expected = e;                                                                                                                
 		}
@@ -249,7 +248,7 @@ public class ConnectionTest {
 		final Session txSession = mock(Session.class);
 		when(this.factory.toSession(this.connection, true, javax.jms.Session.SESSION_TRANSACTED)).thenReturn(txSession);
 
-		this.connection.on(new Message("ABC123", Frame.builder(Command.BEGIN).header(Headers.TRANSACTION, "1").build()));
+		this.connection.on(new Message("ABC123", Frame.builder(Command.BEGIN).header(Standard.TRANSACTION, "1").build()));
 
 		assertEquals(txSession, ReflectionUtil.get(this.connection, "txSessions", Map.class).get("1"));
 
@@ -266,7 +265,7 @@ public class ConnectionTest {
 
 		IllegalStateException expected = null;
 		try {
-			this.connection.on(new Message("ABC123", Frame.builder(Command.BEGIN).header(Headers.TRANSACTION, "1").build()));
+			this.connection.on(new Message("ABC123", Frame.builder(Command.BEGIN).header(Standard.TRANSACTION, "1").build()));
 		} catch (IllegalStateException e) {
 			expected = e;
 		}
@@ -281,7 +280,7 @@ public class ConnectionTest {
 		final Session txSession = mock(Session.class);
 		ReflectionUtil.get(this.connection, "txSessions", Map.class).put("1", txSession);
 
-		this.connection.on(new Message("ABC123", Frame.builder(Command.COMMIT).header(Headers.TRANSACTION, "1").build()));
+		this.connection.on(new Message("ABC123", Frame.builder(Command.COMMIT).header(Standard.TRANSACTION, "1").build()));
 
 		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.COMMIT);
 		verify(txSession).commit();
@@ -292,7 +291,7 @@ public class ConnectionTest {
 	public void on_COMMIT_notExists() {
 		IllegalStateException expected = null;
 		try {
-			this.connection.on(new Message("ABC123", Frame.builder(Command.COMMIT).header(Headers.TRANSACTION, "1").build()));
+			this.connection.on(new Message("ABC123", Frame.builder(Command.COMMIT).header(Standard.TRANSACTION, "1").build()));
 		} catch (IllegalStateException e) {
 			expected = e;
 		}
@@ -307,7 +306,7 @@ public class ConnectionTest {
 		final Session txSession = mock(Session.class);
 		ReflectionUtil.get(this.connection, "txSessions", Map.class).put("1", txSession);
 
-		this.connection.on(new Message("ABC123", Frame.builder(Command.ABORT).header(Headers.TRANSACTION, "1").build()));
+		this.connection.on(new Message("ABC123", Frame.builder(Command.ABORT).header(Standard.TRANSACTION, "1").build()));
 
 		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ABORT);
 		verify(txSession).rollback();
@@ -320,7 +319,7 @@ public class ConnectionTest {
 	public void on_ABORT_notExists() {
 		IllegalStateException expected = null;
 		try {
-			this.connection.on(new Message("ABC123", Frame.builder(Command.ABORT).header(Headers.TRANSACTION, "1").build()));
+			this.connection.on(new Message("ABC123", Frame.builder(Command.ABORT).header(Standard.TRANSACTION, "1").build()));
 		} catch (IllegalStateException e) {
 			expected = e;
 		}

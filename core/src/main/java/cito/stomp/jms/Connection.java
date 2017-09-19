@@ -17,7 +17,12 @@ package cito.stomp.jms;
 
 import static cito.Strings.isBlank;
 import static cito.Util.isNullOrEmpty;
-import static cito.stomp.Headers.ACCEPT_VERSION;
+import static cito.stomp.Header.Standard.ACCEPT_VERSION;
+import static cito.stomp.Header.Standard.ACK;
+import static cito.stomp.Header.Standard.ID;
+import static cito.stomp.Header.Standard.LOGIN;
+import static cito.stomp.Header.Standard.PASSCODE;
+import static cito.stomp.Header.Standard.RECEIPT;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -48,7 +53,6 @@ import cito.server.SecurityContextProducer;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Frame.HeartBeat;
-import cito.stomp.Headers;
 import cito.stomp.HeartBeatMonitor;
 
 /**
@@ -130,7 +134,7 @@ public class Connection extends AbstractConnection {
 		if (tx != null)
 			return this.txSessions.get(tx);
 
-		final String ackMode = in.getFirstHeader(Headers.ACK);
+		final String ackMode = in.getFirst(ACK);
 		return getSession("client".equalsIgnoreCase(ackMode));
 	}
 
@@ -153,7 +157,7 @@ public class Connection extends AbstractConnection {
 		this.log.info("Connecting... [sessionId={}]", sessionId);
 	
 		String version = null;
-		final Collection<String> clientSupportedVersion = Arrays.asList(msg.frame().getFirstHeader(ACCEPT_VERSION).split(","));
+		final Collection<String> clientSupportedVersion = Arrays.asList(msg.frame().getFirst(ACCEPT_VERSION).split(","));
 		for (int i = SUPPORTED_VERSIONS.length - 1; i >= 0; i--) {
 			if (clientSupportedVersion.contains(SUPPORTED_VERSIONS[i])) {
 				version = SUPPORTED_VERSIONS[i];
@@ -165,7 +169,7 @@ public class Connection extends AbstractConnection {
 			final Frame.Builder error = Frame.error().version(SUPPORTED_VERSIONS);
 			error.body(MediaType.TEXT_PLAIN_TYPE, "Only STOMP v1.2 supported!");
 			sendToClient(error.build());
-			throw new IllegalStateException("Only STOMP v1.2 supported!" + msg.frame().getHeaders(Headers.ACCEPT_VERSION));
+			throw new IllegalStateException("Only STOMP v1.2 supported!" + msg.frame().get(ACCEPT_VERSION));
 		}
 
 		final Frame.Builder connected = Frame.connnected(version, this.sessionId, "localhost");
@@ -175,8 +179,8 @@ public class Connection extends AbstractConnection {
 			connected.heartbeat(HEARTBEAT_READ_DEFAULT, HEARTBEAT_WRITE_DEFAULT);
 		}
 
-		String login = msg.frame().getFirstHeader(Headers.LOGIN);
-		final String passcode = msg.frame().getFirstHeader(Headers.PASSCODE);
+		String login = msg.frame().getFirst(LOGIN);
+		final String passcode = msg.frame().getFirst(PASSCODE);
 
 		if (isBlank(login) && !this.securityCtx.isUnsatisfied()) {
 			login = this.securityCtx.get().getUserPrincipal().getName();
@@ -225,7 +229,7 @@ public class Connection extends AbstractConnection {
 				getSession(msg.frame()).sendToBroker(msg.frame());
 				break;
 			case ACK: {
-				final String id = msg.frame().getFirstHeader(Headers.ID);
+				final String id = msg.frame().getFirst(ID);
 				javax.jms.Message message = this.ackMessages.remove(id);
 				if (message == null) {
 					throw new IllegalStateException("No such message to ACK! [" + id + "]");
@@ -234,7 +238,7 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			case NACK: {
-				final String id = msg.frame().getFirstHeader(Headers.ID);
+				final String id = msg.frame().getFirst(ID);
 				javax.jms.Message message = this.ackMessages.remove(id);
 				if (message == null) {
 					throw new IllegalStateException("No such message to NACK! [" + id + "]");
@@ -270,7 +274,7 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			case SUBSCRIBE: {
-				final String subscriptionId = msg.frame().getFirstHeader(Headers.ID);
+				final String subscriptionId = msg.frame().getFirst(ID);
 				this.subscriptions.compute(
 						subscriptionId,
 						(k, v) -> { 
@@ -286,7 +290,7 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			case UNSUBSCRIBE: {
-				final String subscriptionId = msg.frame().getFirstHeader(Headers.ID);
+				final String subscriptionId = msg.frame().getFirst(ID);
 				final Subscription subscription = this.subscriptions.remove(subscriptionId);
 				if (subscription == null)
 					throw new IllegalStateException("Subscription does not exist! [" + subscriptionId + "]");
@@ -320,7 +324,7 @@ public class Connection extends AbstractConnection {
 	 * @throws Exception
 	 */
 	private void sendReceipt(@Nonnull Frame frame)  {
-		final String receiptId = frame.getFirstHeader(Headers.RECEIPT);
+		final String receiptId = frame.getFirst(RECEIPT);
 		if (receiptId != null) {
 			sendToClient(Frame.receipt(receiptId).build());
 		}

@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import cito.event.Message;
 import cito.ext.Serialiser;
 import cito.stomp.Frame;
+import cito.stomp.Header;
 
 /**
  * Server messaging support. This can be used in two ways: {@link Inject}ed or {@code extend} it.
@@ -77,7 +78,7 @@ public class MessagingSupport {
 	 * @param type if {@code null} defaults to {@code application/json}.
 	 */
 	public void broadcast(String destination, @Nonnull Object payload, MediaType type) {
-		broadcast(destination, payload, type, Collections.<String, String>emptyMap());
+		broadcast(destination, payload, type, Collections.<Header, String>emptyMap());
 	}
 
 	/**
@@ -87,7 +88,7 @@ public class MessagingSupport {
 	 * @param payload the send payload.
 	 * @param headers
 	 */
-	public void broadcast(String destination, @Nonnull Object payload, Map<String, String> headers) {
+	public void broadcast(String destination, @Nonnull Object payload, Map<Header, String> headers) {
 		broadcast(destination, payload, null, headers);
 	}
 
@@ -99,7 +100,7 @@ public class MessagingSupport {
 	 * @param type if {@code null} defaults to {@code application/json}.
 	 * @param headers
 	 */
-	public void broadcast(String destination, @Nonnull Object payload, MediaType type, Map<String, String> headers) {
+	public void broadcast(String destination, @Nonnull Object payload, MediaType type, Map<Header, String> headers) {
 		if (type == null) {
 			type = MediaType.APPLICATION_JSON_TYPE;
 		}
@@ -121,7 +122,7 @@ public class MessagingSupport {
 	 * @param payload the send payload.
 	 */
 	public void broadcastTo(@Nonnull Principal principal, String destination, @Nonnull Object payload) {
-		broadcastTo(principal, destination, payload, Collections.<String, String>emptyMap());
+		broadcastTo(principal, destination, payload, Collections.<Header, String>emptyMap());
 	}
 
 	/**
@@ -133,7 +134,7 @@ public class MessagingSupport {
 	 * @param type if {@code null} defaults to {@code application/json}.
 	 */
 	public void broadcastTo(@Nonnull Principal principal, String destination, @Nonnull Object payload, MediaType type) {
-		broadcastTo(principal, destination, type, payload, Collections.<String, String>emptyMap());
+		broadcastTo(principal, destination, type, payload, Collections.<Header, String>emptyMap());
 	}
 
 	/**
@@ -148,7 +149,7 @@ public class MessagingSupport {
 			@Nonnull Principal principal,
 			String destination,
 			@Nonnull Object payload,
-			Map<String, String> headers)
+			Map<Header, String> headers)
 	{
 		broadcastTo(principal, destination, null, payload, headers);
 	}
@@ -167,7 +168,7 @@ public class MessagingSupport {
 			String destination,
 			MediaType type,
 			@Nonnull Object payload,
-			Map<String, String> headers)
+			Map<Header, String> headers)
 	{
 		this.registry.getSessions(principal).forEach(s -> sendTo(s.getId(), destination, payload, type, headers));
 	}
@@ -181,7 +182,7 @@ public class MessagingSupport {
 	 * @param type if {@code null} defaults to {@code application/json}.
 	 */
 	public void sendTo(@Nonnull String sessionId, String destination, @Nonnull Object payload, MediaType type) {
-		sendTo(sessionId, destination, payload, type, Collections.<String, String>emptyMap());
+		sendTo(sessionId, destination, payload, type, Collections.<Header, String>emptyMap());
 	}
 
 	/**
@@ -192,7 +193,7 @@ public class MessagingSupport {
 	 * @param payload the send payload.
 	 */
 	public void sendTo(@Nonnull String sessionId, String destination, @Nonnull Object payload) {
-		sendTo(sessionId, destination, payload, null, Collections.<String, String>emptyMap());
+		sendTo(sessionId, destination, payload, null, Collections.<Header, String>emptyMap());
 	}
 
 	/**
@@ -207,7 +208,7 @@ public class MessagingSupport {
 			@Nonnull String sessionId,
 			String destination,
 			@Nonnull Object payload,
-			Map<String, String> headers)
+			Map<Header, String> headers)
 	{
 		sendTo(sessionId, destination, payload, null, headers);
 	}
@@ -226,7 +227,7 @@ public class MessagingSupport {
 			String destination,
 			@Nonnull Object payload,
 			MediaType type,
-			Map<String, String> headers)
+			Map<Header, String> headers)
 	{
 		if (type == null) {
 			type = MediaType.APPLICATION_JSON_TYPE;

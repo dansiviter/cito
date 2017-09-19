@@ -40,7 +40,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import cito.ReflectionUtil;
 import cito.stomp.Frame;
-import cito.stomp.Headers;
+import cito.stomp.Header;
+import cito.stomp.Header.Standard;
 
 /**
  * Unit tests for {@link Factory}.
@@ -124,7 +125,7 @@ public class FactoryTest {
 		final ByteBuffer buffer = ByteBuffer.wrap(new byte[0]).asReadOnlyBuffer();
 		when(frame.getBody()).thenReturn(buffer);
 		when(frame.getHeaders()).thenReturn(new MultivaluedHashMap<>());
-		when(frame.containsHeader(Headers.CONTENT_LENGTH)).thenReturn(true);
+		when(frame.contains(Standard.CONTENT_LENGTH)).thenReturn(true);
 		final BytesMessage message = mock(BytesMessage.class);
 		when(session.createBytesMessage()).thenReturn(message);
 
@@ -132,7 +133,7 @@ public class FactoryTest {
 
 		verify(frame).getBody();
 		verify(frame, times(2)).getHeaders();
-		verify(frame).containsHeader(Headers.CONTENT_LENGTH);
+		verify(frame).contains(Standard.CONTENT_LENGTH);
 		verify(session).createBytesMessage();
 		verify(message).setJMSCorrelationID(null);
 		verify(message).writeBytes(new byte[0]);
@@ -146,7 +147,7 @@ public class FactoryTest {
 		final ByteBuffer buffer = ByteBuffer.wrap(new byte[0]).asReadOnlyBuffer();
 		when(frame.getBody()).thenReturn(buffer);
 		when(frame.getHeaders()).thenReturn(new MultivaluedHashMap<>());
-		when(frame.containsHeader(Headers.CONTENT_LENGTH)).thenReturn(false);
+		when(frame.contains(Standard.CONTENT_LENGTH)).thenReturn(false);
 		final TextMessage message = mock(TextMessage.class);
 		when(session.createTextMessage("")).thenReturn(message);
 
@@ -154,7 +155,7 @@ public class FactoryTest {
 
 		verify(frame).getBody();
 		verify(frame, times(2)).getHeaders();
-		verify(frame).containsHeader(Headers.CONTENT_LENGTH);
+		verify(frame).contains(Standard.CONTENT_LENGTH);
 		verify(session).createTextMessage("");
 		verify(message).setJMSCorrelationID(null);
 		verifyNoMoreInteractions(session, frame, message);
@@ -181,7 +182,7 @@ public class FactoryTest {
 		verify(message).getJMSTimestamp();
 		verify(message).getJMSType();
 		verify(message).getStringProperty("hello");
-		verify(message).getStringProperty(Headers.CONTENT_TYPE);
+		verify(message).getStringProperty(Standard.CONTENT_TYPE.value());
 		verify(message).getText();
 		verifyNoMoreInteractions(message);
 	}
@@ -204,7 +205,7 @@ public class FactoryTest {
 		verify(message).getJMSTimestamp();
 		verify(message).getJMSType();
 		verify(message).getStringProperty("hello");
-		verify(message).getStringProperty(Headers.CONTENT_TYPE);
+		verify(message).getStringProperty(Standard.CONTENT_TYPE.value());
 		verify(message).getBodyLength();
 		verify(message).readBytes(new byte[0]);
 		verifyNoMoreInteractions(message);
@@ -212,11 +213,11 @@ public class FactoryTest {
 
 	@Test
 	public void toJmsKey() {
-		assertEquals("my_HYPHEN_COMPLEX_DOT_key", Factory.toJmsKey("my-COMPLEX.key"));
+		assertEquals("my_HYPHEN_COMPLEX_DOT_key", Factory.toJmsKey(Header.valueOf("my-COMPLEX.key")));
 	}
 
 	@Test
 	public void toStompKey() {
-		assertEquals("my-COMPLEX.key", Factory.toStompKey("my_HYPHEN_COMPLEX_DOT_key"));
+		assertEquals("my-COMPLEX.key", Factory.toStompKey("my_HYPHEN_COMPLEX_DOT_key").value());
 	}
 }

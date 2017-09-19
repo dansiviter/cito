@@ -15,7 +15,7 @@
  */
 package cito.stomp.jms;
 
-import static java.util.Objects.*;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 
@@ -30,7 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cito.stomp.Frame;
-import cito.stomp.Headers;
+import cito.stomp.Header.Custom;
+import cito.stomp.Header.Standard;
 
 /**
  * Defines a subscription
@@ -58,11 +59,11 @@ public class Subscription implements MessageListener {
 	public Subscription(@Nonnull Session session, @Nonnull String id, @Nonnull Frame frame) throws JMSException {
 		this.session = requireNonNull(session);
 		this.id = requireNonNull(id);
-		this.destination = session.toDestination(frame.getFirstHeader(Headers.DESTINATION));
+		this.destination = session.toDestination(frame.getFirst(Standard.DESTINATION));
 
 		final String sessionId = this.session.getConnection().getSessionId();
 		// only consume messages that are for everyone OR only for me
-		String selector = frame.getFirstHeader(Headers.SELECTOR);
+		String selector = frame.getFirst(Custom.SELECTOR);
 		if (selector == null) {
 			selector = String.format(SELECTOR, sessionId);
 		} else {

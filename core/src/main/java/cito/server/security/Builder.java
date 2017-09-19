@@ -37,7 +37,7 @@ import cito.Glob;
 import cito.server.SecurityContext;
 import cito.stomp.Command;
 import cito.stomp.Frame;
-import cito.stomp.Headers;
+import cito.stomp.Header.Standard;
 
 /**
  * 
@@ -188,7 +188,7 @@ public class Builder {
 	public static abstract class DestinationMatcher implements FrameMatcher {
 		@Override
 		public final boolean matches(Frame frame) {
-			return matches(frame.containsHeader(Headers.DESTINATION) ? frame.destination() : null);
+			return matches(frame.contains(Standard.DESTINATION) ? frame.destination() : null);
 		}
 
 		protected abstract boolean matches(String destination);

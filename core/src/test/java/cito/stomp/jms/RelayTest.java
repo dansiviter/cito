@@ -49,7 +49,7 @@ import cito.server.SessionRegistry;
 import cito.server.security.SecurityRegistry;
 import cito.stomp.Command;
 import cito.stomp.Frame;
-import cito.stomp.Headers;
+import cito.stomp.Header.Standard;
 
 /**
  * Unit test for {@link Relay}.
@@ -92,7 +92,7 @@ public class RelayTest {
 
 	@Test
 	public void fromClient_CONNECT() throws JMSException, LoginException {
-		final Frame frame = Frame.builder(Command.CONNECT).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build();
+		final Frame frame = Frame.builder(Command.CONNECT).header(Standard.HOST, "host").header(Standard.ACCEPT_VERSION, "1.1").build();
 		final Message msg = new Message("sessionId", frame);
 		this.relay.fromClient(msg);
 
@@ -106,7 +106,7 @@ public class RelayTest {
 
 	@Test
 	public void fromClient_STOMP() throws JMSException, LoginException {
-		final Frame frame = Frame.builder(Command.STOMP).header(Headers.HOST, "host").header(Headers.ACCEPT_VERSION, "1.1").build();
+		final Frame frame = Frame.builder(Command.STOMP).header(Standard.HOST, "host").header(Standard.ACCEPT_VERSION, "1.1").build();
 		final Message msg = new Message("sessionId", frame);
 		this.relay.fromClient(msg);
 
