@@ -22,7 +22,7 @@ import java.util.Set;
 
 import org.apache.activemq.artemis.core.security.CheckType;
 import org.apache.activemq.artemis.core.security.Role;
-import org.apache.activemq.artemis.spi.core.remoting.Connection;
+import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager3;
 
 /**
@@ -45,14 +45,13 @@ public class NoopSecurityManager implements ActiveMQSecurityManager3 {
 	}
 
 	@Override
-	public String validateUser(String user, String password, Connection connection) {
+	public String validateUser(String user, String password, RemotingConnection remotingConnection) {
 		return isNullOrEmpty(user) ? "UNKNOWN" : user;
 	}
 
 	@Override
-	public String validateUserAndRole(
-			String user, String password, Set<Role> roles, CheckType checkType, String address, Connection connection)
-	{
+	public String validateUserAndRole(String user, String password, Set<Role> roles, CheckType checkType,
+			String address, RemotingConnection remotingConnection) {
 		return isNullOrEmpty(user) ? "UNKNOWN" : user;
 	}
 }
