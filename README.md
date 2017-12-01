@@ -1,4 +1,4 @@
-[![Travis](https://img.shields.io/travis/dansiviter/cito/master.svg?style=flat-square)](https://travis-ci.org/dansiviter/cito)
+[![Travis](https://img.shields.io/travis/dansiviter/cito/master.svg?style=flat-square)](https://travis-ci.org/dansiviter/cito) [![Codacy grade](https://img.shields.io/codacy/grade/61414d4b660e4afe9f463a7ece1dcfc1.svg?style=flat-square)](https://www.codacy.com/app/dansiviter/cito)
 
 # Citō
 
