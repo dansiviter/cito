@@ -102,6 +102,7 @@ public class BrokerConfig {
 	public boolean startEmbeddedBroker() {
 		return true;
 	}
+
 	/**
 	 * @return whether or not this is an HA connection
 	 */

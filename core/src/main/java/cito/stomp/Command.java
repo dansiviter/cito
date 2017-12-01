@@ -36,7 +36,9 @@ public enum Command {
 	STOMP,
 	SUBSCRIBE,
 	UNSUBSCRIBE,
-	HEARTBEAT; // Special command type, doesn't actually exist in the spec..
+
+	// Special command types, these are not in the spec..
+	HEARTBEAT; 
 
 	/**
 	 * 

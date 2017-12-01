@@ -34,15 +34,9 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNull;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -66,9 +60,6 @@ import cito.stomp.Header.Standard;
 @Immutable
 public class Frame {
 	private static final AtomicLong MESSAGE_ID_COUNTER = new AtomicLong();
-
-	public static final char NULL = '\u0000';
-	static final char LINE_FEED = '\n';
 	public static final Frame HEART_BEAT = new Frame(Command.HEARTBEAT, new HashMap<>(0), null);
 
 	private final Command command;
@@ -150,12 +141,30 @@ public class Frame {
 
 	/**
 	 * 
+	 * @param key
+	 * @return
+	 */
+	public List<String> getHeader(String key) {
+		return get(Header.valueOf(key));
+	}
+
+	/**
+	 * 
 	 * @param header
 	 * @return
 	 */
 	public String getFirst(@Nonnull Header header) {
 		final List<String> values = get(header);
 		return values != null && values.size() > 0 ? values.get(0) : null;
+	}
+
+	/**
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public String getFirstHeader(@Nonnull String key) {
+		return getFirst(Header.valueOf(key));
 	}
 
 	/**
@@ -237,102 +246,16 @@ public class Frame {
 	}
 
 	/**
-	 * 
-	 * @param writer
-	 * @throws IOException 
+	 * Only use this for debugging purposes. An especially large frame could lead to {@link BufferOverflowException}.
 	 */
-	public void to(@Nonnull Writer writer) throws IOException {
-		if (isHeartBeat()) {
-			writer.append(LINE_FEED);
-			return;
-		}
-
-		writer.append(getCommand().name()).append(LINE_FEED);
-		for (Entry<Header, List<String>> e : getHeaders().entrySet()) {
-			for (String value : e.getValue()) {
-				writer.append(e.getKey().value()).append(':').append(value).append(LINE_FEED);
-			}
-		}
-
-		writer.append(LINE_FEED);
-
-		if (getBody() != null) {
-			writer.append(UTF_8.decode(getBody()));
-		}
-
-		writer.append(NULL);
-	}
-
 	@Override
 	public String toString() {
-		try (StringWriter writer = new StringWriter()) {
-			to(writer);
-			return writer.toString();
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
+		// 64k is generally much larger than the buffer used by WebSocket implementation, so this should suffice
+		return UTF_8.decode(Encoding.from(this, false, 64 * 1024)).toString();
 	}
 
 
 	// --- Static Methods ---
-
-
-	/**
-	 * Create a {@code Frame} from a {@link String}.
-	 * 
-	 * @param in
-	 * @return
-	 */
-	public static Frame from(@Nonnull String in) {
-		try (StringReader reader = new StringReader(in)) {
-			return from(reader);
-		} catch (IOException e) {
-			throw new IllegalArgumentException("String not parsable!", e);
-		}
-	}
-
-	/**
-	 * Create a {@code Frame} from a {@link Reader}.
-	 * </p>
-	 * <strong>Note:</strong> the caller takes responsibility for closing the {@link Reader}.
-	 * 
-	 * @param in
-	 * @return
-	 * @throws IOException 
-	 */
-	public static Frame from(@Nonnull Reader in) throws IOException {
-		final BufferedReader reader = new BufferedReader(in);
-
-		final String firstLine = reader.readLine();
-
-		if (firstLine.isEmpty()) {
-			return HEART_BEAT;
-		}
-
-		final Command command = Command.valueOf(firstLine);
-
-		final Map<Header, List<String>> headers = new LinkedHashMap<>();
-
-		String headerLine;
-		while (!(headerLine = reader.readLine()).isEmpty() && !Character.toString(NULL).equals(headerLine)) {
-			final String[] tokens = headerLine.split(":");
-			List<String> values = headers.get(Header.valueOf(tokens[0]));
-			if (values == null) {
-				headers.put(Header.valueOf(tokens[0]), values = new ArrayList<>());
-			}
-			values.add(tokens[1]);
-		}
-
-		final StringBuilder buf = new StringBuilder();
-		final char[] arr = new char[8 * 1024];
-		int numCharsRead;
-		while ((numCharsRead = reader.read(arr, 0, arr.length)) != -1) {
-			buf.append(arr, 0, numCharsRead);
-		}
-		buf.setLength(buf.lastIndexOf(Character.toString(NULL)));
-		final ByteBuffer byteBuf = buf.length() == 0 ? null : UTF_8.encode(buf.toString());
-		return new Frame(command, headers, byteBuf);
-	}
 
 	/**
 	 * 
@@ -608,6 +531,7 @@ public class Frame {
 				throw new IllegalArgumentException(this.command + " does not accept a body!");
 			}
 			this.body = requireNonNull(body);
+			header(CONTENT_LENGTH, Integer.toString(body.limit()));
 			return contentType == null ? this : header(CONTENT_TYPE, contentType.toString());
 		}
 
@@ -732,7 +656,7 @@ public class Frame {
 		 */
 		private void assertExists(Header header) {
 			if (!this.headers.containsKey(header))
-				throw new AssertionError("Not set! [" + header + "]");
+				throw new AssertionError("Not set! [command=" + command + ",header=" + header + "]");
 		}
 
 		/**

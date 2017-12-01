@@ -18,14 +18,19 @@ package cito.sockjs;
 
 import static cito.sockjs.EventSourceHandler.EVENTSOURCE;
 import static cito.sockjs.XhrSendHandler.XHR_SEND;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
@@ -74,17 +79,17 @@ public class HtmlFileIT extends AbstractIT {
 		// As HtmlFile is requested using GET we must be very careful not to allow it being cached.
 		verifyNotCached(res);
 
-		try (BufferedReader reader = toReader(res.readEntity(InputStream.class))) {
-			final String d = readTill(reader, "</script>");
+		try (InputStream is = res.readEntity(InputStream.class)) {
+			final String d = readAvailable(is, 1_024);
+			assertTrue(d.length() == 1024);
 			assertEquals(HTML_FILE, d.trim());
-			assertTrue(d.length() > 1024);
-			assertEquals("<script>\np(\"o\");\n</script>\n", readTill(reader, "</script>"));
+			assertEquals("<script>\np(\"o\");\n</script>\r\n", readAvailable(is, -1));
 
 			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 
 			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
 			verifyEmptyEntity(res0);
 
-			assertEquals("<script>\np(\"a[\\\"x\\\"]\");\n</script>\n", readTill(reader, "</script>"));
+			assertEquals("<script>\np(\"a[\\\"x\\\"]\");\n</script>\r\n", readAvailable(is, -1));
 		}
 	}
 
@@ -128,7 +133,7 @@ public class HtmlFileIT extends AbstractIT {
 		//	The connection should be closed after enough data was delivered.
 		//
 		//	        self.assertFalse(r.read())
-		
+
 		final String uuid = uuid();
 		final Response res = target("000", uuid, EVENTSOURCE).request().get();
 
@@ -159,5 +164,46 @@ public class HtmlFileIT extends AbstractIT {
 	@Deployment
 	public static WebArchive createDeployment() {
 		return createWebArchive();
+	}
+
+	/**
+	 * Reads all the available bytes, essentially to not block on waiting for input.
+	 * 
+	 * @param is the stream to use as source.
+	 * @param limit the limit to the number of bytes, or {@code -1} to ignore.
+	 * @return the UTF8 String.
+	 * @throws IOException
+	 */
+	private static String readAvailable(InputStream is, int limit) throws IOException {
+		try {
+			Thread.sleep(5); // the reading of available bytes can be a little hasty, so add a brief delay
+		} catch (InterruptedException e) {
+			throw new IOException(e);
+		}
+		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+			final byte[] buf = new byte[1_024];
+			int total = 0;
+			while (is.available() > 0) {
+				int toRead = limit >= 0 && total + is.available() > limit ? limit - total : is.available();
+				int read = is.read(buf, 0, toRead > buf.length ? buf.length : toRead);
+				out.write(buf, 0, read);
+				total += read;
+
+				if (limit >= 0 && total >= limit) {
+					break;
+				}
+			}
+			return UTF_8.decode(ByteBuffer.wrap(out.toByteArray())).toString();
+		}
+	}
+
+	/**
+	 * Does exactly what it says on the tin!
+	 * 
+	 * @param str
+	 * @return
+	 */
+	private static String trimLeading(String str) {
+		return str.replaceAll("^\\s+", "");
 	}
 }

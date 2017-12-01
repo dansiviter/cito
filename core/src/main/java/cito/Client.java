@@ -41,10 +41,11 @@ import javax.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cito.server.ws.FrameEncoding;
 import cito.stomp.Connection;
 import cito.stomp.Frame;
 import cito.stomp.HeartBeatMonitor;
+import cito.stomp.ws.FrameDecoder;
+import cito.stomp.ws.FrameEncoder;
 
 /**
  * A basic STOMP WebSocket client.
@@ -54,8 +55,8 @@ import cito.stomp.HeartBeatMonitor;
  */
 @ClientEndpoint(
 		subprotocols = { "v11.stomp", "v12.stomp" },
-		encoders = FrameEncoding.class,
-		decoders = FrameEncoding.class
+		encoders = FrameEncoder.Binary.class,
+		decoders = FrameDecoder.Binary.class
 )
 public class Client implements Connection {
 	private final static Logger LOG = LoggerFactory.getLogger(Client.class);

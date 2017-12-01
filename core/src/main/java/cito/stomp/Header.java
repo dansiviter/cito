@@ -15,6 +15,8 @@
  */
 package cito.stomp;
 
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -27,7 +29,7 @@ import javax.ws.rs.core.HttpHeaders;
  * @since v1.0 [14 Jul 2016]
  */
 public interface Header {
-	public static final Map<String, Header> HEADERS = new HashMap<>();
+	public static final Map<CharSequence, Header> HEADERS = new HashMap<>();
 
 
 	/**
@@ -43,14 +45,14 @@ public interface Header {
 	 * @param value
 	 * @return
 	 */
-	public static Header valueOf(String value) {
+	public static Header valueOf(CharSequence value) {
 		Header header = HEADERS.get(value);
 
 		if (header != null) {
 			return header;
 		}
 		for (Header h : Standard.values()) {
-			if (h.value().equalsIgnoreCase(value)) {
+			if (equalsIgnoreCase(h.value(), value)) {
 				header = h;
 				break;
 			}
@@ -60,7 +62,7 @@ public interface Header {
 			return header;
 		}
 		for (Header h : Custom.values()) {
-			if (h.value().equalsIgnoreCase(value)) {
+			if (equalsIgnoreCase(h.value(), value)) {
 				header = h;
 				break;
 			}
@@ -152,8 +154,8 @@ public interface Header {
 	public static class StringHeader implements Header {
 		private final String value;
 
-		StringHeader(String value) {
-			this.value = value;
+		StringHeader(CharSequence value) {
+			this.value = value.toString().intern();
 		}
 
 		@Override
@@ -172,8 +174,13 @@ public interface Header {
 				return true;
 			if (obj == null || getClass() != obj.getClass())
 				return false;
-			StringHeader other = (StringHeader) obj;
+			final StringHeader other = (StringHeader) obj;
 			return this.value.equalsIgnoreCase(other.value);
+		}
+
+		@Override
+		public String toString() {
+			return this.value;
 		}
 	}
 }

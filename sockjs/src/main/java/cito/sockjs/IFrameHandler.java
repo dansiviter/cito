@@ -42,7 +42,7 @@ public class IFrameHandler extends AbstractHandler {
 	@Override
 	public IFrameHandler init() throws ServletException {
 		try {
-			final String template = Util.resourceToString(getClass(), "iframe.html");
+			final String template = Util.resourceToString(getClass(), "iframe.html", UTF_8);
 			this.template = template.replace("${sockjs.url}", this.servlet.getConfig().sockJsUri()).getBytes(UTF_8);
 			this.eTag = EntityTag.from(md5(this.template));
 		} catch (IOException e) {

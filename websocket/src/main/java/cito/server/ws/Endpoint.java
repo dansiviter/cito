@@ -18,6 +18,8 @@ package cito.server.ws;
 import javax.websocket.server.ServerEndpoint;
 
 import cito.server.AbstractEndpoint;
+import cito.stomp.ws.FrameDecoder;
+import cito.stomp.ws.FrameEncoder;
 
 /**
  * Defines a basic WebSocket endpoint.
@@ -28,8 +30,8 @@ import cito.server.AbstractEndpoint;
 @ServerEndpoint(
 		value = "/websocket",
 		subprotocols = { "v10.stomp", "v11.stomp", "v12.stomp" },
-		encoders = FrameEncoding.class,
-		decoders = FrameEncoding.class,
+		encoders = FrameEncoder.class,
+		decoders = FrameDecoder.class,
 		configurator = WebSocketConfigurator.class
 )
 public class Endpoint extends AbstractEndpoint { }

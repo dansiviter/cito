@@ -15,21 +15,19 @@
  */
 package cito.sockjs;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-
-import org.apache.commons.io.IOUtils;
 
 /**
  * 
@@ -137,9 +135,18 @@ public enum Util { ;
 	 * @return
 	 * @throws IOException
 	 */
-	public static byte[] resource(Class<?> cls, String name) throws IOException {
-		try (InputStream in = cls.getResourceAsStream(name)) {
-			return IOUtils.toByteArray(in);
+	public static ByteBuffer resourceToByteBuffer(Class<?> cls, String name) throws IOException {
+		try (ReadableByteChannel in = Channels.newChannel(cls.getResourceAsStream(name));
+				ByteArrayOutputStream os = new ByteArrayOutputStream(1024);
+				WritableByteChannel out = Channels.newChannel(os))
+		{
+			final ByteBuffer buf = ByteBuffer.allocate(1024);
+			while (in.read(buf) > 0) {
+				buf.flip();
+				out.write(buf);
+				buf.clear();
+			}
+			return ByteBuffer.wrap(os.toByteArray());
 		}
 	}
 
@@ -147,13 +154,11 @@ public enum Util { ;
 	 * 
 	 * @param cls
 	 * @param name
+	 * @param charset
 	 * @return
 	 * @throws IOException
 	 */
-	public static String resourceToString(Class<?> cls, String name) throws IOException {
-		try (Reader reader = new InputStreamReader(cls.getResourceAsStream(name), StandardCharsets.UTF_8)) {
-			final BufferedReader buffer = new BufferedReader(reader);
-			return buffer.lines().collect(Collectors.joining("\n"));
-		}
+	public static String resourceToString(Class<?> cls, String name, Charset charset) throws IOException {
+		return charset.decode(resourceToByteBuffer(cls, name)).toString();
 	}
 }

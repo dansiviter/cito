@@ -30,19 +30,9 @@ import static cito.stomp.Command.SEND;
 import static cito.stomp.Command.STOMP;
 import static cito.stomp.Command.SUBSCRIBE;
 import static cito.stomp.Command.UNSUBSCRIBE;
-import static cito.stomp.Frame.NULL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
 
 import javax.ws.rs.core.MediaType;
 
@@ -56,47 +46,12 @@ import org.junit.Test;
  */
 public class FrameTest {
 	@Test
-	public void from_reader() throws IOException {
-		final String input = "MESSAGE\nheader2:value\nheader1:value2\nheader1:value1\n\nbody" + NULL;
-		final Frame frame;
-		try (StringReader reader = new StringReader(input))  {
-			frame = Frame.from(reader);
-		}
-		assertEquals(Command.MESSAGE, frame.getCommand());
-		assertEquals(2, frame.getHeaders().size());
-
-		// ensure header order is maintained
-		final Iterator<Entry<Header, List<String>>> itr = frame.getHeaders().entrySet().iterator();
-		final Entry<Header, List<String>> header2 = itr.next();
-		assertEquals("header2", header2.getKey().value());
-		assertEquals(1, header2.getValue().size());
-		assertEquals("value", header2.getValue().get(0));
-		final Entry<Header, List<String>> header1 = itr.next();
-		assertEquals("header1", header1.getKey().value());
-		assertEquals(2, header1.getValue().size());
-		assertEquals("value2", header1.getValue().get(0));
-		assertEquals("value1", header1.getValue().get(1));
-		assertEquals(ByteBuffer.wrap("body".getBytes(StandardCharsets.UTF_8)), frame.getBody());
-	}
-
-	@Test
-	public void from_string() {
-		Frame frame = Frame.from("ACK\nheader1:value\n\n" + NULL);
-		assertEquals(Command.ACK, frame.getCommand());
-		assertEquals(1, frame.getHeaders().size());
-		final List<String> header1 = frame.get(Header.valueOf("header1"));
-		assertEquals(1, header1.size());
-		assertEquals("value", header1.get(0));
-		assertNull(frame.getBody());
-	}
-
-	@Test
 	public void toString_() {
-		final Frame frame0 = Frame.message("/here", "sub-0", "123", MediaType.TEXT_PLAIN_TYPE, "body").build();
-		assertEquals("MESSAGE\ndestination:/here\nsubscription:sub-0\nmessage-id:123\ncontent-type:text/plain\n\nbody" + NULL, frame0.toString());
+		final Frame frame0 = Frame.message("/wonderland", "sub-0", "123", MediaType.TEXT_PLAIN_TYPE, "body").build();
+		assertEquals("MESSAGE\ndestination:/wonderland\nsubscription:sub-0\nmessage-id:123\ncontent-length:4\ncontent-type:text/plain\n\nbody\u0000", frame0.toString());
 
-		final Frame frame1 = Frame.send("/there", MediaType.TEXT_PLAIN_TYPE, "body").build();
-		assertEquals("SEND\ndestination:/there\ncontent-type:text/plain\n\nbody" + NULL, frame1.toString());
+		final Frame frame1 = Frame.send("/wonderland", MediaType.TEXT_PLAIN_TYPE, "body").build();
+		assertEquals("SEND\ndestination:/wonderland\ncontent-length:4\ncontent-type:text/plain\n\nbody\u0000", frame1.toString());
 	}
 
 	@Test

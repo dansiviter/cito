@@ -87,7 +87,8 @@ public class Relay {
 	 */
 	public void fromServer(@Observes @FromServer Message evt) {
 		if (this.log.isDebugEnabled()) {
-			this.log.debug("Message event from server. [sessionId={},command={}]", evt.sessionId(), evt.frame().getCommand());
+			this.log.debug("Message event from server. [sessionId={},command={}]", evt.sessionId(),
+					evt.frame().getCommand());
 		}
 		on(evt);
 	}
@@ -146,7 +147,8 @@ public class Relay {
 		// FIXME we need to decouple this from the websocket sessions
 		this.sessionRegistry.getSession(sessionId).ifPresent(s -> {
 			try {
-				if (s.isOpen()) s.close();
+				if (s.isOpen())
+					s.close();
 			} catch (IOException e) {
 				this.log.warn("Unable to close session. [sessionId={}]", sessionId, e);
 			}

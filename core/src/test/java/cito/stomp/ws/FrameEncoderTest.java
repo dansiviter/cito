@@ -13,51 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cito.server.ws;
+package cito.stomp.ws;
 
-import static cito.stomp.Frame.NULL;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
+import java.nio.ByteBuffer;
 
-import javax.websocket.DecodeException;
 import javax.websocket.EncodeException;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import cito.server.ws.FrameEncoding;
 import cito.stomp.Frame;
 
 /**
- * Unit test for {@link FrameEncoding}.
+ * Unit test for {@link FrameEncoder}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [25 Jul 2016]
  */
-public class FrameEncodingTest {
-	private FrameEncoding frameEncoding;
+public class FrameEncoderTest {
+	private FrameEncoder.Binary binary;
+	private FrameEncoder.Text text;
 
 	@Before
 	public void before() {
-		this.frameEncoding = new FrameEncoding();
+		this.binary = new FrameEncoder.Binary();
+		this.text = new FrameEncoder.Text();
 	}
 
 	@Test
-	public void encode() throws EncodeException, IOException {
+	public void encode_byteBuffer() throws EncodeException, IOException {
 		final Frame frame = Frame.receipt("123").build();
-		final StringWriter writer = new StringWriter();
-		this.frameEncoding.encode(frame, writer);
-		assertEquals("RECEIPT\nreceipt-id:123\n\n" + NULL, writer.toString());
+		final ByteBuffer actual = this.binary.encode(frame);
+		assertEquals(UTF_8.encode("RECEIPT\nreceipt-id:123\n\n\u0000"), actual);
 	}
 
 	@Test
-	public void decode() throws DecodeException, IOException {
-		final String input = "MESSAGE\nheader2:value\nheader1:value2\nheader1:value1\n\nbody" + NULL;
-		final StringReader reader = new StringReader(input);
-		final Frame frame = this.frameEncoding.decode(reader);
-		assertEquals(input, frame.toString());
+	public void encode_string() throws EncodeException, IOException {
+		final Frame frame = Frame.receipt("123").build();
+		final String actual = this.text.encode(frame);
+		assertEquals("RECEIPT\nreceipt-id:123\n\n\u0000", actual);
 	}
 }

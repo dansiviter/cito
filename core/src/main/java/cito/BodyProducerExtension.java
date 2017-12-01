@@ -20,6 +20,7 @@ import static org.apache.deltaspike.core.api.provider.BeanProvider.getContextual
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,7 +85,7 @@ public class BodyProducerExtension implements Extension {
 	private <T> Bean<T> createBeanAdapter(InjectionPoint ip, BeanManager beanManager) {
 		final Type type = ip.getType();
 		final Class<T> rawType = ReflectionUtils.getRawType(type);
-		final ContextualLifecycle<T> lifecycleAdapter = new BodyLifecycle<T>(type, beanManager);
+		final ContextualLifecycle<T> lifecycleAdapter = new BodyLifecycle<T>(ip, beanManager);
 		final BeanBuilder<T> beanBuilder = new BeanBuilder<T>(beanManager)
 				.readFromType(new AnnotatedTypeBuilder<T>().readFromType(rawType).create())
 				.beanClass(Body.class) // see https://issues.jboss.org/browse/WELD-2165
@@ -110,7 +111,7 @@ public class BodyProducerExtension implements Extension {
 	 * @param <T>
 	 */
 	private static class BodyLifecycle<T> implements ContextualLifecycle<T> {
-		private final Type type;
+		private final InjectionPoint ip;
 		private final BeanManager beanManager;
 
 		/**
@@ -118,8 +119,8 @@ public class BodyProducerExtension implements Extension {
 		 * @param type
 		 * @param beanManager
 		 */
-		public BodyLifecycle(Type type, BeanManager beanManager) {
-			this.type = type;
+		public BodyLifecycle(InjectionPoint ip, BeanManager beanManager) {
+			this.ip = ip;
 			this.beanManager = beanManager;
 		}
 
@@ -127,11 +128,20 @@ public class BodyProducerExtension implements Extension {
 		public T create(Bean<T> bean, CreationalContext<T> creationalContext) {
 			final Frame frame = getContextualReference(this.beanManager, Message.class, false).frame();
 			final Serialiser serialiser = getContextualReference(this.beanManager, Serialiser.class, false);
+			final T body;
 			try (InputStream is = new ByteBufferInputStream(frame.getBody())) {
-				return serialiser.readFrom(this.type, frame.contentType(), is);
+				body = serialiser.readFrom(this.ip.getType(), frame.contentType(), is);
 			} catch (IOException e) {
 				throw new IllegalStateException("Unable to serialise!", e);
 			}
+
+			for (Annotation ann : this.ip.getAnnotated().getAnnotations()) {
+				if ("javax.validation.Valid".equals(ann.getClass().getName())) {
+					getContextualReference(Validator.class).validate(body);
+				}
+			}
+
+			return body;
 		}
 
 		@Override

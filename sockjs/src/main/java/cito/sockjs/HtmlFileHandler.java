@@ -16,6 +16,9 @@
  */
 package cito.sockjs;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.lang3.StringUtils.rightPad;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -39,8 +42,7 @@ public class HtmlFileHandler extends AbstractStreamingHandler {
 	private static final String PRELUDE;
 	static {
 		try {
-			final String htmlfile = Util.resourceToString(HtmlFileHandler.class, "htmlfile.html");
-			PRELUDE = new StringBuilder(StringUtils.rightPad(htmlfile, 1_024)).append("\r\n").toString();
+			PRELUDE = Util.resourceToString(HtmlFileHandler.class, "htmlfile.html", UTF_8);
 		} catch (IOException e) {
 			throw new IllegalStateException("Unable to load template!", e);
 		}
@@ -65,7 +67,8 @@ public class HtmlFileHandler extends AbstractStreamingHandler {
 			return;
 		}
 
-		handle(async, session, initial, HtmlFileHandler::format, () -> String.format(PRELUDE, callback));
+		handle(async, session, initial, HtmlFileHandler::format, 
+				() -> rightPad(String.format(PRELUDE, callback), 1_024, "\r\n"));
 	}
 
 
