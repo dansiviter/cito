@@ -110,6 +110,7 @@ public class XhrHandler extends AbstractSessionHandler {
 		public void close() throws IOException {
 			this.session.setSender(null);
 			this.pipe.sink().close();
+			this.log.debug("Closing sender. [sessionId={}]", this.session.getId());
 		}
 	}
 }

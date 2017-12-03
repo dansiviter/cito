@@ -28,9 +28,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
@@ -80,16 +79,16 @@ public class HtmlFileIT extends AbstractIT {
 		verifyNotCached(res);
 
 		try (InputStream is = res.readEntity(InputStream.class)) {
-			final String d = readAvailable(is, 1_024);
+			final String d = read(is, 1_024);
 			assertTrue(d.length() == 1024);
 			assertEquals(HTML_FILE, d.trim());
-			assertEquals("<script>\np(\"o\");\n</script>\r\n", readAvailable(is, -1));
+			assertEquals("<script>\np(\"o\");\n</script>\r\n", read(is, 28));
 
 			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 
 			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
 			verifyEmptyEntity(res0);
 
-			assertEquals("<script>\np(\"a[\\\"x\\\"]\");\n</script>\r\n", readAvailable(is, -1));
+			assertEquals("<script>\np(\"a[\\\"x\\\"]\");\n</script>\r\n", read(is, 35));
 		}
 	}
 
@@ -170,40 +169,27 @@ public class HtmlFileIT extends AbstractIT {
 	 * Reads all the available bytes, essentially to not block on waiting for input.
 	 * 
 	 * @param is the stream to use as source.
-	 * @param limit the limit to the number of bytes, or {@code -1} to ignore.
+	 * @param limit the limit to the number of bytes.
 	 * @return the UTF8 String.
 	 * @throws IOException
 	 */
-	private static String readAvailable(InputStream is, int limit) throws IOException {
-		try {
-			Thread.sleep(5); // the reading of available bytes can be a little hasty, so add a brief delay
-		} catch (InterruptedException e) {
-			throw new IOException(e);
+	private static String read(InputStream is, int limit) throws IOException {
+		if (limit <= 0) {
+			throw new IllegalArgumentException("'limit' must be greater than zero!");
 		}
 		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 			final byte[] buf = new byte[1_024];
-			int total = 0;
-			while (is.available() > 0) {
-				int toRead = limit >= 0 && total + is.available() > limit ? limit - total : is.available();
-				int read = is.read(buf, 0, toRead > buf.length ? buf.length : toRead);
+			int read;
+			try {
+			while (limit != 0 && (read = is.read(buf, 0, buf.length > limit ? limit : buf.length)) >= 0) {
 				out.write(buf, 0, read);
-				total += read;
-
-				if (limit >= 0 && total >= limit) {
-					break;
-				}
+				limit -= read;
+			}
+			} catch (SocketTimeoutException e) {
+				System.err.println("XXXXXX '" + UTF_8.decode(ByteBuffer.wrap(out.toByteArray())) + "'");
+				throw e;
 			}
 			return UTF_8.decode(ByteBuffer.wrap(out.toByteArray())).toString();
 		}
-	}
-
-	/**
-	 * Does exactly what it says on the tin!
-	 * 
-	 * @param str
-	 * @return
-	 */
-	private static String trimLeading(String str) {
-		return str.replaceAll("^\\s+", "");
 	}
 }

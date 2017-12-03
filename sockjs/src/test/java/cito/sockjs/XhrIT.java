@@ -243,23 +243,26 @@ public class XhrIT extends AbstractIT {
 	@Test
 	@RunAsClient
 	public void requestHeadersCors() {
+		System.out.println("Running requestHeadersCors...");
+		
 		final String uuid = uuid();
-		Response r = target("000", uuid, XHR).request().header("Access-Control-Request-Headers", "a, b, c").post(Entity.json(null));
-		assertEquals(Status.OK, r.getStatusInfo());
-		verifyCors(r, null);
-		assertEquals("a, b, c", r.getHeaderString("Access-Control-Allow-Headers"));
-		r.close();
+		Response res = target("000", uuid, XHR).request().header("Access-Control-Request-Headers", "a, b, c").post(Entity.json(null));
+		assertEquals(Status.OK, res.getStatusInfo());
+		verifyCors(res, null);
+		assertEquals("a, b, c", res.getHeaderString("Access-Control-Allow-Headers"));
+		res.close();
 
-		r = target("000", uuid, XHR).request().header("Access-Control-Request-Headers", "").post(Entity.json(null));
-		assertEquals(Status.OK, r.getStatusInfo());
-		verifyCors(r, null);
-		assertNull(r.getHeaderString("Access-Control-Allow-Headers"));
-		r.close();
+		res = target("000", uuid, XHR).request().header("Access-Control-Request-Headers", "").post(Entity.json(null));
+		assertEquals(Status.OK, res.getStatusInfo());
+		verifyCors(res, null);
+		assertNull(res.getHeaderString("Access-Control-Allow-Headers"));
+		res.close();
 
-		r = target("000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, r.getStatusInfo());
-		verifyCors(r, null);
-		assertNull(r.getHeaderString("Access-Control-Allow-Headers"));
+		res = target("000", uuid, XHR).request().post(Entity.json(null));
+		assertEquals(Status.OK, res.getStatusInfo());
+		verifyCors(res, null);
+		assertNull(res.getHeaderString("Access-Control-Allow-Headers"));
+		res.close();
 	}
 
 
