@@ -4,6 +4,7 @@ sudo: false
 install: true
 script:
   - mvn clean install
+  - mvn com.gavinmogan:codacy-maven-plugin:coverage -DcoverageReportFile=jacoco/target/site/jacoco-aggregate/jacoco.xml -DprojectToken=61414d4b660e4afe9f463a7ece1dcfc1 -DapiToken=$CODACY_API_TOKEN
 cache:
   directories:
     - '$HOME/.m2/repository'
