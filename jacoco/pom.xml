@@ -55,6 +55,24 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>com.gavinmogan</groupId>
+				<artifactId>codacy-maven-plugin</artifactId>
+				<version>1.0.3</version>
+				<configuration>
+					<projectToken>61414d4b660e4afe9f463a7ece1dcfc1</projectToken>
+					<coverageReportFile>target/site/jacoco-aggregate/jacoco.xml</coverageReportFile>
+				</configuration>
+				<executions>
+					<execution>
+						<id>upload-report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>coverage</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 </project>
