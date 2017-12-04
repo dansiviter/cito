@@ -19,7 +19,6 @@ import static java.nio.charset.Charset.forName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.ws.rs.core.MediaType.CHARSET_PARAMETER;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,8 +26,6 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.MediaType;
@@ -51,14 +48,15 @@ public class TextPlainSerialiser implements BodyWriter<Object>, BodyReader<Objec
 	@Override
 	public Object readFrom(Type type, MediaType mediaType, InputStream is) throws IOException {
 		if (type == String.class) {
-			final Charset charset;
-			if (mediaType.getParameters().containsKey(CHARSET_PARAMETER)) {
-				charset = Charset.forName(mediaType.getParameters().get(CHARSET_PARAMETER));
-			} else {
-				charset = StandardCharsets.UTF_8;
-			}
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, charset))) {
-				return reader.lines().collect(Collectors.joining("\n"));
+			final Charset charset = getCharset(mediaType);
+			final StringBuilder buf = new StringBuilder();
+			try (Reader reader = new InputStreamReader(is, charset)) {
+				int read;
+				final char[] cbuf = new char[16 * 1_024];
+				while ((read = reader.read(cbuf)) != -1) {
+					buf.append(cbuf, 0, read);
+				}
+				return buf.toString();
 			}
 		} else if (type instanceof Class<?> && Reader.class.isAssignableFrom((Class<?>) type)) {
 			return new InputStreamReader(is);
