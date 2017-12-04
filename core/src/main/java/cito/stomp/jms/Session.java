@@ -148,7 +148,6 @@ public class Session {
 	 */
 	@FunctionalInterface
 	private interface SessionFunction<R> {
-
 		/**
 		 * Applies this function to the given argument.
 		 *
@@ -166,13 +165,12 @@ public class Session {
 	 */
 	@FunctionalInterface
 	private interface ProducerFunction {
-
 		/**
 		 * Applies this function to the given argument.
 		 *
 		 * @param p the producer
 		 * @return the function result
 		 */
-		void apply(javax.jms.MessageProducer p) throws JMSException;
+		void apply(MessageProducer p) throws JMSException;
 	}
 }
