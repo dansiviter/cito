@@ -50,15 +50,18 @@ public abstract class AbstractStreamingHandler extends AbstractSessionHandler {
 	/**
 	 * 
 	 * @param async
-	 * @param session
-	 * @param initial
-	 * @param format
+	 * @param session the session.
+	 * @param initial if {@code true} then this is the first request for a session.
+	 * @param format the frame format.
+	 * @param prelude the new request prelude.
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	protected void handle(HttpAsyncContext async, ServletSession session, boolean initial, FrameFormat format, Prelude prelude)
-			throws ServletException, IOException
+	protected void handle(
+			HttpAsyncContext async, ServletSession session, boolean initial, FrameFormat format, Prelude prelude)
+	throws ServletException, IOException
 	{
+		this.log.info("New request. [sessionId={},initial={}]", session.getId(), initial); // FIXME remove this when Travis CI issues are addressed
 		final HttpServletResponse res = async.getResponse();
 
 		final Pipe pipe = Pipe.open();
@@ -100,7 +103,7 @@ public abstract class AbstractStreamingHandler extends AbstractSessionHandler {
 		public void send(Queue<String> frames) throws IOException {
 			while (!frames.isEmpty()) {
 				String frame = frames.poll();
-				this.log.debug("Flushing frame. [sessionId={},frame={}]", this.session.getId(), frame);
+				this.log.info("Flushing frame. [sessionId={},frame={}]", this.session.getId(), frame);
 				frame = StringEscapeUtils.escapeJson(frame);
 				final StringBuilder buf = new StringBuilder("a[\"").append(frame).append("\"]");
 				this.bytesSent += write(pipe, format.format(buf));
@@ -115,6 +118,7 @@ public abstract class AbstractStreamingHandler extends AbstractSessionHandler {
 
 		@Override
 		public void close() throws IOException {
+			this.log.info("Closing sender. [sessionId={},sender={}]", this.session.getId());
 			this.session.setSender(null);
 			this.pipe.sink().close();
 		}

@@ -25,6 +25,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
+ * Simple wrapper for HTTP requests.
+ * 
  * @author Daniel Siviter
  * @since v1.0 [18 Feb 2017]
  */

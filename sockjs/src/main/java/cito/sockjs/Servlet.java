@@ -27,10 +27,12 @@ import static cito.sockjs.XhrSendHandler.XHR_SEND;
 import static cito.sockjs.XhrStreamingHandler.XHR_STREAMING;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,6 +45,11 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.websocket.ClientEndpointConfig;
+import javax.websocket.Endpoint;
+import javax.websocket.Extension;
+import javax.websocket.Session;
+import javax.websocket.WebSocketContainer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +60,7 @@ import org.slf4j.LoggerFactory;
  * @author Daniel Siviter
  * @since v1.0 [4 Jan 2017]
  */
-public class Servlet implements javax.servlet.Servlet {
+public class Servlet implements javax.servlet.Servlet, WebSocketContainer {
 	private final Map<String, AbstractHandler> handers = new HashMap<>();
 	private final Map<String, ServletSession> sessions = new ConcurrentHashMap<>();
 	// XXX Should I use ManagedScheduledExecutorService?
@@ -253,4 +260,78 @@ public class Servlet implements javax.servlet.Servlet {
 
 	@Override
 	public void destroy() { }
+
+	/* (non-Javadoc)
+	 * @see javax.websocket.WebSocketContainer#getDefaultAsyncSendTimeout()
+	 */
+	@Override
+	public long getDefaultAsyncSendTimeout() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	/* (non-Javadoc)
+	 * @see javax.websocket.WebSocketContainer#setAsyncSendTimeout(long)
+	 */
+	@Override
+	public void setAsyncSendTimeout(long timeoutmillis) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public Session connectToServer(Object annotatedEndpointInstance, URI path) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Session connectToServer(Class<?> annotatedEndpointClass, URI path) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Session connectToServer(Endpoint endpointInstance, ClientEndpointConfig cec, URI path) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Session connectToServer(Class<? extends Endpoint> endpointClass, ClientEndpointConfig cec, URI path) {
+		throw new UnsupportedOperationException();
+
+	}
+
+	@Override
+	public long getDefaultMaxSessionIdleTimeout() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void setDefaultMaxSessionIdleTimeout(long timeout) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public int getDefaultMaxBinaryMessageBufferSize() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void setDefaultMaxBinaryMessageBufferSize(int max) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public int getDefaultMaxTextMessageBufferSize() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void setDefaultMaxTextMessageBufferSize(int max) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Set<Extension> getInstalledExtensions() {
+		throw new UnsupportedOperationException();
+	}
 }

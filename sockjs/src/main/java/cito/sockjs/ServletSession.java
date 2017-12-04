@@ -47,7 +47,6 @@ public class ServletSession extends AbstractSession {
 
 	private final LinkedTransferQueue<String> frameQueue = new LinkedTransferQueue<>();
 
-	private final Servlet servlet;
 	private final HttpServletRequest instigatingReq;
 	private final Endpoint endpoint;
 	private final Map<String, String> pathParams;
@@ -65,11 +64,16 @@ public class ServletSession extends AbstractSession {
 	public ServletSession(Servlet servlet, HttpServletRequest instigatingReq)
 			throws ServletException
 	{
-		this.servlet = servlet;
+		super(servlet);
 		this.instigatingReq = instigatingReq;
 		this.endpoint = servlet.getConfig().createEndpoint();
 		this.pathParams = Util.pathParams(servlet.getConfig(), instigatingReq);
 		this.active = LocalDateTime.now();
+	}
+	
+	@Override
+	public Servlet getContainer() {
+		return (Servlet) super.getContainer();
 	}
 
 	/**
@@ -144,7 +148,7 @@ public class ServletSession extends AbstractSession {
 	@Override
 	public void close(CloseReason closeReason) throws IOException {
 		this.log.info("Closing session. [id={},reason={}]", getId(), closeReason);
-		this.servlet.unregister(this);
+		getContainer().unregister(this);
 		this.closed = this.active = LocalDateTime.now();
 	}
 

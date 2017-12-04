@@ -62,13 +62,12 @@ public class HtmlFileHandler extends AbstractStreamingHandler {
 	{
 		final String callback = getCallback(async.getRequest());
 		if (callback == null || callback.isEmpty()) {
-			this.log.warn("Callback expected.");
+			this.log.warn("No callback! [{}]", session.getId());
 			sendNonBlock(async, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "\"callback\" parameter required");
 			return;
 		}
 
-		handle(async, session, initial, HtmlFileHandler::format, 
-				() -> rightPad(String.format(PRELUDE, callback), 1_024, "\r\n"));
+		handle(async, session, initial, HtmlFileHandler::format, () -> prelude(session, callback));
 	}
 
 
@@ -98,5 +97,20 @@ public class HtmlFileHandler extends AbstractStreamingHandler {
 		} catch (UnsupportedEncodingException e) {
 			throw new IllegalStateException(e); // UTF-8 should always be supported!
 		}
+	}
+
+	/**
+	 * 
+	 * @param session
+	 * @param callback
+	 * @return
+	 */
+	private static CharSequence prelude(ServletSession session, String callback) {
+		CharSequence prelude = (CharSequence) session.getUserProperties().get("prelude");
+		if (prelude == null) {
+			prelude = rightPad(String.format(PRELUDE, callback), 1_024, "\r\n");
+			session.getUserProperties().put("prelude", prelude);
+		}
+		return prelude;
 	}
 }

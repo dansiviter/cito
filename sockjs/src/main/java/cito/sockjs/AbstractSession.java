@@ -25,6 +25,8 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -42,20 +44,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Defines an abstract instance of WebSocket {@link Session}.
  * 
  * @author Daniel Siviter
  * @since v1.0 [3 Jan 2017]
  */
 public abstract class AbstractSession implements Session {
 	protected static final CloseReason GO_AWAY = new CloseReason(getCloseCode(3000), "Go away!");
+
 	private final Set<MessageHandlerWrapper> messageHandlers = Collections.newSetFromMap(new ConcurrentHashMap<>());
+	private final Map<String, Object> userProps = new ConcurrentHashMap<>();
 	protected final Logger log;
+	protected WebSocketContainer container;
+
+	private OptionalLong maxIdleTimeout = OptionalLong.empty();
+	private OptionalInt maxTextMessageBufferSize = OptionalInt.empty();
+	private OptionalInt maxBinaryMessageBufferSize = OptionalInt.empty();
 
 	/**
 	 * 
+	 * @param container
 	 */
-	public AbstractSession() {
+	public AbstractSession(WebSocketContainer container) {
 		this.log = LoggerFactory.getLogger(getClass());
+		this.container = container;
 	}
 
 	/**
@@ -97,7 +109,7 @@ public abstract class AbstractSession implements Session {
 	
 	@Override
 	public WebSocketContainer getContainer() {
-		return null;
+		return this.container;
 	}
 
 	@Override
@@ -148,41 +160,49 @@ public abstract class AbstractSession implements Session {
 
 	@Override
 	public long getMaxIdleTimeout() {
-		return 0;
+		return this.maxIdleTimeout.orElseGet(getContainer() :: getDefaultMaxSessionIdleTimeout);
 	}
 
 	@Override
-	public void setMaxIdleTimeout(long milliseconds) { }
-
-	@Override
-	public void setMaxBinaryMessageBufferSize(int length) { }
+	public void setMaxIdleTimeout(long milliseconds) {
+		this.maxIdleTimeout = OptionalLong.of(milliseconds);
+	}
 
 	@Override
 	public int getMaxBinaryMessageBufferSize() {
-		return 0;
+		return this.maxBinaryMessageBufferSize.orElseGet(getContainer() :: getDefaultMaxBinaryMessageBufferSize);
 	}
 
 	@Override
-	public void setMaxTextMessageBufferSize(int length) { }
+	public void setMaxBinaryMessageBufferSize(int length) {
+		this.maxBinaryMessageBufferSize = length > 0 ? OptionalInt.of(length) : OptionalInt.empty();
+	}
 
 	@Override
 	public int getMaxTextMessageBufferSize() {
-		return 0;
+		return this.maxTextMessageBufferSize.orElseGet(getContainer() :: getDefaultMaxTextMessageBufferSize);
 	}
 
+
+	@Override
+	public void setMaxTextMessageBufferSize(int length) {
+		this.maxTextMessageBufferSize = length > 0 ? OptionalInt.of(length) : OptionalInt.empty();
+	}
+
+	
 	@Override
 	public Async getAsyncRemote() {
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public Map<String, Object> getUserProperties() {
-		return null;
+		return this.userProps;
 	}
 
 	@Override
 	public Set<Session> getOpenSessions() {
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 

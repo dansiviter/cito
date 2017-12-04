@@ -54,6 +54,7 @@ public class WebSocketSession extends AbstractSession implements Whole<String> {
 	 * @param delegate
 	 */
 	public WebSocketSession(Session delegate) {
+		super(delegate.getContainer());
 		this.delegate = delegate;
 		this.delegate.addMessageHandler(this);
 	}
