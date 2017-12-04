@@ -18,18 +18,13 @@ package cito.sockjs;
 
 import static cito.sockjs.EventSourceHandler.EVENTSOURCE;
 import static cito.sockjs.XhrSendHandler.XHR_SEND;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
+import java.util.Scanner;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
@@ -78,17 +73,20 @@ public class HtmlFileIT extends AbstractIT {
 		// As HtmlFile is requested using GET we must be very careful not to allow it being cached.
 		verifyNotCached(res);
 
-		try (InputStream is = res.readEntity(InputStream.class)) {
-			final String d = read(is, 1_024);
-			assertTrue(d.length() == 1024);
+		try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
+			scanner.useDelimiter("\r\n");
+			final String d = scanner.next();
 			assertEquals(HTML_FILE, d.trim());
-			assertEquals("<script>\np(\"o\");\n</script>\r\n", read(is, 28));
+			for (int i = 0; i <= 321; i++) { // skip EoL padding
+				assertTrue(scanner.next().isEmpty());
+			}
+			assertEquals("<script>\np(\"o\");\n</script>", scanner.next());
 
 			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 
 			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
 			verifyEmptyEntity(res0);
 
-			assertEquals("<script>\np(\"a[\\\"x\\\"]\");\n</script>\r\n", read(is, 35));
+			assertEquals("<script>\np(\"a[\\\"x\\\"]\");\n</script>", scanner.next());
 		}
 	}
 
@@ -137,10 +135,11 @@ public class HtmlFileIT extends AbstractIT {
 		final Response res = target("000", uuid, EVENTSOURCE).request().get();
 
 		final InputStream is = res.readEntity(InputStream.class);
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-			assertEquals("", reader.readLine());
-			assertEquals("data: o", reader.readLine());
-			assertEquals("", reader.readLine());
+		try (Scanner scanner = new Scanner(is, "UTF8")) {
+			scanner.useDelimiter("\n\r");
+			assertEquals("", scanner.next());
+			assertEquals("data: o", scanner.next());
+			assertEquals("", scanner.next());
 
 			// Test server should gc streaming session after 4096 bytes were sent (including framing).
 
@@ -149,10 +148,10 @@ public class HtmlFileIT extends AbstractIT {
 			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
 			verifyEmptyEntity(res0);
 			res0.close();
-			assertEquals("data: a[\"" + msg + "\"]", reader.readLine());
-			assertEquals("", reader.readLine());
+			assertEquals("data: a[\"" + msg + "\"]", scanner.next());
+			assertEquals("", scanner.next());
 			// The connection should be closed after enough data was delivered.
-			assertNull(reader.readLine());
+			assertNull(scanner.next());
 			res.close();
 		}
 	}
@@ -163,33 +162,5 @@ public class HtmlFileIT extends AbstractIT {
 	@Deployment
 	public static WebArchive createDeployment() {
 		return createWebArchive();
-	}
-
-	/**
-	 * Reads all the available bytes, essentially to not block on waiting for input.
-	 * 
-	 * @param is the stream to use as source.
-	 * @param limit the limit to the number of bytes.
-	 * @return the UTF8 String.
-	 * @throws IOException
-	 */
-	private static String read(InputStream is, int limit) throws IOException {
-		if (limit <= 0) {
-			throw new IllegalArgumentException("'limit' must be greater than zero!");
-		}
-		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-			final byte[] buf = new byte[1_024];
-			int read;
-			try {
-			while (limit != 0 && (read = is.read(buf, 0, buf.length > limit ? limit : buf.length)) >= 0) {
-				out.write(buf, 0, read);
-				limit -= read;
-			}
-			} catch (SocketTimeoutException e) {
-				System.err.println("XXXXXX '" + UTF_8.decode(ByteBuffer.wrap(out.toByteArray())) + "'");
-				throw e;
-			}
-			return UTF_8.decode(ByteBuffer.wrap(out.toByteArray())).toString();
-		}
 	}
 }

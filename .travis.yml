@@ -3,7 +3,7 @@ jdk: oraclejdk8
 sudo: false
 install: true
 script:
-  - mvn clean install -Ptravis -DapiToken=$CODACY_API_TOKEN
+  - mvn clean install -Ptravis
 cache:
   directories:
     - '$HOME/.m2/repository'

@@ -18,12 +18,12 @@ package cito.sockjs;
 import static cito.sockjs.EventSourceHandler.EVENTSOURCE;
 import static cito.sockjs.XhrSendHandler.XHR_SEND;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.util.Scanner;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.Entity;
@@ -36,7 +36,6 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
-
 
 /**
  * Unit test for {@link EventSourceHandler}.
@@ -68,18 +67,19 @@ public class EventSourceIT extends AbstractIT {
 		verifyNotCached(res);
 
 		// The transport must first send a new line prelude, due to a bug in Opera.
-		try (BufferedReader reader = toReader(res.readEntity(InputStream.class))) {
-			assertEquals("", reader.readLine());
-			assertEquals("data: o", reader.readLine());
-			assertEquals("", reader.readLine());
+		try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
+			scanner.useDelimiter("\r\n");
+			assertTrue(scanner.nextLine().isEmpty());
+			assertEquals("data: o", scanner.next());
+			assertTrue(scanner.next().isEmpty());
 
 			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 
 			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
 			verifyEmptyEntity(res0);
 			res0.close();
 
-			assertEquals("data: a[\"x\"]", reader.readLine());
-			assertEquals("", reader.readLine());
+			assertEquals("data: a[\"x\"]", scanner.next());
+			assertTrue(scanner.next().isEmpty());
 
 			// This protocol doesn't allow binary data and we need to specially treat leading space, new lines and
 			// things like \x00. But, now the protocol json-encodes everything, so there is no way to trigger this case.
@@ -88,8 +88,8 @@ public class EventSourceIT extends AbstractIT {
 			verifyEmptyEntity(res1);
 			res1.close();
 
-			assertEquals("data: a[\"  \\u0000\\n\\r \"]", reader.readLine());
-			assertEquals("", reader.readLine());
+			assertEquals("data: a[\"  \\u0000\\n\\r \"]", scanner.next());
+			assertTrue(scanner.next().isEmpty());
 		}
 		res.close();
 	}
@@ -105,11 +105,11 @@ public class EventSourceIT extends AbstractIT {
 		final String uuid = uuid();
 		final Response res = target("000", uuid, EVENTSOURCE).request().get();
 
-		final InputStream is = res.readEntity(InputStream.class);
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-			assertEquals("", reader.readLine());
-			assertEquals("data: o", reader.readLine());
-			assertEquals("", reader.readLine());
+		try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
+			scanner.useDelimiter("\r\n");
+			assertTrue(scanner.nextLine().isEmpty());
+			assertEquals("data: o", scanner.next());
+			assertTrue(scanner.next().isEmpty());
 
 			// Test server should gc streaming session after 4096 bytes were sent (including framing).
 
@@ -118,10 +118,10 @@ public class EventSourceIT extends AbstractIT {
 			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
 			verifyEmptyEntity(res0);
 			res0.close();
-			assertEquals("data: a[\"" + msg + "\"]", reader.readLine());
-			assertEquals("", reader.readLine());
+			assertEquals("data: a[\"" + msg + "\"]", scanner.next());
+			assertTrue(scanner.next().isEmpty());
 			// The connection should be closed after enough data was delivered.
-			assertNull(reader.readLine());
+			assertFalse(scanner.hasNext());
 			res.close();
 		}
 	}

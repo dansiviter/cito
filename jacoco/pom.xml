@@ -60,7 +60,8 @@
 				<artifactId>codacy-maven-plugin</artifactId>
 				<version>1.0.3</version>
 				<configuration>
-					<projectToken>61414d4b660e4afe9f463a7ece1dcfc1</projectToken>
+					<projectToken>${env.CODACY_PROJECT_TOKEN}</projectToken>
+					<apiToken>${env.CODACY_API_TOKEN}</apiToken>
 					<coverageReportFile>target/site/jacoco-aggregate/jacoco.xml</coverageReportFile>
 				</configuration>
 				<executions>

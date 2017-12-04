@@ -19,13 +19,13 @@ import static cito.sockjs.XhrHandler.XHR;
 import static cito.sockjs.XhrSendHandler.XHR_SEND;
 import static cito.sockjs.XhrStreamingHandler.XHR_STREAMING;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.Entity;
@@ -144,23 +144,22 @@ public class XhrIT extends AbstractIT {
 		final String uuid = uuid();
 		final Response res = target("000", uuid, XHR_STREAMING).request().post(Entity.json(null));
 
-		final InputStream is = res.readEntity(InputStream.class);
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-			assertEquals(StringUtils.leftPad("", 2048, "h"), reader.readLine());
-			assertEquals("o", reader.readLine());
+		try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
+			scanner.useDelimiter("\n");
+			assertEquals(StringUtils.leftPad("", 2048, "h"), scanner.next());
+			assertEquals("o", scanner.next());
 
 			// Test server should gc streaming session after 4096 bytes were sent (including framing).
-
 			final String msg = StringUtils.leftPad("", 128, "x");
 			for (int i = 0; i < 31; i++) {
 				final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"" + msg + "\"]")); 
 				assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
 				verifyEmptyEntity(res0);
 				res0.close();
-				assertEquals("Iteration " + i, "a[\"" + msg + "\"]", reader.readLine());
+				assertEquals("Iteration " + i, "a[\"" + msg + "\"]", scanner.next());
 			}
 			// The connection should be closed after enough data was delivered.
-			assertNull(reader.readLine());
+			assertFalse(scanner.hasNext());
 			res.close();
 		}
 	}
@@ -243,8 +242,6 @@ public class XhrIT extends AbstractIT {
 	@Test
 	@RunAsClient
 	public void requestHeadersCors() {
-		System.out.println("Running requestHeadersCors...");
-		
 		final String uuid = uuid();
 		Response res = target("000", uuid, XHR).request().header("Access-Control-Request-Headers", "a, b, c").post(Entity.json(null));
 		assertEquals(Status.OK, res.getStatusInfo());
