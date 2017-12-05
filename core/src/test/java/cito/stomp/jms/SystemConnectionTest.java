@@ -35,7 +35,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
@@ -70,7 +69,7 @@ public class SystemConnectionTest {
 
 	@Test
 	public void init() throws JMSException {
-		final Connection jmsConnection = Mockito.mock(Connection.class);
+		final Connection jmsConnection = mock(Connection.class);
 		when(this.connectionFactory.createConnection(SESSION_ID, null)).thenReturn(jmsConnection);
 
 		this.connection.init();

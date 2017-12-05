@@ -103,8 +103,6 @@ public class PathParserTest {
 		assertTrue(parser0.equals(parser1));
 		assertEquals(parser0.hashCode(), parser1.hashCode());
 
-		assertFalse(parser0.equals(null));
-
 		final PathParser parser2 = new PathParser("/{anotherParam}");
 		assertFalse(parser0.equals(parser2));
 		assertNotEquals(parser0.hashCode(), parser2.hashCode());

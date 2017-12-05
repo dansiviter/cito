@@ -16,6 +16,7 @@
 package cito.sockjs;
 
 import static cito.RegExMatcher.regEx;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.jboss.shrinkwrap.api.ShrinkWrap.create;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -25,7 +26,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -34,7 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.StringJoiner;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletContainerInitializer;
 import javax.websocket.Endpoint;
@@ -48,13 +47,10 @@ import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.client.jaxrs.engines.URLConnectionEngine;
-import org.jboss.resteasy.client.jaxrs.internal.ClientInvocation;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
-import org.mockito.internal.matchers.GreaterThan;
 import org.wildfly.swarm.spi.api.JARArchive;
 
 import cito.sockjs.jaxrs.JsonMessageBodyReader;
@@ -78,10 +74,8 @@ public abstract class AbstractIT {
 	 */
 	protected Client createClient() {
 		return new ResteasyClientBuilder()
-				.socketTimeout(30, TimeUnit.SECONDS)
-				.connectionPoolSize(2)
+				.socketTimeout(30, SECONDS)
 				.register(JsonMessageBodyReader.class)
-				.httpEngine(new TestUrlConnectionEngine())
 				.build();
 	}
 
@@ -389,21 +383,6 @@ public abstract class AbstractIT {
 		@Override
 		public Class<? extends Endpoint> endpointClass() {
 			return CloseEndpoint.class;
-		}
-	}
-
-	/**
-	 * A simple engine to permit configuration of {@link HttpURLConnection}.
-	 * 
-	 * @author Daniel Siviter
-	 * @since v1.0 [25 Feb 2017]
-	 */
-	public static class TestUrlConnectionEngine extends URLConnectionEngine {
-		@Override
-		protected HttpURLConnection createConnection(ClientInvocation request) throws IOException {
-			final HttpURLConnection conn = super.createConnection(request);
-			conn.setReadTimeout(30 * 1000);
-			return conn;
 		}
 	}
 }

@@ -32,7 +32,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -176,7 +175,7 @@ public class Factory {
 		final ByteBuffer buf;
 		if (message instanceof TextMessage) {
 			final TextMessage msg = (TextMessage) message;
-			buf = ByteBuffer.wrap(msg.getText().getBytes(StandardCharsets.UTF_8));
+			buf = ByteBuffer.wrap(msg.getText().getBytes(UTF_8));
 		} else if (message instanceof BytesMessage) {
 			final BytesMessage msg = (BytesMessage) message;
 			byte[] data = new byte[(int) msg.getBodyLength()];
