@@ -39,6 +39,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.AsyncContext;
+import javax.servlet.AsyncEvent;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -166,6 +167,17 @@ public class Servlet implements javax.servlet.Servlet, WebSocketContainer {
 		}
 
 		final AsyncContext asyncContext = req.startAsync();
+		asyncContext.addListener(new AsyncAdapter() {
+			@Override
+			public void onTimeout(AsyncEvent event) throws IOException {
+				log.warn("Async timeout!", event.getThrowable());
+			}
+
+			@Override
+			public void onError(AsyncEvent event) throws IOException {
+				log.warn("Async error!", event.getThrowable());
+			}
+		});
 		asyncContext.setTimeout(TimeUnit.MINUTES.toMillis(1));
 		asyncContext.start(() -> onRequest(handler, asyncContext));
 	}
@@ -276,7 +288,7 @@ public class Servlet implements javax.servlet.Servlet, WebSocketContainer {
 	@Override
 	public void setAsyncSendTimeout(long timeoutmillis) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
