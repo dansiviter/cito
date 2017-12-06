@@ -26,6 +26,9 @@ import java.nio.channels.WritableByteChannel;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cito.sockjs.HttpAsyncContext;
 
 /**
@@ -35,6 +38,7 @@ import cito.sockjs.HttpAsyncContext;
  * @since v1.0 [18 Feb 2017]
  */
 public class ReadStream implements ReadListener {
+	private static final Logger LOG = LoggerFactory.getLogger(ReadStream.class);
 	private final ByteBuffer buffer = ByteBuffer.allocate(1024);
 
 	private final ReadableByteChannel src;
@@ -53,6 +57,7 @@ public class ReadStream implements ReadListener {
 
 	@Override
 	public void onDataAvailable() throws IOException {
+		LOG.debug("Reading... [{}]", async.getRequest().getRequestURI());
 		this.buffer.clear();
 		while (this.in.isReady() && !this.in.isFinished() && this.src.read(this.buffer) != -1) {
 			this.buffer.flip();
@@ -63,11 +68,13 @@ public class ReadStream implements ReadListener {
 
 	@Override
 	public void onAllDataRead() throws IOException {
+		LOG.debug("Read complete. [{}]", async.getRequest().getRequestURI());
 		this.complete.onComplete(null);
 	}
 
 	@Override
-	public void onError(final Throwable t) { 
+	public void onError(final Throwable t) {
+		LOG.debug("Read error. [{}]", async.getRequest().getRequestURI(), t);
 		try {
 			this.complete.onComplete(t);
 		} catch (IOException e) {
