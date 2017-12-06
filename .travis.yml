@@ -2,6 +2,8 @@ language: java
 jdk: oraclejdk8
 sudo: false
 install: true
+before_script:
+  - _JAVA_OPTIONS="-Xmx2048m"
 script:
   - mvn clean install -Ptravis
 cache:
