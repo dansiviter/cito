@@ -16,7 +16,6 @@
 package cito.sockjs;
 
 import static cito.sockjs.InfoHandler.INFO;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -26,7 +25,6 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -52,20 +50,21 @@ public class InfoIT extends AbstractIT {
 	@Test
 	@RunAsClient
 	public void test_basic() {
-		final Response res = target().path(INFO).request().get();
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("application/json;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
-		verifyNoCookie(res);
-		verifyNotCached(res);
-		verifyCors(res, null);
+		try (ClosableResponse res = get(target().path(INFO))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("application/json;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
+			verifyNoCookie(res);
+			verifyNotCached(res);
+			verifyCors(res, null);
 
-		final JsonObject json = res.readEntity(JsonObject.class);
-		assertTrue(json.getBoolean("websocket"));
-		assertNotNull(json.getBoolean("cookie_needed"));
-		final JsonArray origins = json.getJsonArray("origins");
-		assertEquals(1, origins.size());
-		assertEquals("*:*", origins.getString(0));
-		assertNotNull(json.getJsonNumber("entropy"));
+			final JsonObject json = res.readEntity(JsonObject.class);
+			assertTrue(json.getBoolean("websocket"));
+			assertNotNull(json.getBoolean("cookie_needed"));
+			final JsonArray origins = json.getJsonArray("origins");
+			assertEquals(1, origins.size());
+			assertEquals("*:*", origins.getString(0));
+			assertNotNull(json.getJsonNumber("entropy"));
+		}
 	}
 
 	/**
@@ -74,13 +73,16 @@ public class InfoIT extends AbstractIT {
 	@Test
 	@RunAsClient
 	public void test_entropy() {
-		Response res = target().path(INFO).request(MediaType.APPLICATION_JSON_TYPE).get();
-		JsonObject json = res.readEntity(JsonObject.class);
-		final long entropy0 = json.getJsonNumber("entropy").longValue();
-
-		res = target().path(INFO).request().get();
-		json = res.readEntity(JsonObject.class);
-		final long entropy1 = json.getJsonNumber("entropy").longValue();
+		final long entropy0;
+		try (ClosableResponse res = get(target().path(INFO).request(MediaType.APPLICATION_JSON_TYPE))) {
+			final JsonObject json = res.readEntity(JsonObject.class);
+			entropy0 = json.getJsonNumber("entropy").longValue();
+		}
+		final long entropy1;
+		try (ClosableResponse res = get(target().path(INFO))) {
+			final JsonObject json = res.readEntity(JsonObject.class);
+			entropy1 = json.getJsonNumber("entropy").longValue();
+		}
 		assertNotEquals(entropy0, entropy1);
 	}
 
@@ -100,11 +102,11 @@ public class InfoIT extends AbstractIT {
 	@RunAsClient
 	@Ignore
 	public void test_disabled_websocket() {
-//    def test_disabled_websocket(self):
-//        r = GET(wsoff_base_url + '/info')
-//        self.assertEqual(r.status, 200)
-//        data = json.loads(r.body)
-//        self.assertEqual(data['websocket'], False)
+		//    def test_disabled_websocket(self):
+		//        r = GET(wsoff_base_url + '/info')
+		//        self.assertEqual(r.status, 200)
+		//        data = json.loads(r.body)
+		//        self.assertEqual(data['websocket'], False)
 	}
 
 

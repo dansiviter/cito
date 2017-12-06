@@ -16,6 +16,7 @@
 package cito.sockjs;
 
 import static cito.RegExMatcher.regEx;
+import static cito.sockjs.ClosableResponse.closable;
 import static org.jboss.shrinkwrap.api.ShrinkWrap.create;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -23,6 +24,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,10 +37,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.StringJoiner;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.ServletContainerInitializer;
 import javax.websocket.Endpoint;
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -53,6 +59,8 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.wildfly.swarm.spi.api.JARArchive;
 
 import cito.sockjs.jaxrs.JsonMessageBodyReader;
@@ -75,6 +83,10 @@ public abstract class AbstractIT {
 	 * @return
 	 */
 	protected Client createClient() {
+		// The ReSTEasy Client implementation uses Apache HTTP Client by default... which is totally bemusing to use! By
+		// default it only permits one active request and persistent requests (i.e. Event Source) become locked when
+		// attempting to close (RESTEASY-1478). So, to address this I've replaced this with the HttpUrlConnection
+		// version which appears to work as expected.
 		return new ResteasyClientBuilder()
 				.httpEngine(new TestUrlConnectionEngine())
 				.register(JsonMessageBodyReader.class)
@@ -150,6 +162,8 @@ public abstract class AbstractIT {
 		return target().path(server).path(session).path(type);
 	}
 
+
+
 	@After
 	public void after() {
 		if (this.client != null) {
@@ -163,6 +177,48 @@ public abstract class AbstractIT {
 	@BeforeClass
 	public static void beforeClass() {
 		System.setProperty("sun.net.http.allowRestrictedHeaders", Boolean.TRUE.toString());
+	}
+
+	/**
+	 * Convenience GET method to help with resource leaking.
+	 * 
+	 * @param b
+	 * @return
+	 */
+	protected static ClosableResponse get(WebTarget wt) {
+		return get(wt.request());
+	}
+
+	/**
+	 * Convenience GET method to help with resource leaking.
+	 * 
+	 * @param builder
+	 * @return
+	 */
+	protected static ClosableResponse get(Builder builder) {
+		return closable(builder.get());
+	}
+
+	/**
+	 * Convenience POST method to help with resource leaking.
+	 * 
+	 * @param wt
+	 * @param e
+	 * @return
+	 */
+	protected static <T> ClosableResponse post(WebTarget wt, Entity<T> e) {
+		return post(wt.request(), e);
+	}
+
+	/**
+	 * Convenience POST method to help with resource leaking.
+	 * 
+	 * @param builder
+	 * @param e
+	 * @return
+	 */
+	protected static <T> ClosableResponse post(Builder builder, Entity<T> e) {
+		return closable(builder.post(e));
 	}
 
 	/**
@@ -180,7 +236,7 @@ public abstract class AbstractIT {
 	 * 
 	 * @param res
 	 */
-	protected static void verify405(Response res) {
+	protected static void verify405(ClosableResponse res) {
 		assertEquals(Status.METHOD_NOT_ALLOWED, res.getStatusInfo());
 		assertNull(res.getHeaderString(HttpHeaders.CONTENT_TYPE));
 		assertNotNull(res.getHeaderString(HttpHeaders.ALLOW));
@@ -196,8 +252,9 @@ public abstract class AbstractIT {
 	 */
 	protected void verifyOptions(String path, String... allowedMethods) {
 		for (String origin : new String[] { null, "test", "null" }) {
-			final Response r = target().path(path).request().header("Origin", origin).options();
-			verifyOptions(r, origin, allowedMethods);
+			try (ClosableResponse r = closable(target().path(path).request().header("Origin", origin).options())) {
+				verifyOptions(r, origin, allowedMethods);
+			}
 		}
 	}
 
@@ -207,7 +264,7 @@ public abstract class AbstractIT {
 	 * @param origin the origin to test or {@code null}.
 	 * @param allowedMethods
 	 */
-	protected static void verifyOptions(Response res, String origin, String... allowedMethods) {
+	protected static void verifyOptions(ClosableResponse res, String origin, String... allowedMethods) {
 		assertEquals(Status.NO_CONTENT, res.getStatusInfo());
 		assertThat("'max-age' must be large, one year (31536000) is best", res.getHeaderString(HttpHeaders.CACHE_CONTROL), regEx("public, max-age=[1-9][0-9]{6,}"));
 		assertNotNull(res.getHeaderString(HttpHeaders.EXPIRES));
@@ -223,7 +280,7 @@ public abstract class AbstractIT {
 	 * 
 	 * @param res
 	 */
-	protected static void verifyNoCookie(Response res) {
+	protected static void verifyNoCookie(ClosableResponse res) {
 		assertNull(res.getHeaderString(HttpHeaders.SET_COOKIE));
 	}
 
@@ -233,7 +290,7 @@ public abstract class AbstractIT {
 	 * @param res
 	 * @param origin the origin to test or {@code null}.
 	 */
-	protected static void verifyCors(Response res, String origin) {
+	protected static void verifyCors(ClosableResponse res, String origin) {
 		if (origin != null) {
 			assertEquals(origin, res.getHeaderString("access-control-allow-origin"));
 		} else {
@@ -265,7 +322,7 @@ public abstract class AbstractIT {
 	 * 
 	 * @param res
 	 */
-	protected static void verifyNotCached(Response res) {
+	protected static void verifyNotCached(ClosableResponse res) {
 		assertEquals("no-store, no-cache, must-revalidate, max-age=0", res.getHeaderString(HttpHeaders.CACHE_CONTROL));
 		assertNull(res.getHeaderString(HttpHeaders.EXPIRES));
 		assertNull(res.getHeaderString(HttpHeaders.LAST_MODIFIED));
@@ -288,7 +345,7 @@ public abstract class AbstractIT {
 	 * 
 	 * @param res
 	 */
-	protected static void verifyEmptyEntity(Response res) {
+	protected static void verifyEmptyEntity(ClosableResponse res) {
 		assertTrue(!res.hasEntity() || Util.isEmptyOrNull(res.readEntity(String.class)));
 	}
 
@@ -330,9 +387,8 @@ public abstract class AbstractIT {
 	 * @return
 	 */
 	protected static BufferedReader toReader(InputStream is) {
-		return new BufferedReader(new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)));
+		return new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
 	}
-
 
 
 	// --- Inner Classes ---
@@ -388,6 +444,7 @@ public abstract class AbstractIT {
 		}
 	}
 
+
 	/**
 	 * A simple engine to permit configuration of {@link HttpURLConnection}.
 	 * 
@@ -395,12 +452,26 @@ public abstract class AbstractIT {
 	 * @since v1.0 [25 Feb 2017]
 	 */
 	public static class TestUrlConnectionEngine extends URLConnectionEngine {
+		private static final AtomicInteger COUNT = new AtomicInteger();
+
 		@Override
 		protected HttpURLConnection createConnection(ClientInvocation request) throws IOException {
 			final HttpURLConnection conn = super.createConnection(request);
 			conn.setReadTimeout(30 * 1_000);
 			conn.setConnectTimeout(1_000);
-			return conn;
+
+			// TODO this should be removed when issues in Travis CI are fixed
+			System.out.printf("Creating...  [count=%d,%s]\n", COUNT.incrementAndGet(), conn);
+			final HttpURLConnection spy = spy(conn);
+			doAnswer(new Answer<Void>() {
+				@Override
+				public Void answer(InvocationOnMock invocation) throws Throwable {
+					System.out.printf("Disconnecting...  [count=%d,%s]\n", COUNT.decrementAndGet(), conn);
+					conn.disconnect();
+					return null;
+				}
+			}).when(spy).disconnect();
+			return spy;
 		}
 	}
 }

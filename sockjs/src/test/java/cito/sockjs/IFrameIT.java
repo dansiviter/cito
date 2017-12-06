@@ -23,7 +23,6 @@ import static org.junit.Assert.assertThat;
 
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -119,9 +118,9 @@ public class IFrameIT extends AbstractIT{
 		};
 
 		for (String suffix : suffixes) {
-			final Response res = target().path(suffix).request().get();
-			verify404(suffix, res);
-			res.close();
+			try (ClosableResponse res = get(target().path(suffix))) {
+				verify404(suffix, res);
+			}
 		}
 	}
 
@@ -132,19 +131,19 @@ public class IFrameIT extends AbstractIT{
 	 * Sockjs_url must be a valid url and should utilize caching.
 	 */
 	private void verify(String suffix, String query) {
-		final Response res = target().path(suffix).request().get();
-		assertEquals(suffix, Status.OK, res.getStatusInfo());
-		assertEquals("text/html;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
+		try (ClosableResponse res = get(target().path(suffix))) {
+			assertEquals(suffix, Status.OK, res.getStatusInfo());
+			assertEquals("text/html;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
 
-		assertThat("'max-age' must be large, one year (31536000) is best", res.getHeaderString(HttpHeaders.CACHE_CONTROL), regEx("public, max-age=[1-9][0-9]{6,}"));
-		assertNotNull(res.getHeaderString(HttpHeaders.EXPIRES));
+			assertThat("'max-age' must be large, one year (31536000) is best", res.getHeaderString(HttpHeaders.CACHE_CONTROL), regEx("public, max-age=[1-9][0-9]{6,}"));
+			assertNotNull(res.getHeaderString(HttpHeaders.EXPIRES));
 
-		assertNotNull(res.getEntityTag());
-		assertNull(res.getHeaderString(HttpHeaders.LAST_MODIFIED));
-		assertEquals(I_FRAME, res.readEntity(String.class));
+			assertNotNull(res.getEntityTag());
+			assertNull(res.getHeaderString(HttpHeaders.LAST_MODIFIED));
+			assertEquals(I_FRAME, res.readEntity(String.class));
 
-		verifyNoCookie(res);
-		res.close();
+			verifyNoCookie(res);
+		}
 	}
 
 	/**
@@ -153,16 +152,19 @@ public class IFrameIT extends AbstractIT{
 	@Test
 	@RunAsClient
 	public void test_cacheability() {
-		Response res = target().path("iframe.html").request().get();
-		final EntityTag eTag0 = res.getEntityTag();
-		res.close();
-		res = target().path("iframe.html").request().get();
-		final EntityTag eTag1 = res.getEntityTag();
-		res.close();
+		final EntityTag eTag0;
+		try (ClosableResponse res = get(target().path("iframe.html"))) {
+			eTag0 = res.getEntityTag();
+		}
+		final EntityTag eTag1;
+		try (ClosableResponse res = get(target().path("iframe.html"))) {
+			eTag1 = res.getEntityTag();
+		}
 		assertEquals(eTag0, eTag1);
-		res = target().path("iframe.html").request().header(HttpHeaders.IF_NONE_MATCH, eTag0.getValue()).get();
-		assertEquals(Status.NOT_MODIFIED, res.getStatusInfo());
-		verifyEmptyEntity(res);
+		try (ClosableResponse res = get(target().path("iframe.html").request().header(HttpHeaders.IF_NONE_MATCH, eTag0.getValue()))) {
+			assertEquals(Status.NOT_MODIFIED, res.getStatusInfo());
+			verifyEmptyEntity(res);
+		}
 	}
 
 

@@ -17,6 +17,7 @@ package cito.sockjs;
 
 import static cito.sockjs.EventSourceHandler.EVENTSOURCE;
 import static cito.sockjs.XhrSendHandler.XHR_SEND;
+import static javax.ws.rs.client.Entity.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -26,9 +27,7 @@ import java.io.InputStream;
 import java.util.Scanner;
 
 import javax.ws.rs.HttpMethod;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringUtils;
@@ -59,39 +58,38 @@ public class EventSourceIT extends AbstractIT {
 	@RunAsClient
 	public void transport() throws IOException {
 		final String uuid = uuid();
-		final Response res = target("000", uuid, EVENTSOURCE).request().get();
+		try (ClosableResponse res = get(target("000", uuid, EVENTSOURCE))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("text/event-stream;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
+			// As EventSource is requested using GET we must be very carefull not to allow it being cached.
+			verifyNotCached(res);
 
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("text/event-stream;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
-		// As EventSource is requested using GET we must be very carefull not to allow it being cached.
-		verifyNotCached(res);
+			// The transport must first send a new line prelude, due to a bug in Opera.
+			try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
+				scanner.useDelimiter("\r\n");
+				assertTrue(scanner.nextLine().isEmpty());
+				assertEquals("data: o", scanner.next());
+				assertTrue(scanner.next().isEmpty());
 
-		// The transport must first send a new line prelude, due to a bug in Opera.
-		try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
-			scanner.useDelimiter("\r\n");
-			assertTrue(scanner.nextLine().isEmpty());
-			assertEquals("data: o", scanner.next());
-			assertTrue(scanner.next().isEmpty());
+				try (ClosableResponse post = post(target("000", uuid, XHR_SEND), json("[\"x\"]"))) { 
+					assertEquals(Status.NO_CONTENT, post.getStatusInfo());
+					verifyEmptyEntity(post);
+				}
 
-			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 
-			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
-			verifyEmptyEntity(res0);
-			res0.close();
+				assertEquals("data: a[\"x\"]", scanner.next());
+				assertTrue(scanner.next().isEmpty());
 
-			assertEquals("data: a[\"x\"]", scanner.next());
-			assertTrue(scanner.next().isEmpty());
+				// This protocol doesn't allow binary data and we need to specially treat leading space, new lines and
+				// things like \x00. But, now the protocol json-encodes everything, so there is no way to trigger this case.
+				try (ClosableResponse post = post(target("000", uuid, XHR_SEND), json("[\"  \\u0000\\n\\r \"]"))) {
+					assertEquals(Status.NO_CONTENT, post.getStatusInfo());
+					verifyEmptyEntity(post);
+				}
 
-			// This protocol doesn't allow binary data and we need to specially treat leading space, new lines and
-			// things like \x00. But, now the protocol json-encodes everything, so there is no way to trigger this case.
-			final Response res1 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"  \\u0000\\n\\r \"]")); 
-			assertEquals(Status.NO_CONTENT, res1.getStatusInfo());
-			verifyEmptyEntity(res1);
-			res1.close();
-
-			assertEquals("data: a[\"  \\u0000\\n\\r \"]", scanner.next());
-			assertTrue(scanner.next().isEmpty());
+				assertEquals("data: a[\"  \\u0000\\n\\r \"]", scanner.next());
+				assertTrue(scanner.next().isEmpty());
+			}
 		}
-		res.close();
 	}
 
 	/**
@@ -103,26 +101,25 @@ public class EventSourceIT extends AbstractIT {
 	@RunAsClient
 	public void response_limit() throws IOException {
 		final String uuid = uuid();
-		final Response res = target("000", uuid, EVENTSOURCE).request().get();
+		try (ClosableResponse res = get(target("000", uuid, EVENTSOURCE))) {
+			try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
+				scanner.useDelimiter("\r\n");
+				assertTrue(scanner.nextLine().isEmpty());
+				assertEquals("data: o", scanner.next());
+				assertTrue(scanner.next().isEmpty());
 
-		try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
-			scanner.useDelimiter("\r\n");
-			assertTrue(scanner.nextLine().isEmpty());
-			assertEquals("data: o", scanner.next());
-			assertTrue(scanner.next().isEmpty());
+				// Test server should gc streaming session after 4096 bytes were sent (including framing).
 
-			// Test server should gc streaming session after 4096 bytes were sent (including framing).
-
-			final String msg = StringUtils.leftPad("", 4096, "x");
-			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"" + msg + "\"]")); 
-			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
-			verifyEmptyEntity(res0);
-			res0.close();
-			assertEquals("data: a[\"" + msg + "\"]", scanner.next());
-			assertTrue(scanner.next().isEmpty());
-			// The connection should be closed after enough data was delivered.
-			assertFalse(scanner.hasNext());
-			res.close();
+				final String msg = StringUtils.leftPad("", 4096, "x");
+				try (ClosableResponse post = post(target("000", uuid, XHR_SEND), json("[\"" + msg + "\"]"))) { 
+					assertEquals(Status.NO_CONTENT, post.getStatusInfo());
+					verifyEmptyEntity(post);
+				}
+				assertEquals("data: a[\"" + msg + "\"]", scanner.next());
+				assertTrue(scanner.next().isEmpty());
+				// The connection should be closed after enough data was delivered.
+				assertFalse(scanner.hasNext());
+			}
 		}
 	}
 

@@ -18,6 +18,8 @@ package cito.sockjs;
 import static cito.sockjs.XhrHandler.XHR;
 import static cito.sockjs.XhrSendHandler.XHR_SEND;
 import static cito.sockjs.XhrStreamingHandler.XHR_STREAMING;
+import static javax.ws.rs.client.Entity.entity;
+import static javax.ws.rs.client.Entity.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -28,10 +30,8 @@ import java.io.InputStream;
 import java.util.Scanner;
 
 import javax.ws.rs.HttpMethod;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringUtils;
@@ -77,29 +77,32 @@ public class XhrIT extends AbstractIT {
 	@RunAsClient
 	public void transport_polling() {
 		final String uuid = uuid();
-		Response res = target("000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("o\n", res.readEntity(String.class));
-		assertEquals("application/javascript;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
-		verifyCors(res, null);
-		// iOS 6 caches POSTs. Make sure we send no-cache header.
-		verifyNotCached(res);
+		try (ClosableResponse res = post(target("000", uuid, XHR), json(null))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("o\n", res.readEntity(String.class));
+			assertEquals("application/javascript;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
+			verifyCors(res, null);
+			// iOS 6 caches POSTs. Make sure we send no-cache header.
+			verifyNotCached(res);
+		}
 
 		// Xhr transports receive json-encoded array of messages.
-		res = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]"));
-		assertEquals(Status.NO_CONTENT, res.getStatusInfo());
-		verifyEmptyEntity(res);
+		try (ClosableResponse res = post(target("000", uuid, XHR_SEND), json("[\"x\"]"))) {
+			assertEquals(Status.NO_CONTENT, res.getStatusInfo());
+			verifyEmptyEntity(res);
 
-		// The content type of xhr_send must be set to text/plain, even though the response code is 204. This is due to
-		// Firefox/Firebug behaviour - it assumes that the content type is xml and shouts about it.
-		assertEquals("text/plain;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
-		verifyCors(res, null);
-		// iOS 6 caches POSTs. Make sure we send no-cache header.
-		verifyNotCached(res);
+			// The content type of xhr_send must be set to text/plain, even though the response code is 204. This is due to
+			// Firefox/Firebug behaviour - it assumes that the content type is xml and shouts about it.
+			assertEquals("text/plain;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
+			verifyCors(res, null);
+			// iOS 6 caches POSTs. Make sure we send no-cache header.
+			verifyNotCached(res);
+		}
 
-		res = target("000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("a[\"x\"]\n", res.readEntity(String.class));
+		try (ClosableResponse res = post(target("000", uuid, XHR), json(null))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("a[\"x\"]\n", res.readEntity(String.class));
+		}
 	}
 
 	/**
@@ -110,27 +113,27 @@ public class XhrIT extends AbstractIT {
 	@RunAsClient
 	public void transport_streaming() throws IOException {
 		final String uuid = uuid();
-		final Response res = target("000", uuid, XHR_STREAMING).request().post(Entity.json(null));
+		try (ClosableResponse res = post(target("000", uuid, XHR_STREAMING), json(null))) {
 
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("application/javascript;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
-		verifyCors(res, null);
-		// iOS 6 caches POSTs. Make sure we send no-cache header.
-		verifyNotCached(res);
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("application/javascript;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
+			verifyCors(res, null);
+			// iOS 6 caches POSTs. Make sure we send no-cache header.
+			verifyNotCached(res);
 
-		// The transport must first send 2KiB of h bytes as prelude.
-		try (BufferedReader reader = toReader(res.readEntity(InputStream.class))) {
-			assertEquals(StringUtils.leftPad("", 2048, "h"), reader.readLine());
-			assertEquals("o", reader.readLine());
+			// The transport must first send 2KiB of h bytes as prelude.
+			try (BufferedReader reader = toReader(res.readEntity(InputStream.class))) {
+				assertEquals(StringUtils.leftPad("", 2048, "h"), reader.readLine());
+				assertEquals("o", reader.readLine());
 
-			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 
-			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
-			verifyEmptyEntity(res0);
-			res0.close();
+				try (ClosableResponse res0 = post(target("000", uuid, XHR_SEND), json("[\"x\"]"))) {
+					assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
+					verifyEmptyEntity(res0);
+				}
 
-			assertEquals("a[\"x\"]", reader.readLine());
+				assertEquals("a[\"x\"]", reader.readLine());
+			}
 		}
-		res.close();
 	}
 
 	/**
@@ -142,25 +145,25 @@ public class XhrIT extends AbstractIT {
 	@RunAsClient
 	public void response_limit() throws IOException {
 		final String uuid = uuid();
-		final Response res = target("000", uuid, XHR_STREAMING).request().post(Entity.json(null));
+		try (ClosableResponse res = post(target("000", uuid, XHR_STREAMING), json(null))) {
 
-		try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
-			scanner.useDelimiter("\n");
-			assertEquals(StringUtils.leftPad("", 2048, "h"), scanner.next());
-			assertEquals("o", scanner.next());
+			try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
+				scanner.useDelimiter("\n");
+				assertEquals(StringUtils.leftPad("", 2048, "h"), scanner.next());
+				assertEquals("o", scanner.next());
 
-			// Test server should gc streaming session after 4096 bytes were sent (including framing).
-			final String msg = StringUtils.leftPad("", 128, "x");
-			for (int i = 0; i < 31; i++) {
-				final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"" + msg + "\"]")); 
-				assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
-				verifyEmptyEntity(res0);
-				res0.close();
-				assertEquals("Iteration " + i, "a[\"" + msg + "\"]", scanner.next());
+				// Test server should gc streaming session after 4096 bytes were sent (including framing).
+				final String msg = StringUtils.leftPad("", 128, "x");
+				for (int i = 0; i < 31; i++) {
+					try (ClosableResponse res0 = post(target("000", uuid, XHR_SEND), json("[\"" + msg + "\"]"))) {
+						assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
+						verifyEmptyEntity(res0);
+					}
+					assertEquals("Iteration " + i, "a[\"" + msg + "\"]", scanner.next());
+				}
+				// The connection should be closed after enough data was delivered.
+				assertFalse(scanner.hasNext());
 			}
-			// The connection should be closed after enough data was delivered.
-			assertFalse(scanner.hasNext());
-			res.close();
 		}
 	}
 
@@ -171,8 +174,9 @@ public class XhrIT extends AbstractIT {
 	@Test
 	@RunAsClient
 	public void invalidSession() {
-		final Response res = target("000", uuid(), XHR_SEND).request().post(Entity.json("[\"x\"]"));
-		verify404(XHR_SEND, res);
+		try (ClosableResponse res = post(target("000", uuid(), XHR_SEND), json("[\"x\"]"))) {
+			verify404(XHR_SEND, res);
+		}
 	}
 
 	/**
@@ -182,25 +186,26 @@ public class XhrIT extends AbstractIT {
 	@RunAsClient
 	public void invalidJson() {
 		final String uuid = uuid();
-		Response res = target("000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("o\n", res.readEntity(String.class));
-
-		res = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x"));
-		assertEquals(Status.INTERNAL_SERVER_ERROR, res.getStatusInfo());
-		assertEquals("Broken JSON encoding.", res.readEntity(String.class));
-
-		res = target("000", uuid, XHR_SEND).request().post(Entity.json(null));
-		assertEquals(Status.INTERNAL_SERVER_ERROR, res.getStatusInfo());
-		assertEquals("Payload expected.", res.readEntity(String.class));
-
-		res = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"a\"]"));
-		assertEquals(Status.NO_CONTENT, res.getStatusInfo());
-		verifyEmptyEntity(res);
-
-		res = target("000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("a[\"a\"]\n", res.readEntity(String.class));
+		try (ClosableResponse res = post(target("000", uuid, XHR), json(null))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("o\n", res.readEntity(String.class));
+		}
+		try (ClosableResponse res = post(target("000", uuid, XHR_SEND), json("[\"x"))) {
+			assertEquals(Status.INTERNAL_SERVER_ERROR, res.getStatusInfo());
+			assertEquals("Broken JSON encoding.", res.readEntity(String.class));
+		}
+		try (ClosableResponse res = post(target("000", uuid, XHR_SEND), json(null))) {
+			assertEquals(Status.INTERNAL_SERVER_ERROR, res.getStatusInfo());
+			assertEquals("Payload expected.", res.readEntity(String.class));
+		}
+		try (ClosableResponse res = post(target("000", uuid, XHR_SEND), json("[\"a\"]"))) {
+			assertEquals(Status.NO_CONTENT, res.getStatusInfo());
+			verifyEmptyEntity(res);
+		}
+		try (ClosableResponse res = post(target("000", uuid, XHR), json(null))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("a[\"a\"]\n", res.readEntity(String.class));
+		}
 	}
 
 	/**
@@ -210,9 +215,10 @@ public class XhrIT extends AbstractIT {
 	@RunAsClient
 	public void contentType() {
 		final String uuid = uuid();
-		Response res = target("000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("o\n", res.readEntity(String.class));
+		try (ClosableResponse res = post(target("000", uuid, XHR), json(null))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("o\n", res.readEntity(String.class));
+		}
 
 		final String[] cTypes = {
 				"text/plain",
@@ -226,14 +232,16 @@ public class XhrIT extends AbstractIT {
 		};
 
 		for (String ct : cTypes) {
-			res = target("000", uuid, XHR_SEND).request().post(Entity.entity("[\"a\"]", MediaType.valueOf(ct)));
-			assertEquals(Status.NO_CONTENT, res.getStatusInfo());
-			verifyEmptyEntity(res);
+			try (ClosableResponse res = post(target("000", uuid, XHR_SEND), entity("[\"a\"]", MediaType.valueOf(ct)))) {
+				assertEquals(Status.NO_CONTENT, res.getStatusInfo());
+				verifyEmptyEntity(res);
+			}
 		}
 
-		res = target("000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("a[\"a\",\"a\",\"a\",\"a\",\"a\",\"a\"]\n", res.readEntity(String.class));
+		try (ClosableResponse res = post(target("000", uuid, XHR), json(null))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("a[\"a\",\"a\",\"a\",\"a\",\"a\",\"a\"]\n", res.readEntity(String.class));
+		}
 	}
 
 	/**
@@ -243,23 +251,21 @@ public class XhrIT extends AbstractIT {
 	@RunAsClient
 	public void requestHeadersCors() {
 		final String uuid = uuid();
-		Response res = target("000", uuid, XHR).request().header("Access-Control-Request-Headers", "a, b, c").post(Entity.json(null));
-		assertEquals(Status.OK, res.getStatusInfo());
-		verifyCors(res, null);
-		assertEquals("a, b, c", res.getHeaderString("Access-Control-Allow-Headers"));
-		res.close();
-
-		res = target("000", uuid, XHR).request().header("Access-Control-Request-Headers", "").post(Entity.json(null));
-		assertEquals(Status.OK, res.getStatusInfo());
-		verifyCors(res, null);
-		assertNull(res.getHeaderString("Access-Control-Allow-Headers"));
-		res.close();
-
-		res = target("000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, res.getStatusInfo());
-		verifyCors(res, null);
-		assertNull(res.getHeaderString("Access-Control-Allow-Headers"));
-		res.close();
+		try (ClosableResponse res = post(target("000", uuid, XHR).request().header("Access-Control-Request-Headers", "a, b, c"), json(null))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			verifyCors(res, null);
+			assertEquals("a, b, c", res.getHeaderString("Access-Control-Allow-Headers"));
+		}
+		try (ClosableResponse res = post(target("000", uuid, XHR).request().header("Access-Control-Request-Headers", ""), json(null))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			verifyCors(res, null);
+			assertNull(res.getHeaderString("Access-Control-Allow-Headers"));
+		}
+		try (ClosableResponse res = post(target("000", uuid, XHR), json(null))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			verifyCors(res, null);
+			assertNull(res.getHeaderString("Access-Control-Allow-Headers"));
+		}
 	}
 
 

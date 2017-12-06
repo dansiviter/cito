@@ -20,7 +20,6 @@ import static org.junit.Assert.assertTrue;
 
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -41,11 +40,12 @@ public class GreetingIT extends AbstractIT {
 	@Test
 	@RunAsClient
 	public void test_greeting() {
-		final Response response = target().request().get();
-		assertEquals(200, response.getStatus());
-		assertEquals(MediaType.valueOf("text/plain; charset=UTF-8"), response.getMediaType());
-		assertEquals("Welcome to SockJS!\n", response.readEntity(String.class));
-		assertTrue(response.getCookies().isEmpty());
+		try (ClosableResponse res = get(target())) {
+			assertEquals(200, res.getStatus());
+			assertEquals(MediaType.valueOf("text/plain; charset=UTF-8"), res.getMediaType());
+			assertEquals("Welcome to SockJS!\n", res.readEntity(String.class));
+			assertTrue(res.getCookies().isEmpty());
+		}
 	}
 
 	/**
@@ -68,9 +68,9 @@ public class GreetingIT extends AbstractIT {
 		for (String path : paths) {
 			target = target.path(path);
 		}
-		final Response res = target.request().get();
-		assertEquals(404, res.getStatus());
-		res.close();
+		try (ClosableResponse res = get(target)) {
+			assertEquals(404, res.getStatus());
+		}
 	}
 
 

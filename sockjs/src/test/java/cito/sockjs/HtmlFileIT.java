@@ -18,6 +18,7 @@ package cito.sockjs;
 
 import static cito.sockjs.EventSourceHandler.EVENTSOURCE;
 import static cito.sockjs.XhrSendHandler.XHR_SEND;
+import static javax.ws.rs.client.Entity.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -26,9 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Scanner;
 
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringUtils;
@@ -66,27 +65,29 @@ public class HtmlFileIT extends AbstractIT {
 	@RunAsClient
 	public void transport() throws IOException {
 		final String uuid = uuid();
-		final Response res = target("000", uuid, "htmlfile").queryParam("c", "%63allback").request().get();
+		try (ClosableResponse res = get(target("000", uuid, "htmlfile").queryParam("c", "%63allback"))) {
 
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("text/html;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
-		// As HtmlFile is requested using GET we must be very careful not to allow it being cached.
-		verifyNotCached(res);
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("text/html;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
+			// As HtmlFile is requested using GET we must be very careful not to allow it being cached.
+			verifyNotCached(res);
 
-		try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
-			scanner.useDelimiter("\r\n");
-			final String d = scanner.next();
-			assertEquals(HTML_FILE, d.trim());
-			for (int i = 0; i <= 321; i++) { // skip EoL padding
-				assertTrue(scanner.next().isEmpty());
+			try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {
+				scanner.useDelimiter("\r\n");
+				final String d = scanner.next();
+				assertEquals(HTML_FILE, d.trim());
+				for (int i = 0; i <= 321; i++) { // skip EoL padding
+					assertTrue(scanner.next().isEmpty());
+				}
+				assertEquals("<script>\np(\"o\");\n</script>", scanner.next());
+
+				try (ClosableResponse post = post(target("000", uuid, XHR_SEND), json("[\"x\"]"))) {
+					assertEquals(Status.NO_CONTENT, post.getStatusInfo());
+					verifyEmptyEntity(post);
+				}
+
+				assertEquals("<script>\np(\"a[\\\"x\\\"]\");\n</script>", scanner.next());
 			}
-			assertEquals("<script>\np(\"o\");\n</script>", scanner.next());
-
-			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"x\"]")); 
-			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
-			verifyEmptyEntity(res0);
-
-			assertEquals("<script>\np(\"a[\\\"x\\\"]\");\n</script>", scanner.next());
 		}
 	}
 
@@ -97,10 +98,11 @@ public class HtmlFileIT extends AbstractIT {
 	@RunAsClient
 	public void no_callback() throws IOException {
 		final String uuid = uuid();
-		final Response res = target("000", uuid, "htmlfile").request().get();
+		try (ClosableResponse res = get(target("000", uuid, "htmlfile"))) {
 
-		assertEquals(Status.INTERNAL_SERVER_ERROR, res.getStatusInfo());
-		assertEquals("\"callback\" parameter required", res.readEntity(String.class));
+			assertEquals(Status.INTERNAL_SERVER_ERROR, res.getStatusInfo());
+			assertEquals("\"callback\" parameter required", res.readEntity(String.class));
+		}
 	}
 
 	/**
@@ -132,27 +134,26 @@ public class HtmlFileIT extends AbstractIT {
 		//	        self.assertFalse(r.read())
 
 		final String uuid = uuid();
-		final Response res = target("000", uuid, EVENTSOURCE).request().get();
+		try (ClosableResponse res = get(target("000", uuid, EVENTSOURCE))) {
 
-		final InputStream is = res.readEntity(InputStream.class);
-		try (Scanner scanner = new Scanner(is, "UTF8")) {
-			scanner.useDelimiter("\n\r");
-			assertEquals("", scanner.next());
-			assertEquals("data: o", scanner.next());
-			assertEquals("", scanner.next());
+			final InputStream is = res.readEntity(InputStream.class);
+			try (Scanner scanner = new Scanner(is, "UTF8")) {
+				scanner.useDelimiter("\n\r");
+				assertEquals("", scanner.next());
+				assertEquals("data: o", scanner.next());
+				assertEquals("", scanner.next());
 
-			// Test server should gc streaming session after 4096 bytes were sent (including framing).
-
-			final String msg = StringUtils.leftPad("", 4096, "x");
-			final Response res0 = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"" + msg + "\"]")); 
-			assertEquals(Status.NO_CONTENT, res0.getStatusInfo());
-			verifyEmptyEntity(res0);
-			res0.close();
-			assertEquals("data: a[\"" + msg + "\"]", scanner.next());
-			assertEquals("", scanner.next());
-			// The connection should be closed after enough data was delivered.
-			assertNull(scanner.next());
-			res.close();
+				// Test server should gc streaming session after 4096 bytes were sent (including framing).
+				final String msg = StringUtils.leftPad("", 4096, "x");
+				try (ClosableResponse post = post(target("000", uuid, XHR_SEND), json("[\"" + msg + "\"]"))) { 
+					assertEquals(Status.NO_CONTENT, post.getStatusInfo());
+					verifyEmptyEntity(post);
+				}
+				assertEquals("data: a[\"" + msg + "\"]", scanner.next());
+				assertEquals("", scanner.next());
+				// The connection should be closed after enough data was delivered.
+				assertNull(scanner.next());
+			}
 		}
 	}
 

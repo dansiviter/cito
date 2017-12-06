@@ -15,15 +15,16 @@
  */
 package cito.sockjs;
 
+import static cito.sockjs.ClosableResponse.closable;
 import static cito.sockjs.XhrHandler.XHR;
 import static cito.sockjs.XhrSendHandler.XHR_SEND;
+import static javax.ws.rs.client.Entity.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -57,27 +58,30 @@ public class FramingIT extends AbstractIT {
 	@RunAsClient
 	public void simpleSession() throws InterruptedException, ExecutionException {
 		final String uuid = uuid();
-		Response res = target("000", uuid, XHR).request().post(Entity.json(null));
-
-		// New line is a frame delimiter specific for xhr-polling"
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("o\n", res.readEntity(String.class));
+		try (ClosableResponse res = post(target("000", uuid, XHR), json(null))) {
+			// New line is a frame delimiter specific for xhr-polling"
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("o\n", res.readEntity(String.class));
+		}
 
 		// After a session was established the server needs to accept requests for sending messages.
 
 		// Xhr-polling accepts messages as a list of JSON-encoded strings.
-		res = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"a\"]"));
-		assertEquals(Status.NO_CONTENT, res.getStatusInfo());
-		verifyEmptyEntity(res);
+		try (ClosableResponse res = post(target("000", uuid, XHR_SEND), json("[\"a\"]"))) {
+			assertEquals(Status.NO_CONTENT, res.getStatusInfo());
+			verifyEmptyEntity(res);
+		}
 
 		// We're using an echo service - we'll receive our message back. The message is encoded as an array 'a'.
-		res = target("000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, res.getStatusInfo());
-		assertEquals("a[\"a\"]\n", res.readEntity(String.class));
+		try (ClosableResponse res = post(target("000", uuid, XHR), json(null))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			assertEquals("a[\"a\"]\n", res.readEntity(String.class));
+		}
 
 		// Sending messages to not existing sessions is invalid.
-		res = target("000", "bad_session", XHR_SEND).request().post(Entity.json("[\"a\"]"));
-		verify404(XHR_SEND, res);
+		try (ClosableResponse res = post(target("000", "bad_session", XHR_SEND), json("[\"a\"]"))) {
+			verify404(XHR_SEND, res);
+		}
 
 		// The session must time out after 5 seconds of not having a receiving connection. The server must send a
 		// heartbeat frame every 25 seconds. The heartbeat frame contains a single h character. This delay may be
@@ -88,31 +92,34 @@ public class FramingIT extends AbstractIT {
 		// The server must not allow two receiving connections to wait on a single session. In such case the server must
 		// send a close frame to the new connection.
 		for (int i = 0; i < 10; i++) {
-			res = target("000", uuid, XHR_SEND).request().post(Entity.json("[\"xxxxxx\"]"));
-			assertEquals(Status.NO_CONTENT, res.getStatusInfo());
+			try (ClosableResponse res = post(target("000", uuid, XHR_SEND), json("[\"xxxxxx\"]"))) {
+				assertEquals(Status.NO_CONTENT, res.getStatusInfo());
+			}
 		}
 
 		// Due to the time it takes for an async request to be scheduled it might actually be the one that returns the
 		// 'another connection still open' error. Therefore we need to check both.
-		final Future<Response> asyncFuture = target("000", uuid, XHR).request().async().post(Entity.json(null));
+		final Future<Response> asyncFuture = target("000", uuid, XHR).request().async().post(json(null));
 
-		res = target("000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, res.getStatusInfo());
-		final String resPayload = res.readEntity(String.class);
+		try (ClosableResponse res = post(target("000", uuid, XHR), json(null))) {
+			assertEquals(Status.OK, res.getStatusInfo());
+			final String resPayload = res.readEntity(String.class);
 
-		final Response asyncRes = asyncFuture.get();
-		assertEquals(Status.OK, asyncRes.getStatusInfo());
-		final String asyncResPayload = asyncRes.readEntity(String.class);
+			try (ClosableResponse asyncRes = closable(asyncFuture.get())) {
+				assertEquals(Status.OK, asyncRes.getStatusInfo());
+				final String asyncResPayload = asyncRes.readEntity(String.class);
 
-		if (ENABLE_CONCURRENT_REQUESTS_TEST) {
-			final String expectedError = "c[2010,\"Another connection still open\"]\n";
-			if (!expectedError.equals(resPayload) && !expectedError.equals(asyncResPayload)) {
-				fail("Neither response had '" + expectedError + "'! [blocking=" + resPayload + ",async=" + asyncResPayload + "]");
-			}
-	
-			final String expected = "a[\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\"]\n";
-			if (!expected.equals(resPayload) && !expected.equals(asyncResPayload)) {
-				fail("Neither response had '" + expected + "'! [blocking=" + resPayload + ",async=" + asyncResPayload + "]");
+				if (ENABLE_CONCURRENT_REQUESTS_TEST) {
+					final String expectedError = "c[2010,\"Another connection still open\"]\n";
+					if (!expectedError.equals(resPayload) && !expectedError.equals(asyncResPayload)) {
+						fail("Neither response had '" + expectedError + "'! [blocking=" + resPayload + ",async=" + asyncResPayload + "]");
+					}
+
+					final String expected = "a[\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\",\"xxxxxx\"]\n";
+					if (!expected.equals(resPayload) && !expected.equals(asyncResPayload)) {
+						fail("Neither response had '" + expected + "'! [blocking=" + resPayload + ",async=" + asyncResPayload + "]");
+					}
+				}
 			}
 		}
 
@@ -127,24 +134,28 @@ public class FramingIT extends AbstractIT {
 	@RunAsClient
 	public void closeSession() throws InterruptedException {
 		final String uuid = uuid();
-		Response r = target(EndpointType.CLOSE, "000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, r.getStatusInfo());
-		assertEquals("o\n", r.readEntity(String.class));
+		Response res = target(EndpointType.CLOSE, "000", uuid, XHR).request().post(json(null));
+		assertEquals(Status.OK, res.getStatusInfo());
+		assertEquals("o\n", res.readEntity(String.class));
+		res.close();
 
-		r = target(EndpointType.CLOSE, "000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, r.getStatusInfo());
-		assertEquals("c[3000,\"Go away!\"]\n", r.readEntity(String.class));
+		res = target(EndpointType.CLOSE, "000", uuid, XHR).request().post(json(null));
+		assertEquals(Status.OK, res.getStatusInfo());
+		assertEquals("c[3000,\"Go away!\"]\n", res.readEntity(String.class));
+		res.close();
 
 		// Until the timeout occurs, the server must constantly serve the close message.
 		for (int i = 0; i <= 4; i++) {
-			r = target(EndpointType.CLOSE, "000", uuid, XHR).request().post(Entity.json(null));
-			assertEquals("Iteration " + i, Status.OK, r.getStatusInfo());
-			assertEquals("Iteration " + i, "c[3000,\"Go away!\"]\n", r.readEntity(String.class));
+			res = target(EndpointType.CLOSE, "000", uuid, XHR).request().post(json(null));
+			assertEquals("Iteration " + i, Status.OK, res.getStatusInfo());
+			assertEquals("Iteration " + i, "c[3000,\"Go away!\"]\n", res.readEntity(String.class));
 			Thread.sleep(1_000);
+			res.close();
 		}
-		r = target(EndpointType.CLOSE, "000", uuid, XHR).request().post(Entity.json(null));
-		assertEquals(Status.OK, r.getStatusInfo());
-		assertEquals("o\n", r.readEntity(String.class));
+		res = target(EndpointType.CLOSE, "000", uuid, XHR).request().post(json(null));
+		assertEquals(Status.OK, res.getStatusInfo());
+		assertEquals("o\n", res.readEntity(String.class));
+		res.close();
 	}
 
 
