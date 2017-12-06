@@ -75,9 +75,8 @@ public class XhrSendHandler extends AbstractSessionHandler {
 		async.start(() -> start(session, async, pipe.source()));
 		req.getInputStream().setReadListener(new ReadStream(async, pipe.sink(), t -> {
 			if (t != null) {
-				this.log.warn("Unable to read entity!", t);
+				this.log.warn("Error reading entity!", t);
 			}
-			async.complete();
 			pipe.sink().close();
 		}));
 	}
@@ -106,6 +105,8 @@ public class XhrSendHandler extends AbstractSessionHandler {
 					throw new JsonException("Only Array Start/End and String expected!");
 				}
 			}
+			this.log.info("Completing read. [{}]", session.getId());
+			src.close();
 			async.getResponse().setStatus(HttpServletResponse.SC_NO_CONTENT);
 			async.complete();
 		} catch (IOException | JsonException e) {
