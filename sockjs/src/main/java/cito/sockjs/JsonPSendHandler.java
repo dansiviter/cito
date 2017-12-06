@@ -89,7 +89,6 @@ public class JsonPSendHandler extends AbstractSessionHandler {
 			if (t != null) {
 				this.log.warn("Unable to read entity!", t);
 			}
-			async.complete();
 			pipe.sink().close();
 		}));
 	}
