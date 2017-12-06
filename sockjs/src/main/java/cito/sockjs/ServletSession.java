@@ -257,7 +257,7 @@ public class ServletSession extends AbstractSession {
 			synchronized (this.buf) {
 				this.buf.append(msg);
 				if (last) {
-					frameQueue.add(buf.toString());
+					frameQueue.add(this.buf.toString());
 					this.buf.setLength(0);
 					this.buf.trimToSize();
 					flush();

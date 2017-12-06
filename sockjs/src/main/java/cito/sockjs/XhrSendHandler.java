@@ -73,7 +73,13 @@ public class XhrSendHandler extends AbstractSessionHandler {
 		final Pipe pipe = Pipe.open();
 		// FIXME Not strictly non-blocking as it's still reading off another thread which is blocked
 		async.start(() -> start(session, async, pipe.source()));
-		req.getInputStream().setReadListener(new ReadStream(async, pipe.sink(), t -> pipe.sink().close()));
+		req.getInputStream().setReadListener(new ReadStream(async, pipe.sink(), t -> {
+			if (t != null) {
+				this.log.warn("Unable to read entity!", t);
+			}
+			async.complete();
+			pipe.sink().close();
+		}));
 	}
 
 	/**
@@ -82,7 +88,8 @@ public class XhrSendHandler extends AbstractSessionHandler {
 	 * @param async
 	 * @param src
 	 */
-	public void start(ServletSession session, HttpAsyncContext async, ReadableByteChannel src) {
+	private void start(ServletSession session, HttpAsyncContext async, ReadableByteChannel src) {
+		this.log.info("Starting read. [{}]", session.getId());
 		try (JsonParser parser = Json.createParser(newReader(src, UTF_8.newDecoder(), -1))) {
 			while (parser.hasNext()) {
 				final Event evt = parser.next();

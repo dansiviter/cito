@@ -85,7 +85,13 @@ public class JsonPSendHandler extends AbstractSessionHandler {
 		final Pipe pipe = Pipe.open();
 		// FIXME Not strictly non-blocking as it's still reading off another thread which is blocked
 		async.start(() -> start(session, async, pipe.source()));
-		req.getInputStream().setReadListener(new ReadStream(async, pipe.sink(), t -> pipe.sink().close()));
+		req.getInputStream().setReadListener(new ReadStream(async, pipe.sink(), t -> {
+			if (t != null) {
+				this.log.warn("Unable to read entity!", t);
+			}
+			async.complete();
+			pipe.sink().close();
+		}));
 	}
 
 	/**

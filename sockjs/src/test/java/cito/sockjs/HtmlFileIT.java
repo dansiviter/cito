@@ -66,7 +66,6 @@ public class HtmlFileIT extends AbstractIT {
 	public void transport() throws IOException {
 		final String uuid = uuid();
 		try (ClosableResponse res = get(target("000", uuid, "htmlfile").queryParam("c", "%63allback"))) {
-
 			assertEquals(Status.OK, res.getStatusInfo());
 			assertEquals("text/html;charset=UTF-8", res.getHeaderString(HttpHeaders.CONTENT_TYPE));
 			// As HtmlFile is requested using GET we must be very careful not to allow it being cached.
@@ -99,7 +98,6 @@ public class HtmlFileIT extends AbstractIT {
 	public void no_callback() throws IOException {
 		final String uuid = uuid();
 		try (ClosableResponse res = get(target("000", uuid, "htmlfile"))) {
-
 			assertEquals(Status.INTERNAL_SERVER_ERROR, res.getStatusInfo());
 			assertEquals("\"callback\" parameter required", res.readEntity(String.class));
 		}
@@ -135,7 +133,6 @@ public class HtmlFileIT extends AbstractIT {
 
 		final String uuid = uuid();
 		try (ClosableResponse res = get(target("000", uuid, EVENTSOURCE))) {
-
 			final InputStream is = res.readEntity(InputStream.class);
 			try (Scanner scanner = new Scanner(is, "UTF8")) {
 				scanner.useDelimiter("\n\r");

@@ -43,7 +43,6 @@ public abstract class AbstractSessionHandler extends AbstractHandler {
 	 * @throws IOException
 	 */
 	public void handle(HttpAsyncContext async) throws ServletException, IOException {
-
 		ServletSession session = this.servlet.getSession(async.getRequest());
 
 		boolean initial = false;

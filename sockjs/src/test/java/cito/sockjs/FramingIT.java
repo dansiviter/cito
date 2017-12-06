@@ -121,9 +121,9 @@ public class FramingIT extends AbstractIT {
 					}
 				}
 			}
+		} finally {
+			asyncFuture.cancel(true);
 		}
-
-		asyncFuture.cancel(true);
 	}
 
 	/**
