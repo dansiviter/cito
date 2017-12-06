@@ -162,8 +162,6 @@ public abstract class AbstractIT {
 		return target().path(server).path(session).path(type);
 	}
 
-
-
 	@After
 	public void after() {
 		if (this.client != null) {
@@ -472,6 +470,14 @@ public abstract class AbstractIT {
 				}
 			}).when(spy).disconnect();
 			return spy;
+		}
+
+		/* (non-Javadoc)
+		 * @see org.jboss.resteasy.client.jaxrs.engines.URLConnectionEngine#close()
+		 */
+		@Override
+		public void close() {
+			super.close();
 		}
 	}
 }

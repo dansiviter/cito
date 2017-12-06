@@ -150,6 +150,7 @@ public abstract class AbstractHandler {
 	 * @param message
 	 */
 	protected void sendNonBlock(HttpAsyncContext async, int statusCode, String message) {
+		this.log.info("Completing async. [uri={},status={},msg={}]", async.getRequest().getRequestURI(), statusCode, message);
 		try {
 			final HttpServletResponse res = async.getResponse();
 			res.setStatus(statusCode);

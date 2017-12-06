@@ -105,10 +105,7 @@ public class XhrSendHandler extends AbstractSessionHandler {
 					throw new JsonException("Only Array Start/End and String expected!");
 				}
 			}
-			this.log.info("Completing read. [{}]", session.getId());
-			src.close();
-			async.getResponse().setStatus(HttpServletResponse.SC_NO_CONTENT);
-			async.complete();
+			sendNonBlock(async, HttpServletResponse.SC_NO_CONTENT);
 		} catch (IOException | JsonException e) {
 			final String message = e instanceof JsonException ? "Broken JSON encoding." : "Error processing data!";
 			this.log.warn(message, e);
