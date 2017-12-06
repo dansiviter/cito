@@ -167,17 +167,7 @@ public class Servlet implements javax.servlet.Servlet, WebSocketContainer {
 		}
 
 		final AsyncContext asyncContext = req.startAsync();
-		asyncContext.addListener(new AsyncAdapter() {
-			@Override
-			public void onTimeout(AsyncEvent event) throws IOException {
-				log.warn("Async timeout!", event.getThrowable());
-			}
-
-			@Override
-			public void onError(AsyncEvent event) throws IOException {
-				log.warn("Async error!", event.getThrowable());
-			}
-		});
+		asyncContext.addListener(new LoggingHandler());
 		asyncContext.setTimeout(TimeUnit.MINUTES.toMillis(1));
 		asyncContext.start(() -> onRequest(handler, asyncContext));
 	}
@@ -345,5 +335,19 @@ public class Servlet implements javax.servlet.Servlet, WebSocketContainer {
 	@Override
 	public Set<Extension> getInstalledExtensions() {
 		throw new UnsupportedOperationException();
+	}
+
+	private static class LoggingHandler extends AsyncAdapter {
+		private final Logger log = LoggerFactory.getLogger(LoggingHandler.class);
+
+		@Override
+		public void onTimeout(AsyncEvent event) throws IOException {
+			this.log.warn("Async timeout!", event.getThrowable());
+		}
+
+		@Override
+		public void onError(AsyncEvent event) throws IOException {
+			this.log.warn("Async error!", event.getThrowable());
+		}
 	}
 }
