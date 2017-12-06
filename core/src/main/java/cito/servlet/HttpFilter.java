@@ -36,7 +36,9 @@ import javax.servlet.http.HttpServletResponse;
  */
 public abstract class HttpFilter implements Filter {
 	@Override
-	public void init(FilterConfig filterConfig) throws ServletException { }
+	public void init(FilterConfig filterConfig) throws ServletException {
+		// override where needed
+	}
 
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -49,5 +51,7 @@ public abstract class HttpFilter implements Filter {
 	throws IOException, ServletException;
 
 	@Override
-	public void destroy() { }
+	public void destroy() {
+		// override where needed
+	}
 }

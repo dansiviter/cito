@@ -110,7 +110,7 @@ public abstract class AbstractEndpoint extends Endpoint {
 	@Override
 	public void onClose(Session session, CloseReason reason) {
 		this.log.info("WebSocket connection closed. [id={},principle={},code={},reason={}]", session.getId(), session.getUserPrincipal(), reason.getCloseCode(), reason.getReasonPhrase());
-		final WebSocketContext ctx = Extension.webSocketContext(this.beanManager);
+		final WebSocketContext ctx = webSocketContext(this.beanManager);
 		try (QuietClosable c = ctx.activate(session)) {
 			this.registry.unregister(session);
 			this.sessionEvent.select(Qualifiers.onClose()).fire(session);

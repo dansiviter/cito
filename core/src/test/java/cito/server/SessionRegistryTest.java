@@ -100,7 +100,7 @@ public class SessionRegistryTest {
 
 		verify(session).getId();
 		verify(session).getUserPrincipal();
-		verifyNoMoreInteractions(session);;
+		verifyNoMoreInteractions(session);
 	}
 
 	@Test

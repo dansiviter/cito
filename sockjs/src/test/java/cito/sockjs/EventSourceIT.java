@@ -24,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.SocketTimeoutException;
 import java.util.Scanner;
 
 import javax.ws.rs.HttpMethod;
@@ -50,8 +49,6 @@ public class EventSourceIT extends AbstractIT {
 	@Test
 	@RunAsClient
 	public void options_eventSource() {
-		System.out.println("Running EventSourceIT#options_eventSource...");
-
 		verifyOptions("abc/abc/" + EVENTSOURCE, HttpMethod.GET, HttpMethod.OPTIONS);
 	}
 
@@ -61,8 +58,6 @@ public class EventSourceIT extends AbstractIT {
 	@Test
 	@RunAsClient
 	public void transport() throws IOException {
-		System.out.println("Running EventSourceIT#transport...");
-
 		final String uuid = uuid();
 		try (ClosableResponse res = get(target("000", uuid, EVENTSOURCE))) {
 			assertEquals(Status.OK, res.getStatusInfo());
@@ -109,8 +104,6 @@ public class EventSourceIT extends AbstractIT {
 	@Test
 	@RunAsClient
 	public void response_limit() throws IOException {
-		System.out.println("Running EventSourceIT#response_limit...");
-
 		final String uuid = uuid();
 		try (ClosableResponse res = get(target("000", uuid, EVENTSOURCE))) {
 			try (Scanner scanner = new Scanner(res.readEntity(InputStream.class), "UTF8")) {

@@ -27,14 +27,22 @@ import javax.servlet.AsyncListener;
  */
 public abstract class AsyncAdapter implements AsyncListener {
 	@Override
-	public void onComplete(AsyncEvent event) throws IOException { }
+	public void onComplete(AsyncEvent event) throws IOException { 
+		// override as needed
+	}
 
 	@Override
-	public void onTimeout(AsyncEvent event) throws IOException { }
+	public void onTimeout(AsyncEvent event) throws IOException {
+		// override as needed
+	}
 
 	@Override
-	public void onError(AsyncEvent event) throws IOException { }
+	public void onError(AsyncEvent event) throws IOException {
+		// override as needed
+	}
 
 	@Override
-	public void onStartAsync(AsyncEvent event) throws IOException { }
+	public void onStartAsync(AsyncEvent event) throws IOException {
+		// override as needed
+	}
 }

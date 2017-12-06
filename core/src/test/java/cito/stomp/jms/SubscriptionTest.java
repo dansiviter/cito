@@ -55,12 +55,11 @@ public class SubscriptionTest {
 	@Mock
 	private MessageConsumer messageConsumer;
 
-	private Frame frame;
 	private Subscription subscription;
 
 	@Before
 	public void before() throws JMSException {
-		this.frame = Frame.subscribe("id", "/foo").build();
+		final Frame frame = Frame.subscribe("id", "/foo").build();
 		when(this.session.toDestination(eq("/foo"))).thenReturn(this.destination);
 		when(this.session.getConnection()).thenReturn(connection);
 		when(this.session.createConsumer(eq(this.destination), anyString())).thenReturn(this.messageConsumer);
