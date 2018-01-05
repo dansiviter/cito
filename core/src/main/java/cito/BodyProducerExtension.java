@@ -20,7 +20,6 @@ import static org.apache.deltaspike.core.api.provider.BeanProvider.getContextual
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -134,19 +133,12 @@ public class BodyProducerExtension implements Extension {
 			} catch (IOException e) {
 				throw new IllegalStateException("Unable to serialise!", e);
 			}
-
-			for (Annotation ann : this.ip.getAnnotated().getAnnotations()) {
-				if ("javax.validation.Valid".equals(ann.getClass().getName())) {
-					getContextualReference(Validator.class).validate(body);
-				}
-			}
-
 			return body;
 		}
 
 		@Override
 		public void destroy(Bean<T> bean, T instance, CreationalContext<T> creationalContext) {
-			// body is a bean so no need to destroy 
+			// body is a POJO so no need to destroy 
 		}
 	}
 }

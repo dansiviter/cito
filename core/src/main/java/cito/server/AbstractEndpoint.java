@@ -16,11 +16,16 @@
 package cito.server;
 
 import static cito.server.Extension.webSocketContext;
+import static java.lang.String.format;
+
+import java.io.IOException;
 
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 import javax.websocket.CloseReason;
+import javax.websocket.CloseReason.CloseCodes;
+import javax.websocket.EncodeException;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.OnClose;
@@ -28,7 +33,9 @@ import javax.websocket.OnError;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
+import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 
 import cito.QuietClosable;
@@ -99,10 +106,15 @@ public abstract class AbstractEndpoint extends Endpoint {
 	@OnError
 	@Override
 	public void onError(Session session, Throwable cause) {
-		this.log.warn("WebSocket error. [id={},principle={}]", session.getId(), session.getUserPrincipal(), cause);
+		final String errorId = RandomStringUtils.randomAlphanumeric(8).toUpperCase();
+		this.log.warn("WebSocket error. [id={},principle={},errorId={}]", session.getId(), session.getUserPrincipal(), errorId, cause);
 		try (QuietClosable c = webSocketContext(this.beanManager).activate(session)) {
-			this.registry.unregister(session);
 			this.errorEvent.select(Qualifiers.onError()).fire(cause);
+			final Frame errorFrame = Frame.error().body(MediaType.TEXT_PLAIN_TYPE, format("%s [errorId=%s]", cause.getMessage(), errorId)).build();
+			session.getBasicRemote().sendObject(errorFrame);
+			session.close(new CloseReason(CloseCodes.PROTOCOL_ERROR, format("See server log. [errorId=%s]", errorId)));
+		} catch (IOException | EncodeException e) {
+			this.log.error("Unable to send error frame! [id={},principle={}]", session.getId(), session.getUserPrincipal(), e);
 		}
 	}
 

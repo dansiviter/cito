@@ -49,6 +49,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang3.StringUtils;
+
 import cito.stomp.Header.Standard;
 
 /**
@@ -656,7 +658,9 @@ public class Frame {
 		 */
 		private void assertExists(Header header) {
 			if (!this.headers.containsKey(header))
-				throw new AssertionError("Not set! [command=" + command + ",header=" + header + "]");
+				throw new AssertionError(String.format(
+						"Required header '%s' not set on '%s' frame!",
+						StringUtils.capitalize(header.toString().toLowerCase()), command));
 		}
 
 		/**

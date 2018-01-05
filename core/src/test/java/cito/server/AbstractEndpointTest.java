@@ -16,15 +16,21 @@
  */
 package cito.server;
 
+import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +39,9 @@ import javax.enterprise.event.Event;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
+import javax.websocket.EncodeException;
 import javax.websocket.EndpointConfig;
+import javax.websocket.RemoteEndpoint.Basic;
 import javax.websocket.Session;
 
 import org.junit.After;
@@ -102,7 +110,7 @@ public class AbstractEndpointTest {
 
 		verify(this.registry).register(session);
 		verify(session).getRequestParameterMap();
-		verify(session).getId();
+		verify(session, times(2)).getId();
 		verify(session).getUserPrincipal();
 		verify(this.log).info("WebSocket connection opened. [id={},httpSessionId={},principle={}]",
 				"sessionId",
@@ -135,21 +143,25 @@ public class AbstractEndpointTest {
 	}
 
 	@Test
-	public void onError() {
+	public void onError() throws IOException, EncodeException {
 		final Session session = mock(Session.class);
 		when(session.getId()).thenReturn("sessionId");
 		final Throwable cause = new Throwable();
 		when(this.errorEvent.select(Qualifiers.onError())).thenReturn(this.errorEvent);
+		final Basic basic = mock(Basic.class);
+		when(session.getBasicRemote()).thenReturn(basic);
 
 		this.endpoint.onError(session, cause);
 
 		verify(session).getId();
 		verify(session).getUserPrincipal();
-		verify(this.log).warn("WebSocket error. [id={},principle={}]", "sessionId", null, cause);
-		verify(this.registry).unregister(session);
+		verify(this.log).warn(eq("WebSocket error. [id={},principle={},errorId={}]"), eq("sessionId"), isNull(), anyString(), eq(cause));
 		verify(this.errorEvent).select(Qualifiers.onError());
 		verify(this.errorEvent).fire(cause);
-		verifyNoMoreInteractions(session);
+		verify(session).getBasicRemote();
+		verify(basic).sendObject(any(Frame.class));
+		verify(session).close(any(CloseReason.class));
+		verifyNoMoreInteractions(session, basic);
 	}
 
 	@Test

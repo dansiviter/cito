@@ -30,8 +30,8 @@ import cito.stomp.ws.FrameEncoder;
 @ServerEndpoint(
 		value = "/websocket",
 		subprotocols = { "v10.stomp", "v11.stomp", "v12.stomp" },
-		encoders = FrameEncoder.class,
-		decoders = FrameDecoder.class,
+		encoders = { FrameEncoder.Binary.class, FrameEncoder.Text.class },
+		decoders = { FrameDecoder.Binary.class, FrameDecoder.Text.class },
 		configurator = WebSocketConfigurator.class
 )
 public class Endpoint extends AbstractEndpoint { }

@@ -29,6 +29,8 @@ import cito.annotation.WebSocketScope;
  * @since v1.0 [17 Aug 2016]
  */
 public interface SecurityContext {
+	SecurityContext NOOP = new SecurityContext() {};
+
 	/**
 	 * Returns a {@link Principal} object containing the name of the current authenticated user. If the user
 	 * has not been authenticated, the method returns null.
@@ -37,7 +39,9 @@ public interface SecurityContext {
 	 * not been authenticated.
 	 * @throws java.lang.IllegalStateException if called outside the scope of a websocket session.
 	 */
-	Principal getUserPrincipal();
+	default Principal getUserPrincipal() {
+		return null;
+	}
 
 	/**
 	 * Returns a boolean indicating whether the authenticated user is included in the specified logical "role". If the
@@ -48,5 +52,7 @@ public interface SecurityContext {
 	 * if the user has not been authenticated.
 	 * @throws java.lang.IllegalStateException if called outside the scope of a websocket session.
 	 */
-	boolean isUserInRole(@Nonnull String role);
+	default boolean isUserInRole(@Nonnull String role) {
+		return false;
+	}
 }

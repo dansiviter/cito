@@ -16,8 +16,6 @@
  */
 package cito.broker.artemis;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-
 import java.util.Set;
 
 import org.apache.activemq.artemis.core.security.CheckType;
@@ -46,12 +44,12 @@ public class NoopSecurityManager implements ActiveMQSecurityManager3 {
 
 	@Override
 	public String validateUser(String user, String password, RemotingConnection remotingConnection) {
-		return isNullOrEmpty(user) ? "UNKNOWN" : user;
+		return user == null || user.isEmpty() ? "UNKNOWN" : user;
 	}
 
 	@Override
 	public String validateUserAndRole(String user, String password, Set<Role> roles, CheckType checkType,
 			String address, RemotingConnection remotingConnection) {
-		return isNullOrEmpty(user) ? "UNKNOWN" : user;
+		return user == null || user.isEmpty() ? "UNKNOWN" : user;
 	}
 }

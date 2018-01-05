@@ -8,9 +8,7 @@
 		<artifactId>root</artifactId>
 		<version>0.1.0-SNAPSHOT</version>
 	</parent>
-	<groupId>io.cito</groupId>
 	<artifactId>jacoco</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
 	<name>Cit&#x00F5; JaCoCo Aggregate Report</name>
 
 	<properties>

@@ -82,6 +82,7 @@ public class SessionRegistryTest {
 		assertTrue(getPrincipalSessionMap().get(NULL_PRINCIPLE).contains(session));
 
 		verify(session).getId();
+		verify(this.log).debug("Registering session. [{}]", "sessionId");
 		verify(session).getUserPrincipal();
 		verifyNoMoreInteractions(session);
 	}
@@ -99,6 +100,7 @@ public class SessionRegistryTest {
 		assertTrue(getPrincipalSessionMap().isEmpty());
 
 		verify(session).getId();
+		verify(this.log).debug("Un-registering session. [{}]", "sessionId");
 		verify(session).getUserPrincipal();
 		verifyNoMoreInteractions(session);
 	}
@@ -118,6 +120,7 @@ public class SessionRegistryTest {
 		assertEquals("Session not registered! [sessionId]", e.getMessage());
 
 		verify(session).getId();
+		verify(this.log).debug("Un-registering session. [{}]", "sessionId");
 		verifyNoMoreInteractions(session);
 	}
 
@@ -193,7 +196,7 @@ public class SessionRegistryTest {
 		verify(this.log).debug("Sending message to client. [sessionId={},command={}]", "sessionId", Command.MESSAGE);
 		verify(session).getBasicRemote();
 		verify(basic).sendObject(frame);
-		verify(this.log).warn("Unable to send message! [sessionid={},command={}]", "sessionId", Command.MESSAGE, ioe);
+		verify(this.log).error("Unable to send message! [sessionid={},command={}]", "sessionId", Command.MESSAGE, ioe);
 		verifyNoMoreInteractions(msg, frame, session, basic);
 	}
 

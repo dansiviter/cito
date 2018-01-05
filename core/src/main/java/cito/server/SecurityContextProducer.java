@@ -15,11 +15,16 @@
  */
 package cito.server;
 
+import static cito.server.SecurityContext.NOOP;
+
 import java.util.Map;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.websocket.Session;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cito.annotation.WebSocketScope;
 
@@ -31,6 +36,8 @@ import cito.annotation.WebSocketScope;
  */
 @ApplicationScoped
 public class SecurityContextProducer {
+	private static final Logger LOG = LoggerFactory.getLogger(SecurityContextProducer.class);
+
 	private static final String KEY = SecurityContext.class.getName();
 
 	/**
@@ -40,7 +47,8 @@ public class SecurityContextProducer {
 	@Produces @WebSocketScope
 	public static SecurityContext securityCtx(Session session) {
 		final Map<String, Object> props = session.getUserProperties();
-		return (SecurityContext) props.get(KEY);
+		final SecurityContext securityCtx = (SecurityContext) props.get(KEY);
+		return securityCtx != null ? securityCtx : NOOP;
 	}
 
 	/**
@@ -49,8 +57,9 @@ public class SecurityContextProducer {
 	 * @return
 	 */
 	public static void set(Session session, SecurityContext securityCtx) {
+		LOG.debug("Setting session. [{}]", session != null ? session.getId() : null);
 		final SecurityContext old = securityCtx(session);
-		if (old != null) {
+		if (old != NOOP) {
 			throw new IllegalStateException("Already set!");
 		}
 		if (securityCtx != null) {

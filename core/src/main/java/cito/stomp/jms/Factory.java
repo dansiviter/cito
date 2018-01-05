@@ -54,6 +54,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import cito.DestinationType;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Frame.Builder;
@@ -73,6 +74,7 @@ public class Factory {
 		final Set<Header> ignore = new HashSet<>();
 		ignore.add(DESTINATION);
 		ignore.add(CONTENT_LENGTH);
+		ignore.add(CONTENT_TYPE);
 		IGNORE_HEADERS = Collections.unmodifiableSet(ignore);
 	}
 
@@ -101,17 +103,14 @@ public class Factory {
 	 * @throws JMSException
 	 */
 	public Destination toDestination(Session session, String destination) throws JMSException {
-		final int separatorIndex = destination.indexOf('/', 1);
-		final String type = destination.substring(0, separatorIndex + 1).toLowerCase();   
-		final String subDestination = destination.substring(separatorIndex + 1, destination.length());
-		switch (type) {
-		case "queue/":
+		final String subDestination = destination.substring(destination.indexOf('/', 1) + 1, destination.length());
+		switch (DestinationType.from(destination)) {
+		case QUEUE:
 			return session.createQueue(subDestination);
-		case "topic/":
+		case TOPIC:
 			return session.createTopic(subDestination);
 		default:
 			throw new IllegalArgumentException("Unknown destination! ["  + destination + "]");
-
 		}
 	}
 
@@ -180,7 +179,6 @@ public class Factory {
 			final BytesMessage msg = (BytesMessage) message;
 			byte[] data = new byte[(int) msg.getBodyLength()];
 			msg.readBytes(data);
-			frame.header(CONTENT_LENGTH, Integer.toString(data.length));
 			buf = ByteBuffer.wrap(data);
 		} else {
 			throw new IllegalArgumentException("Unexpected type! [" + message.getClass() + "]");

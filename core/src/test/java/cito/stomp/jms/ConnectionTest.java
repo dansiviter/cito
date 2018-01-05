@@ -15,6 +15,7 @@
  */
 package cito.stomp.jms;
 
+import static cito.server.SecurityContext.NOOP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.enterprise.event.Event;
-import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Provider;
 import javax.jms.ConnectionFactory;
@@ -91,7 +91,7 @@ public class ConnectionTest {
 	@Mock
 	private javax.websocket.Session wsSession;
 	@Mock
-	private Instance<SecurityContext> securityCtx;
+	private Provider<SecurityContext> securityCtx;
 
 	@InjectMocks
 	private Connection connection;
@@ -112,12 +112,27 @@ public class ConnectionTest {
 		this.connection.sendToClient(frame);
 
 		verify(heartBeatMonitor).resetSend();
+		verify(frame).isHeartBeat();
 		verify(frame).getCommand();
 		verify(this.log).info("Sending message to client. [sessionId={},command={}]", "ABC123", Command.MESSAGE);
 		verify(this.brokerMessageEvent).fire(any(Message.class));
 		verifyNoMoreInteractions(heartBeatMonitor, frame);
 	}
 
+	@Test
+	public void send_frame_HEARTBEAT() {
+		final HeartBeatMonitor heartBeatMonitor = mock(HeartBeatMonitor.class);
+		ReflectionUtil.set(this.connection, "heartBeatMonitor", heartBeatMonitor);
+		final Frame frame = Frame.HEART_BEAT;
+	
+		this.connection.sendToClient(frame);
+
+		verify(heartBeatMonitor).resetSend();
+		verify(this.log).debug("Sending message to client. [sessionId={},command=HEARTBEAT]", "ABC123");
+		verify(this.brokerMessageEvent).fire(any(Message.class));
+		verifyNoMoreInteractions(heartBeatMonitor);
+	}
+	
 	@Test
 	public void connect() throws JMSException, LoginException {
 		ReflectionUtil.set(this.connection, "sessionId", null); // every other test needs it set!
@@ -127,12 +142,12 @@ public class ConnectionTest {
 		final Message messageEvent = new Message("ABC123", frame);
 		final javax.jms.Connection jmsConnection = mock(javax.jms.Connection.class);
 		when(this.connectionFactory.createConnection(null, null)).thenReturn(jmsConnection);
-		when(this.securityCtx.isUnsatisfied()).thenReturn(true);
+		when(this.securityCtx.get()).thenReturn(NOOP);
 
 		this.connection.connect(messageEvent);
 
 		verify(this.log).info("Connecting... [sessionId={}]", "ABC123");
-		verify(this.securityCtx).isUnsatisfied();
+		verify(this.securityCtx).get();
 		verify(this.connectionFactory).createConnection(null, null);
 		verify(heartBeatMonitor).resetSend();
 		verify(this.log).info("Starting JMS connection... [sessionId={}]", "ABC123");
@@ -187,8 +202,20 @@ public class ConnectionTest {
 		final Frame frame = Frame.send("/there", null, "{}").build();
 		this.connection.on(new Message("ABC123", frame));
 
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.SEND);
+		verifyNoMoreInteractions(session);
+	}
+
+	@Test
+	public void on_SEND_jmsDestination() throws JMSException {
+		final Session session = mock(Session.class);
+		ReflectionUtil.set(this.connection, "session", session);
+
+		final Frame frame = Frame.send("topic/there", null, "{}").build();
+		this.connection.on(new Message("ABC123", frame));
+
 		verify(session).sendToBroker(frame);
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.SEND);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.SEND);
 		verifyNoMoreInteractions(session);
 	}
 
@@ -200,7 +227,7 @@ public class ConnectionTest {
 
 		this.connection.on(new Message("ABC123", Frame.builder(Command.ACK).header(Standard.ID, "1").build()));
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ACK);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.ACK);
 		verify(msg).acknowledge();
 		verifyNoMoreInteractions(msg);
 	}
@@ -214,7 +241,7 @@ public class ConnectionTest {
 			expected = e;                                                                                                                
 		}
 		assertEquals("No such message to ACK! [1]", expected.getMessage());
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ACK);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.ACK);
 	}
 
 	@Test
@@ -225,7 +252,7 @@ public class ConnectionTest {
 
 		this.connection.on(new Message("ABC123", Frame.builder(Command.NACK).header(Standard.ID, "1").build()));
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.NACK);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.NACK);
 		verify(this.log).warn("NACK recieved, but no JMS equivalent! [{}]", "1");
 		verifyNoMoreInteractions(msg);
 	}
@@ -240,7 +267,7 @@ public class ConnectionTest {
 		}
 		assertNotNull(expected);
 		assertEquals("No such message to NACK! [1]", expected.getMessage());
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.NACK);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.NACK);
 	}
 
 	@Test
@@ -252,7 +279,7 @@ public class ConnectionTest {
 
 		assertEquals(txSession, ReflectionUtil.get(this.connection, "txSessions", Map.class).get("1"));
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.BEGIN);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.BEGIN);
 		verify(this.factory).toSession(this.connection, true, javax.jms.Session.SESSION_TRANSACTED);
 		verifyNoMoreInteractions(txSession);
 	}
@@ -271,7 +298,7 @@ public class ConnectionTest {
 		}
 		assertEquals("Transaction already started! [1]", expected.getMessage());
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.BEGIN);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.BEGIN);
 	}
 
 	@Test
@@ -282,7 +309,7 @@ public class ConnectionTest {
 
 		this.connection.on(new Message("ABC123", Frame.builder(Command.COMMIT).header(Standard.TRANSACTION, "1").build()));
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.COMMIT);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.COMMIT);
 		verify(txSession).commit();
 		verifyNoMoreInteractions(txSession);
 	}
@@ -297,7 +324,7 @@ public class ConnectionTest {
 		}
 		assertEquals("Transaction session does not exists! [1]", expected.getMessage());
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.COMMIT);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.COMMIT);
 	}
 
 	@Test
@@ -308,11 +335,11 @@ public class ConnectionTest {
 
 		this.connection.on(new Message("ABC123", Frame.builder(Command.ABORT).header(Standard.TRANSACTION, "1").build()));
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ABORT);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.ABORT);
 		verify(txSession).rollback();
 		verifyNoMoreInteractions(txSession);
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ABORT);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.ABORT);
 	}
 
 	@Test
@@ -325,7 +352,7 @@ public class ConnectionTest {
 		}
 		assertEquals("Transaction session does not exists! [1]", expected.getMessage());
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.ABORT);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.ABORT);
 	}
 
 	@Test
@@ -340,7 +367,7 @@ public class ConnectionTest {
 
 		this.connection.on(new Message("ABC123", Frame.subscribe("1", "/dest").build()));
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.SUBSCRIBE);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.SUBSCRIBE);
 		verify(session).toDestination("/dest");
 		verify(session).getConnection();
 		verify(session).createConsumer(destination, "session IS NULL OR session = 'ABC123'");
@@ -362,7 +389,7 @@ public class ConnectionTest {
 		}
 		assertEquals("Subscription already exists! [1]", expected.getMessage());
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.SUBSCRIBE);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.SUBSCRIBE);
 	}
 
 	@Test
@@ -373,7 +400,7 @@ public class ConnectionTest {
 
 		this.connection.on(new Message("ABC123", Frame.builder(Command.UNSUBSCRIBE).subscription("1").build()));
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.UNSUBSCRIBE);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.UNSUBSCRIBE);
 	}
 
 	@Test
@@ -386,7 +413,7 @@ public class ConnectionTest {
 		}
 		assertEquals("Subscription does not exist! [1]", expected.getMessage());
 
-		verify(this.log).info("Message received. [sessionId={},command={}]", "ABC123", Command.UNSUBSCRIBE);
+		verify(this.log).info("Message received from client. [sessionId={},command={}]", "ABC123", Command.UNSUBSCRIBE);
 	}
 
 	@Test

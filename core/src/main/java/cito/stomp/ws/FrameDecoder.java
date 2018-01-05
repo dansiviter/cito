@@ -15,6 +15,7 @@
  */
 package cito.stomp.ws;
 
+import static cito.stomp.Encoding.LF;
 import static cito.stomp.Encoding.NULL;
 import static cito.stomp.Encoding.from;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -52,6 +53,18 @@ public abstract class FrameDecoder implements Decoder {
 	}
 
 
+	// --- Static Methods ---
+
+	/**
+	 * 
+	 * @param c
+	 * @return
+	 */
+	private static boolean willDecode(byte c) {
+		return c == NULL || c == LF;
+	}
+
+
 	// --- Inner Classes ---
 
 	/**
@@ -62,14 +75,14 @@ public abstract class FrameDecoder implements Decoder {
 	public static class Binary extends FrameDecoder implements Decoder.Binary<Frame> {
 		@Override
 		public boolean willDecode(ByteBuffer bytes) {
-			return bytes.get(bytes.limit()) == NULL;
+			return FrameDecoder.willDecode(bytes.get(bytes.limit()));
 		}
 
 		@Override
 		public Frame decode(ByteBuffer bytes) throws DecodeException {
 			try {
 				return from(bytes);
-			} catch (IOException e) {
+			} catch (IOException | AssertionError e) {
 				throw new DecodeException(bytes, e.getMessage(), e);
 			}
 		}
@@ -83,15 +96,15 @@ public abstract class FrameDecoder implements Decoder {
 	public static class Text extends FrameDecoder implements Decoder.Text<Frame> {
 		@Override
 		public boolean willDecode(String s) {
-			return s.charAt(s.length() - 1) == NULL;
+			return FrameDecoder.willDecode((byte) s.charAt(s.length() - 1));
 		}
 
 		@Override
 		public Frame decode(String s) throws DecodeException {
 			try {
 				return from(UTF_8.encode(s));
-			} catch (IOException e) {
-				throw new DecodeException(s, e.getMessage(), e);
+			} catch (IOException | AssertionError e) {
+				throw new DecodeException(s, "Unable to decode. \"" + s + "\" : " + e.getMessage(), e);
 			}
 		}
 	}

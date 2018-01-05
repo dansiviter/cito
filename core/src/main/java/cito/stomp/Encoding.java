@@ -34,9 +34,9 @@ import java.util.Map.Entry;
  * @since v1.0 [29 Nov 2017]
  */
 public enum Encoding { ;
-	static final byte LF = '\n';
-	static final byte CR = '\r';
 	static final byte COLON = ':';
+	public static final byte LF = '\n';
+	public static final byte CR = '\r';
 	public static final byte NULL = '\u0000';
 
 	/**
@@ -63,8 +63,7 @@ public enum Encoding { ;
 	 */
 	public static void write(Frame frame, ByteBuffer buf) {
 		if (frame.isHeartBeat()) {
-			buf.put(NULL);
-			buf.flip();
+			buf.put(LF);
 			return;
 		}
 
@@ -85,14 +84,15 @@ public enum Encoding { ;
 
 		buf.put(NULL);
 	}
-	
+
 	/**
 	 * 
 	 * @param buf
 	 * @return
 	 * @throws IOException
+	 * @throws AssertionError if the {@link Builder} does not have required values.
 	 */
-	public static Frame from(ByteBuffer buf) throws IOException {
+	public static Frame from(ByteBuffer buf) throws IOException, AssertionError {
 		skipEoL(buf);
 
 		final CharBuffer command = readLine(buf);
@@ -170,6 +170,9 @@ public enum Encoding { ;
 	 * @return
 	 */
 	private static boolean isEol(ByteBuffer buf) {
+		if (!buf.hasRemaining()) {
+			return false;
+		}
 		if (buf.get(buf.position()) == LF) {
 			return true;
 		}

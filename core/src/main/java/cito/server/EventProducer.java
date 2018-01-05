@@ -28,6 +28,9 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.ObserverMethod;
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+
+import cito.DestinationType;
 import cito.Glob;
 import cito.PathParamProducer;
 import cito.QuietClosable;
@@ -50,6 +53,8 @@ public class EventProducer {
 	private final Map<String, String> idDestinationMap = new WeakHashMap<>();
 
 	@Inject
+	private Logger log;
+	@Inject
 	private BeanManager manager;
 
 	/**
@@ -68,7 +73,10 @@ public class EventProducer {
 		}
 		case SEND: {
 			final String destination = msg.frame().destination();
-			notify(OnSend.class, extension.getMessageObservers(OnSend.class), destination, msg);
+			final boolean consumed = notify(OnSend.class, extension.getMessageObservers(OnSend.class), destination, msg);
+			if (!consumed && DestinationType.from(destination) == DestinationType.DIRECT) {
+				throw new IllegalStateException("Non-JMS destination not consumed! [destination=" + destination + ",sessionId=" + msg.sessionId() + "]");
+			}
 			break;
 		}
 		case SUBSCRIBE: {
@@ -102,8 +110,10 @@ public class EventProducer {
 	 * @param observerMethods
 	 * @param destination
 	 * @param evt
+	 * @return {@code true} if one or more notifiers consumed the event.
 	 */
-	private static <A extends Annotation> void notify(Class<A> annotation, Set<ObserverMethod<Message>> observerMethods, String destination, Message evt) {
+	private static <A extends Annotation> boolean notify(Class<A> annotation, Set<ObserverMethod<Message>> observerMethods, String destination, Message evt) {
+		boolean consumed = false;
 		for (ObserverMethod<Message> om : observerMethods) {
 			for (A a : getAnnotations(annotation, om.getObservedQualifiers())) {
 				final String value = ReflectionUtil.invoke(a, "value");
@@ -112,8 +122,10 @@ public class EventProducer {
 				}
 				try (QuietClosable closable = PathParamProducer.set(value)) {
 					om.notify(evt);
+					consumed = true;
 				}
 			}
 		}
+		return consumed;
 	}
 }

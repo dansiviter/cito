@@ -43,13 +43,10 @@ import javax.security.auth.login.LoginException;
 import javax.websocket.CloseReason;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.deltaspike.core.api.provider.BeanProvider;
-
+import cito.DestinationType;
 import cito.annotation.FromBroker;
 import cito.event.Message;
-import cito.server.JaasSecurityContext;
 import cito.server.SecurityContext;
-import cito.server.SecurityContextProducer;
 import cito.stomp.Command;
 import cito.stomp.Frame;
 import cito.stomp.Frame.HeartBeat;
@@ -76,7 +73,7 @@ public class Connection extends AbstractConnection {
 	@Inject
 	private Provider<javax.websocket.Session> wsSession;
 	@Inject
-	private Instance<SecurityContext> securityCtx;
+	private Provider<SecurityContext> securityCtx;
 
 	private HeartBeatMonitor heartBeatMonitor;
 	private String sessionId;
@@ -99,8 +96,12 @@ public class Connection extends AbstractConnection {
 	public void sendToClient(@Nonnull Frame frame) {
 		this.heartBeatMonitor.resetSend();
 		final Command command = frame.getCommand();
-		this.log.info("Sending message to client. [sessionId={},command={}]",
-				this.sessionId, command != null ? command : "HEARTBEAT");
+
+		if (frame.isHeartBeat()) {
+			this.log.debug("Sending message to client. [sessionId={},command=HEARTBEAT]", this.sessionId);
+		} else {
+			this.log.info("Sending message to client. [sessionId={},command={}]", this.sessionId, command);
+		}
 		this.brokerMessageEvent.fire(new Message(this.sessionId, frame));
 	}
 
@@ -153,9 +154,9 @@ public class Connection extends AbstractConnection {
 			throw new IllegalArgumentException("Session ID cannot be null!");
 		}
 		this.sessionId = msg.sessionId();
-	
+
 		this.log.info("Connecting... [sessionId={}]", sessionId);
-	
+
 		String version = null;
 		final Collection<String> clientSupportedVersion = Arrays.asList(msg.frame().getFirst(ACCEPT_VERSION).split(","));
 		for (int i = SUPPORTED_VERSIONS.length - 1; i >= 0; i--) {
@@ -182,12 +183,9 @@ public class Connection extends AbstractConnection {
 		String login = msg.frame().getFirst(LOGIN);
 		final String passcode = msg.frame().getFirst(PASSCODE);
 
-		if (isBlank(login) && !this.securityCtx.isUnsatisfied()) {
-			login = this.securityCtx.get().getUserPrincipal().getName();
-		} else if (!isBlank(login) && this.securityCtx.isUnsatisfied()) { // perform login if security context doesn't already exist
-			final JaasSecurityContext jaasSecurityContext = BeanProvider.getDependent(this.beanManager, JaasSecurityContext.class).get();
-			jaasSecurityContext.login(login, passcode.toCharArray());
-			SecurityContextProducer.set(this.wsSession.get(), jaasSecurityContext);
+		if (isBlank(login)) {
+			final SecurityContext securityCtx = this.securityCtx.get();
+			login = securityCtx.getUserPrincipal() != null ? securityCtx.getUserPrincipal().getName() : null;
 		}
 
 		createDelegate(login, passcode);
@@ -201,10 +199,6 @@ public class Connection extends AbstractConnection {
 		}
 	}
 
-	/**
-	 * 
-	 * @param msg
-	 */
 	@Override
 	public void on(Message msg) {
 		if (!getSessionId().equals(msg.sessionId())) {
@@ -217,16 +211,18 @@ public class Connection extends AbstractConnection {
 		this.heartBeatMonitor.resetRead();
 
 		if (msg.frame().isHeartBeat()) {
-			this.log.debug("Heartbeat recieved. [sessionId={}]", this.sessionId);
+			this.log.debug("Heartbeat recieved from client. [sessionId={}]", this.sessionId);
 			return;
 		}
 
-		this.log.info("Message received. [sessionId={},command={}]", this.sessionId, msg.frame().getCommand());
+		this.log.info("Message received from client. [sessionId={},command={}]", this.sessionId, msg.frame().getCommand());
 
 		try {
 			switch (msg.frame().getCommand()) {
 			case SEND:
-				getSession(msg.frame()).sendToBroker(msg.frame());
+				if (DestinationType.from(msg.frame().destination()) != DestinationType.DIRECT) {
+					getSession(msg.frame()).sendToBroker(msg.frame());
+				}
 				break;
 			case ACK: {
 				final String id = msg.frame().getFirst(ID);
@@ -284,7 +280,7 @@ public class Connection extends AbstractConnection {
 								}
 								return new Subscription(getSession(msg.frame()), k, msg.frame());
 							} catch (JMSException e) {
-								throw new IllegalStateException("Unable to subscribe! [" + subscriptionId + "]");
+								throw new IllegalStateException("Unable to subscribe! [" + subscriptionId + "]", e);
 							}
 						});
 				break;

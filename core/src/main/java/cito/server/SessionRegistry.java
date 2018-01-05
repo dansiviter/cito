@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.annotation.Nonnull;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
@@ -55,8 +56,10 @@ public class SessionRegistry {
 	 * 
 	 * @param session
 	 */
-	public void register(Session session) {
-		final Session oldSession = this.sessionMap.put(session.getId(), session);
+	public void register(@Nonnull Session session) {
+		final String sessionId = session.getId();
+		this.log.debug("Registering session. [{}]", sessionId);
+		final Session oldSession = this.sessionMap.put(sessionId, session);
 		if (oldSession != null)
 			throw new IllegalArgumentException("Session already registered! [" + session.getId() + "]");
 		Principal principal = session.getUserPrincipal();
@@ -69,8 +72,9 @@ public class SessionRegistry {
 	 * 
 	 * @param session
 	 */
-	public void unregister(Session session) {
+	public void unregister(@Nonnull Session session) {
 		final String sessionId = session.getId();
+		this.log.debug("Un-registering session. [{}]", sessionId);
 		final Session oldSession = this.sessionMap.remove(sessionId);
 		if (oldSession == null)
 			throw new IllegalArgumentException("Session not registered! [" + sessionId + "]");
@@ -85,7 +89,7 @@ public class SessionRegistry {
 	 * @param id
 	 * @return
 	 */
-	public Optional<Session> getSession(String id) {
+	public Optional<Session> getSession(@Nonnull String id) {
 		return Optional.ofNullable(this.sessionMap.get(id));
 	}
 
@@ -94,7 +98,7 @@ public class SessionRegistry {
 	 * @param principal
 	 * @return
 	 */
-	public Set<Session> getSessions(Principal principal) {
+	public Set<Session> getSessions(@Nonnull Principal principal) {
 		final Set<Session> sessions = this.principalSessionMap.get(principal);
 		return sessions != null ? Collections.unmodifiableSet(sessions) : Collections.emptySet();
 	}
@@ -109,13 +113,18 @@ public class SessionRegistry {
 		this.log.debug("Sending message to client. [sessionId={},command={}]",
 				sessionId, frame.getCommand() != null ? frame.getCommand() : "HEARTBEAT");
 
-		final Session session = getSession(sessionId).orElseThrow(
-				() -> new IllegalStateException("Session does not exist! [" + sessionId + "]"));
-		try {
-			session.getBasicRemote().sendObject(frame);
-		} catch (IOException | EncodeException e) {
-			this.log.warn("Unable to send message! [sessionid={},command={}]", sessionId, frame.getCommand(), e);
+		Optional<Session> session = getSession(sessionId);
+
+		if (!session.isPresent()) { // Java 9 has #ifPresentOrElse(...)
+			this.log.error("Unable to find session! [{}]", sessionId);
 		}
+		getSession(sessionId).ifPresent(s -> {
+			try {
+				s.getBasicRemote().sendObject(frame);
+			} catch (IOException | EncodeException e) {
+				this.log.error("Unable to send message! [sessionid={},command={}]", sessionId, frame.getCommand(), e);
+			}
+		});
 	}
 
 

@@ -28,6 +28,10 @@
 			<artifactId>cdi-api</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>javax.annotation</groupId>
+			<artifactId>javax.annotation-api</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>javax.validation</groupId>
 			<artifactId>validation-api</artifactId>
 		</dependency>
@@ -41,10 +45,6 @@
 			<groupId>org.apache.deltaspike.core</groupId>
 			<artifactId>deltaspike-core-impl</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.deltaspike.modules</groupId>
-			<artifactId>deltaspike-security-module-impl</artifactId>
-		</dependency>
 
 		<dependency>
 			<groupId>net.sourceforge.streamsupport</groupId>
@@ -55,14 +55,9 @@
 		<!-- JSON-B -->
 
 		<dependency>
-			<groupId>javax.json.bind</groupId>
-			<artifactId>javax.json.bind-api</artifactId>
-			<version>1.0</version>
-		</dependency>
-		<dependency>
 			<groupId>org.eclipse</groupId>
 			<artifactId>yasson</artifactId>
-			<version>1.0</version>
+			<version>1.0.1</version>
 		</dependency>
 
 
@@ -73,20 +68,17 @@
 			<artifactId>arquillian</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.jboss.arquillian.junit</groupId>
-			<artifactId>arquillian-junit-container</artifactId>
-			<scope>test</scope>
-		</dependency>
 
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>tjws</artifactId>
+			<version>3.0.18.Final</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-client</artifactId>
+			<version>3.0.18.Final</version>
 			<scope>test</scope>
 			<exclusions>
 				<exclusion>
