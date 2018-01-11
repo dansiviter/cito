@@ -3,7 +3,7 @@ jdk: oraclejdk8
 sudo: required
 install: true
 script:
-  - mvn clean install -Ptravis -X
+  - mvn clean install -Ptravis
 cache:
   directories:
     - '$HOME/.m2/repository'
