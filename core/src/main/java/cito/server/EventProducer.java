@@ -28,8 +28,6 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.ObserverMethod;
 import javax.inject.Inject;
 
-import org.slf4j.Logger;
-
 import cito.DestinationType;
 import cito.Glob;
 import cito.PathParamProducer;
@@ -53,8 +51,6 @@ public class EventProducer {
 	private final Map<String, String> idDestinationMap = new WeakHashMap<>();
 
 	@Inject
-	private Logger log;
-	@Inject
 	private BeanManager manager;
 
 	/**
@@ -66,13 +62,13 @@ public class EventProducer {
 
 		final Extension extension = this.manager.getExtension(Extension.class);
 
-		switch (msg.frame().getCommand()) {
+		switch (msg.frame().command()) {
 		case CONNECTED: { // on client thread as it's response to CONNECT
 			extension.getMessageObservers(OnConnected.class).forEach(om -> om.notify(msg));
 			break;
 		}
 		case SEND: {
-			final String destination = msg.frame().destination();
+			final String destination = msg.frame().destination().get();
 			final boolean consumed = notify(OnSend.class, extension.getMessageObservers(OnSend.class), destination, msg);
 			if (!consumed && DestinationType.from(destination) == DestinationType.DIRECT) {
 				throw new IllegalStateException("Non-JMS destination not consumed! [destination=" + destination + ",sessionId=" + msg.sessionId() + "]");
@@ -80,14 +76,14 @@ public class EventProducer {
 			break;
 		}
 		case SUBSCRIBE: {
-			final String id = msg.frame().subscription();
-			final String destination = msg.frame().destination();
+			final String id = msg.frame().subscription().get();
+			final String destination = msg.frame().destination().get();
 			idDestinationMap.put(id, destination);
 			notify(OnSubscribe.class, extension.getMessageObservers(OnSubscribe.class), destination, msg);
 			break;
 		}
 		case UNSUBSCRIBE: {
-			final String id = msg.frame().subscription();
+			final String id = msg.frame().subscription().get();
 			final String destination = this.idDestinationMap.remove(id);
 			notify(OnUnsubscribe.class, extension.getMessageObservers(OnUnsubscribe.class), destination, msg);
 			break;

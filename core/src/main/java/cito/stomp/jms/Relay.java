@@ -70,7 +70,7 @@ public class Relay {
 	 */
 	public void fromClient(@Nonnull Message msg) {
 		final String sessionId = msg.sessionId();
-		this.log.debug("Message from client. [sessionId={},command={}]", sessionId, msg.frame().getCommand());
+		this.log.debug("Message from client. [sessionId={},command={}]", sessionId, msg.frame().command());
 
 		final boolean permitted = this.securityRegistry.isPermitted(msg.frame(), this.securityCtx.get());
 		if (!permitted) {
@@ -88,7 +88,7 @@ public class Relay {
 	public void fromServer(@Observes @FromServer Message evt) {
 		if (this.log.isDebugEnabled()) {
 			this.log.debug("Message event from server. [sessionId={},command={}]", evt.sessionId(),
-					evt.frame().getCommand());
+					evt.frame().command());
 		}
 		on(evt);
 	}
@@ -102,8 +102,8 @@ public class Relay {
 		try {
 			AbstractConnection conn = evt.sessionId() != null ? this.connections.get(sessionId) : this.systemConn;
 
-			if (evt.frame().getCommand() != null) {
-				switch (evt.frame().getCommand()) {
+			if (evt.frame().command() != null) {
+				switch (evt.frame().command()) {
 				case CONNECT:
 				case STOMP:
 					this.log.info("CONNECT/STOMP recieved. Opening connection to broker. [sessionId={}]", sessionId);

@@ -30,6 +30,7 @@ import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.slf4j.Logger;
 
 import cito.event.Message;
+import cito.util.ToStringBuilder;
 
 /**
  * 
@@ -108,5 +109,13 @@ public abstract class AbstractConnection implements cito.stomp.Connection {
 		} catch (JMSException e) {
 			throw new IOException(e);
 		}
+	}
+
+	@Override
+	public String toString() {
+		return ToStringBuilder
+				.create(this)
+				.append("sessionId", getSessionId())
+				.toString();
 	}
 }

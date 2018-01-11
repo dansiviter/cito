@@ -102,8 +102,8 @@ public class Client implements Connection {
 		final Frame connectedFrame = this.connectFuture.get(timeout, unit);
 		this.connectFuture = null;
 
-		final long readDelay = Math.max(connectedFrame.heartBeat().x, connectFrame.heartBeat().y);
-		final long writeDelay = Math.max(connectFrame.heartBeat().x, connectedFrame.heartBeat().y);
+		final long readDelay = Math.max(connectedFrame.heartBeat().get().x, connectFrame.heartBeat().get().y);
+		final long writeDelay = Math.max(connectFrame.heartBeat().get().x, connectedFrame.heartBeat().get().y);
 		this.heartBeatMonitor.start(readDelay, writeDelay);
 	}
 
@@ -112,7 +112,7 @@ public class Client implements Connection {
 		if (frame.isHeartBeat()) {
 			LOG.debug("Sending heart beat.");
 		} else {
-			LOG.info("Sending frame. [command={}]", frame.getCommand());
+			LOG.info("Sending frame. [command={}]", frame.command());
 		}
 
 		try {
@@ -138,9 +138,9 @@ public class Client implements Connection {
 			LOG.debug("Heartbeart recieved. [sessionId={}]", getSessionId());
 			return;
 		} else {
-			LOG.info("Message recieved! [command={},sessionId={}] {}", frame.getCommand(), getSessionId(), frame);
+			LOG.info("Message recieved! [command={},sessionId={}] {}", frame.command(), getSessionId(), frame);
 		}
-		switch (frame.getCommand()) {
+		switch (frame.command()) {
 		case CONNECTED:
 			if (getState() != State.CONNECTING || this.connectFuture == null) {
 				throw new IllegalStateException("CONNECTED message not expected!");
@@ -152,7 +152,7 @@ public class Client implements Connection {
 			System.out.println("MESSAGE recieved!");
 			break;
 		case RECEIPT:
-			this.receipts.get(frame.receiptId()).complete(frame);
+			this.receipts.get(frame.receiptId().getAsInt()).complete(frame);
 			break;
 		case ERROR:
 			System.out.println("ERROR recieved!");
@@ -163,7 +163,7 @@ public class Client implements Connection {
 			}
 			break;
 		default:
-			throw new IllegalStateException("Unexpected command recieved! [" + frame.getCommand() + "]");
+			throw new IllegalStateException("Unexpected command recieved! [" + frame.command() + "]");
 		}
 	}
 

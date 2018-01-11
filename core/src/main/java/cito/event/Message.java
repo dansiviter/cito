@@ -18,6 +18,7 @@ package cito.event;
 import javax.annotation.concurrent.Immutable;
 
 import cito.stomp.Frame;
+import cito.util.ToStringBuilder;
 
 /**
  * 
@@ -53,5 +54,11 @@ public class Message {
 		return frame;
 	}
 
-
+	@Override
+	public String toString() {
+		return ToStringBuilder.create(this)
+				.append("sessionId", this.sessionId)
+				.append("frame.command", this.frame.command())
+				.toString();
+	}
 }

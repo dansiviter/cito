@@ -30,7 +30,7 @@ import cito.event.Message;
 import cito.stomp.Frame;
 
 /**
- * Injects the {@link Frame#getBody()} from the {@link Message#frame()}, performing deserialisation if required.
+ * Injects the {@link Frame#body()} from the {@link Message#frame()}, performing deserialisation if required.
  * <pre>
  * 	public void onSend(&#064;Observes &#064;OnSend MessageEvent, &#064;Body MyBean myBean) { ... }
  * </pre>

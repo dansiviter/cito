@@ -15,11 +15,9 @@
  */
 package cito.stomp.jms;
 
-import static cito.Strings.isBlank;
 import static cito.Util.isNullOrEmpty;
 import static cito.stomp.Header.Standard.ACCEPT_VERSION;
 import static cito.stomp.Header.Standard.ACK;
-import static cito.stomp.Header.Standard.ID;
 import static cito.stomp.Header.Standard.LOGIN;
 import static cito.stomp.Header.Standard.PASSCODE;
 import static cito.stomp.Header.Standard.RECEIPT;
@@ -28,6 +26,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -35,7 +34,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Event;
-import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.jms.JMSException;
@@ -71,8 +69,6 @@ public class Connection extends AbstractConnection {
 	@Inject @FromBroker
 	private Event<Message> brokerMessageEvent;
 	@Inject
-	private Provider<javax.websocket.Session> wsSession;
-	@Inject
 	private Provider<SecurityContext> securityCtx;
 
 	private HeartBeatMonitor heartBeatMonitor;
@@ -95,7 +91,7 @@ public class Connection extends AbstractConnection {
 	@Override
 	public void sendToClient(@Nonnull Frame frame) {
 		this.heartBeatMonitor.resetSend();
-		final Command command = frame.getCommand();
+		final Command command = frame.command();
 
 		if (frame.isHeartBeat()) {
 			this.log.debug("Sending message to client. [sessionId={},command=HEARTBEAT]", this.sessionId);
@@ -131,11 +127,11 @@ public class Connection extends AbstractConnection {
 	 * @throws JMSException
 	 */
 	private Session getSession(@Nonnull Frame in) throws JMSException {
-		final String tx = in.transaction();
-		if (tx != null)
-			return this.txSessions.get(tx);
+		final Optional<String> tx = in.transaction();
+		if (tx.isPresent())
+			return this.txSessions.get(tx.get());
 
-		final String ackMode = in.getFirst(ACK);
+		final String ackMode = in.getFirst(ACK).orElse(null);
 		return getSession("client".equalsIgnoreCase(ackMode));
 	}
 
@@ -158,7 +154,7 @@ public class Connection extends AbstractConnection {
 		this.log.info("Connecting... [sessionId={}]", sessionId);
 
 		String version = null;
-		final Collection<String> clientSupportedVersion = Arrays.asList(msg.frame().getFirst(ACCEPT_VERSION).split(","));
+		final Collection<String> clientSupportedVersion = Arrays.asList(msg.frame().getFirst(ACCEPT_VERSION).get().split(","));
 		for (int i = SUPPORTED_VERSIONS.length - 1; i >= 0; i--) {
 			if (clientSupportedVersion.contains(SUPPORTED_VERSIONS[i])) {
 				version = SUPPORTED_VERSIONS[i];
@@ -175,26 +171,24 @@ public class Connection extends AbstractConnection {
 
 		final Frame.Builder connected = Frame.connnected(version, this.sessionId, "localhost");
 
-		final HeartBeat heartBeat = msg.frame().heartBeat();
-		if (!version.equals("1.0") && heartBeat != null) {
+		final Optional<HeartBeat> heartBeat = msg.frame().heartBeat();
+		if (!version.equals("1.0") && heartBeat.isPresent()) {
 			connected.heartbeat(HEARTBEAT_READ_DEFAULT, HEARTBEAT_WRITE_DEFAULT);
 		}
 
-		String login = msg.frame().getFirst(LOGIN);
-		final String passcode = msg.frame().getFirst(PASSCODE);
-
-		if (isBlank(login)) {
+		final String login = msg.frame().getFirst(LOGIN).orElseGet(() -> {
 			final SecurityContext securityCtx = this.securityCtx.get();
-			login = securityCtx.getUserPrincipal() != null ? securityCtx.getUserPrincipal().getName() : null;
-		}
+			return securityCtx.getUserPrincipal() != null ? securityCtx.getUserPrincipal().getName() : null;
+		});
+		final String passcode = msg.frame().getFirst(PASSCODE).orElse(null);
 
 		createDelegate(login, passcode);
 
 		sendToClient(connected.build());
 
-		if (!version.equals("1.0") && heartBeat != null) {
-			final long readDelay = Math.max(heartBeat.x, HEARTBEAT_READ_DEFAULT);
-			final long writeDelay = Math.max(HEARTBEAT_WRITE_DEFAULT, heartBeat.y);
+		if (!version.equals("1.0") && heartBeat.isPresent()) {
+			final long readDelay = Math.max(heartBeat.get().x, HEARTBEAT_READ_DEFAULT);
+			final long writeDelay = Math.max(HEARTBEAT_WRITE_DEFAULT, heartBeat.get().y);
 			this.heartBeatMonitor.start(readDelay, writeDelay);
 		}
 	}
@@ -204,8 +198,8 @@ public class Connection extends AbstractConnection {
 		if (!getSessionId().equals(msg.sessionId())) {
 			throw new IllegalArgumentException("Session identifier mismatch! [expected=" + this.sessionId + ",actual=" + msg.sessionId() + "]");
 		}
-		if (msg.frame().getCommand() == Command.CONNECT || msg.frame().getCommand() == Command.DISCONNECT) {
-			throw new IllegalArgumentException(msg.frame().getCommand() + " not supported! [" + msg.sessionId() + "]");
+		if (msg.frame().command() == Command.CONNECT || msg.frame().command() == Command.DISCONNECT) {
+			throw new IllegalArgumentException(msg.frame().command() + " not supported! [" + msg.sessionId() + "]");
 		}
 
 		this.heartBeatMonitor.resetRead();
@@ -215,17 +209,17 @@ public class Connection extends AbstractConnection {
 			return;
 		}
 
-		this.log.info("Message received from client. [sessionId={},command={}]", this.sessionId, msg.frame().getCommand());
+		this.log.info("Message received from client. [sessionId={},command={}]", this.sessionId, msg.frame().command());
 
 		try {
-			switch (msg.frame().getCommand()) {
+			switch (msg.frame().command()) {
 			case SEND:
-				if (DestinationType.from(msg.frame().destination()) != DestinationType.DIRECT) {
+				if (DestinationType.from(msg.frame().destination().get()) != DestinationType.DIRECT) {
 					getSession(msg.frame()).sendToBroker(msg.frame());
 				}
 				break;
 			case ACK: {
-				final String id = msg.frame().getFirst(ID);
+				final String id = msg.frame().subscription().get();
 				javax.jms.Message message = this.ackMessages.remove(id);
 				if (message == null) {
 					throw new IllegalStateException("No such message to ACK! [" + id + "]");
@@ -234,7 +228,7 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			case NACK: {
-				final String id = msg.frame().getFirst(ID);
+				final String id = msg.frame().subscription().get();
 				javax.jms.Message message = this.ackMessages.remove(id);
 				if (message == null) {
 					throw new IllegalStateException("No such message to NACK! [" + id + "]");
@@ -244,15 +238,16 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			case BEGIN: {
-				if (this.txSessions.containsKey(msg.frame().transaction())) {
-					throw new IllegalStateException("Transaction already started! [" + msg.frame().transaction() + "]");
+				final String tx = msg.frame().transaction().get();
+				if (this.txSessions.containsKey(tx)) {
+					throw new IllegalStateException("Transaction already started! [" + tx + "]");
 				}
 				final Session txSession = this.factory.toSession(this, true, javax.jms.Session.SESSION_TRANSACTED);
-				this.txSessions.put(msg.frame().transaction(), txSession);
+				this.txSessions.put(msg.frame().transaction().get(), txSession);
 				break;
 			}
 			case COMMIT: {
-				final String tx = msg.frame().transaction();
+				final String tx = msg.frame().transaction().get();
 				final Session txSession = this.txSessions.remove(tx);
 				if (txSession == null) {
 					throw new IllegalStateException("Transaction session does not exists! [" + tx + "]");
@@ -261,7 +256,7 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			case ABORT: {
-				final String tx = msg.frame().transaction();
+				final String tx = msg.frame().transaction().get();
 				final Session txSession = this.txSessions.remove(tx);
 				if (txSession == null) {
 					throw new IllegalStateException("Transaction session does not exists! [" + tx + "]");
@@ -270,7 +265,7 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			case SUBSCRIBE: {
-				final String subscriptionId = msg.frame().getFirst(ID);
+				final String subscriptionId = msg.frame().subscription().get();
 				this.subscriptions.compute(
 						subscriptionId,
 						(k, v) -> { 
@@ -286,7 +281,7 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			case UNSUBSCRIBE: {
-				final String subscriptionId = msg.frame().getFirst(ID);
+				final String subscriptionId = msg.frame().subscription().get();
 				final Subscription subscription = this.subscriptions.remove(subscriptionId);
 				if (subscription == null)
 					throw new IllegalStateException("Subscription does not exist! [" + subscriptionId + "]");
@@ -298,11 +293,11 @@ public class Connection extends AbstractConnection {
 				break;
 			}
 			default:
-				throw new IllegalArgumentException("Unexpected frame! [" + msg.frame().getCommand());
+				throw new IllegalArgumentException("Unexpected frame! [" + msg.frame().command());
 			}
 			sendReceipt(msg.frame());
 		} catch (JMSException e) {
-			this.log.error("Error handling message! [sessionId={},command={}]", this.sessionId, msg.frame().getCommand(), e);
+			this.log.error("Error handling message! [sessionId={},command={}]", this.sessionId, msg.frame().command(), e);
 		}
 	}
 
@@ -320,10 +315,7 @@ public class Connection extends AbstractConnection {
 	 * @throws Exception
 	 */
 	private void sendReceipt(@Nonnull Frame frame)  {
-		final String receiptId = frame.getFirst(RECEIPT);
-		if (receiptId != null) {
-			sendToClient(Frame.receipt(receiptId).build());
-		}
+		frame.getFirst(RECEIPT).ifPresent(id -> sendToClient(Frame.receipt(id).build()));
 	}
 
 	/**

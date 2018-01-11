@@ -18,6 +18,7 @@ package cito.stomp;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -41,17 +42,27 @@ import org.junit.Test;
  */
 public class EncodingTest {
 	@Test
+	public void isFrame_heartbeat() {
+		assertTrue(Encoding.isFrame(ByteBuffer.wrap(Frame.HEART_BEAT.toString().getBytes())));
+	}
+
+	@Test
+	public void isFrame_message() {
+		assertTrue(Encoding.isFrame(Encoding.from(Frame.message("destination", "subscriptionId", "messageId", null, "message").build(), false, 1024)));
+	}
+
+	@Test
 	public void from_byteBuffer() throws IOException, DecodeException {
 		final String input = "MESSAGE\ndestination:wonderland\nsubscription:a\ncontent-length:4\n\nbody\u0000";
 		final Frame frame;
 		try (InputStream is = new ByteArrayInputStream(input.getBytes()))  {
 			frame = Encoding.from(ByteBuffer.wrap(input.getBytes(UTF_8)));
 		}
-		assertEquals(Command.MESSAGE, frame.getCommand());
-		assertEquals(4, frame.getHeaders().size());
+		assertEquals(Command.MESSAGE, frame.command());
+		assertEquals(4, frame.headers().size());
 
 		// ensure header order is maintained
-		final Iterator<Entry<Header, List<String>>> itr = frame.getHeaders().entrySet().iterator();
+		final Iterator<Entry<Header, List<String>>> itr = frame.headers().entrySet().iterator();
 		final Entry<Header, List<String>> header2 = itr.next();
 		assertEquals("destination", header2.getKey().value());
 		assertEquals(1, header2.getValue().size());
@@ -60,7 +71,7 @@ public class EncodingTest {
 		assertEquals("subscription", header1.getKey().value());
 		assertEquals(1, header1.getValue().size());
 		assertEquals("a", header1.getValue().get(0));
-		assertEquals(ByteBuffer.wrap("body".getBytes(StandardCharsets.UTF_8)), frame.getBody());
+		assertEquals(ByteBuffer.wrap("body".getBytes(StandardCharsets.UTF_8)), frame.body().get());
 	}
 
 	@Test
@@ -70,8 +81,8 @@ public class EncodingTest {
 		try (InputStream is = new ByteArrayInputStream(input.getBytes()))  {
 			frame = Encoding.from(ByteBuffer.wrap(input.getBytes(UTF_8)));
 		}
-		assertEquals(Command.MESSAGE, frame.getCommand());
-		assertEquals(4, frame.getHeaders().size());
+		assertEquals(Command.MESSAGE, frame.command());
+		assertEquals(4, frame.headers().size());
 	}
 
 	@Test
@@ -81,8 +92,8 @@ public class EncodingTest {
 		try (InputStream is = new ByteArrayInputStream(input.getBytes()))  {
 			frame = Encoding.from(ByteBuffer.wrap(input.getBytes(UTF_8)));
 		}
-		assertEquals(Command.MESSAGE, frame.getCommand());
-		assertEquals(4, frame.getHeaders().size());
+		assertEquals(Command.MESSAGE, frame.command());
+		assertEquals(4, frame.headers().size());
 	}
 
 	@Test

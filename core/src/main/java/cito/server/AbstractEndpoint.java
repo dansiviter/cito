@@ -93,7 +93,7 @@ public abstract class AbstractEndpoint extends Endpoint {
 	@OnMessage
 	public void message(Session session, Frame frame) {
 		final String sessionId = session.getId();
-		this.log.debug("Received message from client. [id={},principle={},command={}]", sessionId, session.getUserPrincipal(), frame.getCommand());
+		this.log.debug("Received message from client. [id={},principle={},command={}]", sessionId, session.getUserPrincipal(), frame.command());
 		try (QuietClosable c = webSocketContext(this.beanManager).activate(session)) {
 			final Message event = new Message(sessionId, frame);
 			try (QuietClosable closable = ClientMessageProducer.set(event)) {

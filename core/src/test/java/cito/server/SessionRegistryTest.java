@@ -155,7 +155,7 @@ public class SessionRegistryTest {
 		when(msg.sessionId()).thenReturn("sessionId");
 		final Frame frame = mock(Frame.class);
 		when(msg.frame()).thenReturn(frame);
-		when(frame.getCommand()).thenReturn(Command.MESSAGE);
+		when(frame.command()).thenReturn(Command.MESSAGE);
 		final Session session = Mockito.mock(Session.class);
 		getSessionMap().put("sessionId", session);
 		getPrincipalSessionMap().put(NULL_PRINCIPLE, new HashSet<>(singleton(session)));
@@ -166,7 +166,7 @@ public class SessionRegistryTest {
 
 		verify(msg).sessionId();
 		verify(msg).frame();
-		verify(frame, times(2)).getCommand();
+		verify(frame, times(2)).command();
 		verify(this.log).debug("Sending message to client. [sessionId={},command={}]", "sessionId", Command.MESSAGE);
 		verify(session).getBasicRemote();
 		verify(basic).sendObject(frame);
@@ -179,7 +179,7 @@ public class SessionRegistryTest {
 		when(msg.sessionId()).thenReturn("sessionId");
 		final Frame frame = mock(Frame.class);
 		when(msg.frame()).thenReturn(frame);
-		when(frame.getCommand()).thenReturn(Command.MESSAGE);
+		when(frame.command()).thenReturn(Command.MESSAGE);
 		final Session session = Mockito.mock(Session.class);
 		getSessionMap().put("sessionId", session);
 		getPrincipalSessionMap().put(NULL_PRINCIPLE, new HashSet<>(singleton(session)));
@@ -192,7 +192,7 @@ public class SessionRegistryTest {
 
 		verify(msg).sessionId();
 		verify(msg).frame();
-		verify(frame, times(3)).getCommand();
+		verify(frame, times(3)).command();
 		verify(this.log).debug("Sending message to client. [sessionId={},command={}]", "sessionId", Command.MESSAGE);
 		verify(session).getBasicRemote();
 		verify(basic).sendObject(frame);

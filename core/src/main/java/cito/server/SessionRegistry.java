@@ -111,7 +111,7 @@ public class SessionRegistry {
 		final String sessionId = msg.sessionId();
 		final Frame frame = msg.frame();
 		this.log.debug("Sending message to client. [sessionId={},command={}]",
-				sessionId, frame.getCommand() != null ? frame.getCommand() : "HEARTBEAT");
+				sessionId, frame.command() != null ? frame.command() : "HEARTBEAT");
 
 		Optional<Session> session = getSession(sessionId);
 
@@ -122,7 +122,7 @@ public class SessionRegistry {
 			try {
 				s.getBasicRemote().sendObject(frame);
 			} catch (IOException | EncodeException e) {
-				this.log.error("Unable to send message! [sessionid={},command={}]", sessionId, frame.getCommand(), e);
+				this.log.error("Unable to send message! [sessionid={},command={}]", sessionId, frame.command(), e);
 			}
 		});
 	}

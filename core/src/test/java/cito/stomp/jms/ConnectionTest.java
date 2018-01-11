@@ -18,6 +18,7 @@ package cito.stomp.jms;
 import static cito.server.SecurityContext.NOOP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -42,6 +43,8 @@ import javax.security.auth.login.LoginException;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 
+import org.hamcrest.core.StringEndsWith;
+import org.hamcrest.core.StringStartsWith;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -107,13 +110,13 @@ public class ConnectionTest {
 		final HeartBeatMonitor heartBeatMonitor = mock(HeartBeatMonitor.class);
 		ReflectionUtil.set(this.connection, "heartBeatMonitor", heartBeatMonitor);
 		final Frame frame = mock(Frame.class);
-		when(frame.getCommand()).thenReturn(Command.MESSAGE);
+		when(frame.command()).thenReturn(Command.MESSAGE);
 
 		this.connection.sendToClient(frame);
 
 		verify(heartBeatMonitor).resetSend();
 		verify(frame).isHeartBeat();
-		verify(frame).getCommand();
+		verify(frame).command();
 		verify(this.log).info("Sending message to client. [sessionId={},command={}]", "ABC123", Command.MESSAGE);
 		verify(this.brokerMessageEvent).fire(any(Message.class));
 		verifyNoMoreInteractions(heartBeatMonitor, frame);
@@ -443,6 +446,12 @@ public class ConnectionTest {
 		verify(jmsConnection).close();
 		verify(heartBeatMonitor).close();
 		verifyNoMoreInteractions(heartBeatMonitor, jmsConnection);
+	}
+
+	@Test
+	public void toString_() {
+		assertThat(this.connection.toString(), new StringStartsWith(Connection.class.getName() + "@"));
+		assertThat(this.connection.toString(), new StringEndsWith("[sessionId=ABC123]"));
 	}
 
 	@After

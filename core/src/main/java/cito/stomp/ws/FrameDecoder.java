@@ -15,8 +15,6 @@
  */
 package cito.stomp.ws;
 
-import static cito.stomp.Encoding.LF;
-import static cito.stomp.Encoding.NULL;
 import static cito.stomp.Encoding.from;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -27,6 +25,7 @@ import javax.websocket.DecodeException;
 import javax.websocket.Decoder;
 import javax.websocket.EndpointConfig;
 
+import cito.stomp.Encoding;
 import cito.stomp.Frame;
 
 /**
@@ -53,18 +52,6 @@ public abstract class FrameDecoder implements Decoder {
 	}
 
 
-	// --- Static Methods ---
-
-	/**
-	 * 
-	 * @param c
-	 * @return
-	 */
-	private static boolean willDecode(byte c) {
-		return c == NULL || c == LF;
-	}
-
-
 	// --- Inner Classes ---
 
 	/**
@@ -75,7 +62,7 @@ public abstract class FrameDecoder implements Decoder {
 	public static class Binary extends FrameDecoder implements Decoder.Binary<Frame> {
 		@Override
 		public boolean willDecode(ByteBuffer bytes) {
-			return FrameDecoder.willDecode(bytes.get(bytes.limit()));
+			return Encoding.isFrame(bytes);
 		}
 
 		@Override
@@ -96,7 +83,8 @@ public abstract class FrameDecoder implements Decoder {
 	public static class Text extends FrameDecoder implements Decoder.Text<Frame> {
 		@Override
 		public boolean willDecode(String s) {
-			return FrameDecoder.willDecode((byte) s.charAt(s.length() - 1));
+			// FIXME not very efficient as we'll be decoding twice
+			return Encoding.isFrame(UTF_8.encode(s));
 		}
 
 		@Override

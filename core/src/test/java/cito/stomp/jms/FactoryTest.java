@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.Optional;
 
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
@@ -123,16 +124,16 @@ public class FactoryTest {
 		final javax.jms.Session session = mock(javax.jms.Session.class);
 		final Frame frame = mock(Frame.class);
 		final ByteBuffer buffer = ByteBuffer.wrap(new byte[0]).asReadOnlyBuffer();
-		when(frame.getBody()).thenReturn(buffer);
-		when(frame.getHeaders()).thenReturn(new MultivaluedHashMap<>());
+		when(frame.body()).thenReturn(Optional.of(buffer));
+		when(frame.headers()).thenReturn(new MultivaluedHashMap<>());
 		when(frame.contains(Standard.CONTENT_LENGTH)).thenReturn(true);
 		final BytesMessage message = mock(BytesMessage.class);
 		when(session.createBytesMessage()).thenReturn(message);
 
 		this.factory.toMessage(session, frame);
 
-		verify(frame).getBody();
-		verify(frame, times(2)).getHeaders();
+		verify(frame).body();
+		verify(frame, times(2)).headers();
 		verify(frame).contains(Standard.CONTENT_LENGTH);
 		verify(session).createBytesMessage();
 		verify(message).setJMSCorrelationID(null);
@@ -145,16 +146,16 @@ public class FactoryTest {
 		final javax.jms.Session session = mock(javax.jms.Session.class);
 		final Frame frame = mock(Frame.class);
 		final ByteBuffer buffer = ByteBuffer.wrap(new byte[0]).asReadOnlyBuffer();
-		when(frame.getBody()).thenReturn(buffer);
-		when(frame.getHeaders()).thenReturn(new MultivaluedHashMap<>());
+		when(frame.body()).thenReturn(Optional.of(buffer));
+		when(frame.headers()).thenReturn(new MultivaluedHashMap<>());
 		when(frame.contains(Standard.CONTENT_LENGTH)).thenReturn(false);
 		final TextMessage message = mock(TextMessage.class);
 		when(session.createTextMessage("")).thenReturn(message);
 
 		this.factory.toMessage(session, frame);
 
-		verify(frame).getBody();
-		verify(frame, times(2)).getHeaders();
+		verify(frame).body();
+		verify(frame, times(2)).headers();
 		verify(frame).contains(Standard.CONTENT_LENGTH);
 		verify(session).createTextMessage("");
 		verify(message).setJMSCorrelationID(null);

@@ -27,6 +27,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
+
 import javax.enterprise.inject.spi.Annotated;
 import javax.enterprise.inject.spi.InjectionPoint;
 
@@ -86,7 +88,7 @@ public class PathParamProducerTest {
 		final DestinationChanged dc = mock(DestinationChanged.class);
 		final Frame frame = mock(Frame.class);
 		when(msg.frame()).thenReturn(frame);
-		when(frame.destination()).thenReturn("/here");
+		when(frame.destination()).thenReturn(Optional.of("/here"));
 		final Annotated annotated = mock(Annotated.class);
 		when(ip.getAnnotated()).thenReturn(annotated);
 		when(annotated.getAnnotation(PathParam.class)).thenReturn(createPathParam("there"));
@@ -108,7 +110,7 @@ public class PathParamProducerTest {
 		final Message msg = mock(Message.class);
 		final Frame frame = mock(Frame.class);
 		when(msg.frame()).thenReturn(frame);
-		when(frame.destination()).thenReturn("/here");
+		when(frame.destination()).thenReturn(Optional.of("/here"));
 		final Annotated annotated = mock(Annotated.class);
 		when(ip.getAnnotated()).thenReturn(annotated);
 		when(annotated.getAnnotation(PathParam.class)).thenReturn(createPathParam("there"));

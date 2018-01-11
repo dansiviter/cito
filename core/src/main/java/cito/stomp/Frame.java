@@ -42,11 +42,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
+import javax.annotation.concurrent.ThreadSafe;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
@@ -59,14 +63,14 @@ import cito.stomp.Header.Standard;
  * @author Daniel Siviter
  * @since v1.0 [12 Jul 2016]
  */
-@Immutable
+@Immutable @ThreadSafe
 public class Frame {
 	private static final AtomicLong MESSAGE_ID_COUNTER = new AtomicLong();
-	public static final Frame HEART_BEAT = new Frame(Command.HEARTBEAT, new HashMap<>(0), null);
+	public static final Frame HEART_BEAT = new Frame(Command.HEARTBEAT, new HashMap<>(0));
 
 	private final Command command;
 	private final Map<Header, List<String>> headers;
-	private final ByteBuffer body;
+	private final Optional<ByteBuffer> body;
 
 	/**
 	 * 
@@ -74,7 +78,7 @@ public class Frame {
 	 * @param headers
 	 */
 	Frame(@Nonnull Command command, @Nonnull Map<Header, List<String>> headers) {
-		this(command, headers, null);
+		this(command, headers, Optional.empty());
 	}
 
 	/**
@@ -83,12 +87,12 @@ public class Frame {
 	 * @param headers
 	 * @param body
 	 */
-	Frame(@Nonnull Command command, @Nonnull Map<Header, List<String>> headers, ByteBuffer body) {
+	Frame(@Nonnull Command command, @Nonnull Map<Header, List<String>> headers, @Nonnull Optional<ByteBuffer> body) {
 		this.command = requireNonNull(command);
 		final Map<Header, List<String>> tmpHeaders = new LinkedHashMap<>(headers);
 		tmpHeaders.entrySet().forEach(e -> e.setValue(unmodifiableList(e.getValue())));
 		this.headers = unmodifiableMap(tmpHeaders);
-		this.body = body != null ? body.asReadOnlyBuffer() : null;
+		this.body = body.map(ByteBuffer::asReadOnlyBuffer);
 	}
 
 	/**
@@ -103,7 +107,7 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public Command getCommand() {
+	public Command command() {
 		return command;
 	}
 
@@ -111,25 +115,25 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public Map<Header, List<String>> getHeaders() {
+	public Map<Header, List<String>> headers() {
 		return headers;
 	}
 
 	/**
-	 * 
-	 * @return
+	 * @return the frame body
 	 */
-	public ByteBuffer getBody() {
+	public Optional<ByteBuffer> body() {
 		return body;
 	}
 
 	/**
+	 * Checks if the header is set on the frame.
 	 * 
-	 * @param header
-	 * @return
+	 * @param header the header to check.
+	 * @return {@code true} if the frame contains the header.
 	 */
 	public boolean contains(Header header) {
-		return get(header) != null;
+		return !Objects.isNull(get(header));
 	}
 
 	/**
@@ -138,7 +142,7 @@ public class Frame {
 	 * @return
 	 */
 	public List<String> get(Header header) {
-		return getHeaders().get(header);
+		return headers().get(header);
 	}
 
 	/**
@@ -155,25 +159,38 @@ public class Frame {
 	 * @param header
 	 * @return
 	 */
-	public String getFirst(@Nonnull Header header) {
+	public Optional<String> getFirst(@Nonnull Header header) {
 		final List<String> values = get(header);
-		return values != null && values.size() > 0 ? values.get(0) : null;
+		if (values != null && !values.isEmpty()) {
+			return Optional.of(values.get(0));
+		}
+		return Optional.empty();
 	}
 
 	/**
 	 * 
-	 * @param key
+	 * @param header
 	 * @return
 	 */
-	public String getFirstHeader(@Nonnull String key) {
-		return getFirst(Header.valueOf(key));
+	public Optional<String> getFirstHeader(@Nonnull String header) {
+		return getFirst(Header.valueOf(header));
+	}
+
+	/**
+	 * 
+	 * @param header
+	 * @return
+	 */
+	public OptionalInt getFirstInt(@Nonnull Header header) {
+		final Optional<String> value = getFirst(header);
+		return value.isPresent() ? OptionalInt.of(Integer.parseInt(value.get())) : OptionalInt.empty();
 	}
 
 	/**
 	 * 
 	 * @return
 	 */
-	public String destination() {
+	public Optional<String> destination() {
 		return getFirst(DESTINATION);
 	}
 
@@ -181,41 +198,39 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public int contentLength() {
-		final String contentLength = getFirst(CONTENT_LENGTH);
-		return contentLength != null ? Integer.parseInt(contentLength) : -1;
+	public OptionalInt contentLength() {
+		return getFirstInt(CONTENT_LENGTH);
 	}
 
 	/**
 	 * 
 	 * @return
 	 */
-	public MediaType contentType() {
-		final String contentType = getFirst(CONTENT_TYPE);
-		return contentType != null ? MediaType.valueOf(contentType) : null;
+	public Optional<MediaType> contentType() {
+		return getFirst(CONTENT_TYPE).map(MediaType::valueOf);
 	}
 
 	/**
 	 * 
 	 * @return
 	 */
-	public int receipt() {
-		return Integer.parseInt(getFirst(RECEIPT));
+	public OptionalInt receipt() {
+		return getFirstInt(RECEIPT);
 	}
 
 	/**
 	 * 
 	 * @return
 	 */
-	public int receiptId() {
-		return Integer.parseInt(getFirst(RECEIPT_ID));
+	public OptionalInt receiptId() {
+		return getFirstInt(RECEIPT_ID);
 	}
 
 	/**
 	 * 
 	 * @return
 	 */
-	public String subscription() {
+	public Optional<String> subscription() {
 		if (this.command == Command.MESSAGE) { // why is MESSAGE so special?!
 			return getFirst(SUBSCRIPTION);
 		}
@@ -226,16 +241,15 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public HeartBeat heartBeat() {
-		final String heartBeat = getFirst(Standard.HEART_BEAT);
-		return heartBeat != null ? new HeartBeat(heartBeat) : null;
+	public Optional<HeartBeat> heartBeat() {
+		return getFirst(Standard.HEART_BEAT).map(HeartBeat::new);
 	}
 
 	/**
 	 * 
 	 * @return
 	 */
-	public String transaction() {
+	public Optional<String> transaction() {
 		return getFirst(TRANSACTION);
 	}
 
@@ -243,7 +257,7 @@ public class Frame {
 	 * 
 	 * @return
 	 */
-	public String session() {
+	public Optional<String> session() {
 		return getFirst(SESSION);
 	}
 
@@ -300,6 +314,29 @@ public class Frame {
 			@Nonnull String messageId,
 			MediaType contentType,
 			@Nonnull String body)
+	{
+		return builder(Command.MESSAGE)
+				.destination(destination)
+				.subscription(subscriptionId)
+				.messageId(messageId)
+				.body(contentType, body);
+	}
+
+	/**
+	 * 
+	 * @param destination
+	 * @param subscriptionId
+	 * @param messageId
+	 * @param contentType
+	 * @param body
+	 * @return
+	 */
+	public static Builder message(
+			@Nonnull String destination,
+			@Nonnull String subscriptionId,
+			@Nonnull String messageId,
+			MediaType contentType,
+			@Nonnull ByteBuffer body)
 	{
 		return builder(Command.MESSAGE)
 				.destination(destination)
@@ -403,7 +440,7 @@ public class Frame {
 	public static class Builder {
 		private final Command command;
 		private final Map<Header, List<String>> headers = new LinkedHashMap<>();
-		private ByteBuffer body;
+		private Optional<ByteBuffer> body = Optional.empty();
 
 		/**
 		 * Create a {@link Frame} builder from the given {@link Builder}.
@@ -425,12 +462,12 @@ public class Frame {
 		 * @param frame
 		 */
 		private Builder(@Nonnull Frame frame) {
-			this(frame.getCommand());
+			this(frame.command());
 
-			for (Entry<Header, List<String>> e : frame.getHeaders().entrySet()) {
+			for (Entry<Header, List<String>> e : frame.headers().entrySet()) {
 				headers.put(e.getKey(),  new ArrayList<>(e.getValue()));
 			}
-			this.body = frame.getBody();
+			this.body = frame.body();
 		}
 
 		/**
@@ -532,7 +569,7 @@ public class Frame {
 			if (!this.command.body()) {
 				throw new IllegalArgumentException(this.command + " does not accept a body!");
 			}
-			this.body = requireNonNull(body);
+			this.body = Optional.of(body);
 			header(CONTENT_LENGTH, Integer.toString(body.limit()));
 			return contentType == null ? this : header(CONTENT_TYPE, contentType.toString());
 		}

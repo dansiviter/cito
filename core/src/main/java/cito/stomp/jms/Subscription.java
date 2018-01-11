@@ -18,6 +18,7 @@ package cito.stomp.jms;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import javax.annotation.Nonnull;
 import javax.jms.Destination;
@@ -31,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import cito.stomp.Frame;
 import cito.stomp.Header.Custom;
-import cito.stomp.Header.Standard;
 
 /**
  * Defines a subscription
@@ -59,18 +59,19 @@ public class Subscription implements MessageListener {
 	public Subscription(@Nonnull Session session, @Nonnull String id, @Nonnull Frame frame) throws JMSException {
 		this.session = requireNonNull(session);
 		this.id = requireNonNull(id);
-		this.destination = session.toDestination(frame.getFirst(Standard.DESTINATION));
+		this.destination = session.toDestination(frame.destination().get());
 
 		final String sessionId = this.session.getConnection().getSessionId();
 		// only consume messages that are for everyone OR only for me
-		String selector = frame.getFirst(Custom.SELECTOR);
-		if (selector == null) {
-			selector = String.format(SELECTOR, sessionId);
+		final Optional<String> selector = frame.getFirst(Custom.SELECTOR);
+		final String selectorStr;
+		if (selector.isPresent()) {
+			selectorStr = String.format(COMPLEX_SELECTOR, sessionId, selector.get());
 		} else {
-			selector = String.format(COMPLEX_SELECTOR, sessionId, selector);
+			selectorStr = String.format(SELECTOR, sessionId);
 		}
 
-		this.consumer = session.createConsumer(this.destination, selector);
+		this.consumer = session.createConsumer(this.destination, selectorStr);
 		this.consumer.setMessageListener(this);
 
 		LOG.debug("Created subscription. [sessionId={},id={},destination={},selector={}]", sessionId, id, this.destination, selector);

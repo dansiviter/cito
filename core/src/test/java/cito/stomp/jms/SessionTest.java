@@ -15,18 +15,22 @@
  */
 package cito.stomp.jms;
 
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 
+import org.hamcrest.core.StringEndsWith;
+import org.hamcrest.core.StringStartsWith;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,7 +69,7 @@ public class SessionTest {
 	public void send_frame() throws JMSException {
 		ReflectionUtil.set(this.session, "producer", this.producer);
 		final Frame frame = mock(Frame.class);
-		when(frame.destination()).thenReturn("/here");
+		when(frame.destination()).thenReturn(Optional.of("/here"));
 		final Message message = mock(Message.class);
 		when(this.factory.toMessage(this.delegate, frame)).thenReturn(message);
 		final Destination destination = mock(Destination.class);
@@ -117,6 +121,12 @@ public class SessionTest {
 		verify(this.factory).toFrame(message, "subscriptionId");
 		verify(this.conn).sendToClient(frame);
 		verifyNoMoreInteractions(message, subscription, message);
+	}
+
+	@Test
+	public void toString_() {
+		assertThat(this.session.toString(), new StringStartsWith(Session.class.getName() + "@"));
+		assertThat(this.session.toString(), new StringEndsWith("[connection=conn,session=delegate]"));
 	}
 
 	@After

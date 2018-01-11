@@ -55,13 +55,13 @@ public class FrameDecoderTest {
 		try (InputStream is = new ByteArrayInputStream(input.getBytes()))  {
 			frame = binary.decode(ByteBuffer.wrap(input.getBytes(UTF_8)));
 		}
-		assertEquals(Command.MESSAGE, frame.getCommand());
+		assertEquals(Command.MESSAGE, frame.command());
 	}
 
 	@Test
 	public void decode_string() throws DecodeException {
 		final String input = "MESSAGE\ndestination:wonderland\nsubscription:a\ncontent-length:4\n\nbody\u0000";
 		final Frame frame = text.decode(input);
-		assertEquals(Command.MESSAGE, frame.getCommand());
+		assertEquals(Command.MESSAGE, frame.command());
 	}
 }

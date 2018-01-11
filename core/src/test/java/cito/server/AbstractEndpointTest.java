@@ -16,7 +16,6 @@
  */
 package cito.server;
 
-import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
@@ -129,14 +128,14 @@ public class AbstractEndpointTest {
 		final Session session = mock(Session.class);
 		when(session.getId()).thenReturn("sessionId");
 		final Frame frame = mock(Frame.class);
-		when(frame.getCommand()).thenReturn(Command.MESSAGE);
+		when(frame.command()).thenReturn(Command.MESSAGE);
 
 		this.endpoint.message(session, frame);
 
 		verify(session).getId();
 		verify(session).getUserPrincipal();
 		verify(this.log).debug("Received message from client. [id={},principle={},command={}]", "sessionId", null, Command.MESSAGE);
-		verify(frame).getCommand();
+		verify(frame).command();
 		verify(this.relay).fromClient(any());
 		verify(this.messageEvent).fire(any());
 		verifyNoMoreInteractions(session, frame);

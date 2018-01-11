@@ -24,6 +24,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 
 import cito.stomp.Frame;
+import cito.util.ToStringBuilder;
 
 /**
  * 
@@ -108,9 +109,8 @@ public class Session {
 	 * @throws JMSException
 	 */
 	public void sendToBroker(Frame frame) throws JMSException {
-		String destinationName = frame.destination();
 		final Message message = withSession(s -> this.factory.toMessage(s, frame));
-		final Destination destination = withSession(s -> this.factory.toDestination(s, destinationName));
+		final Destination destination = withSession(s -> this.factory.toDestination(s, frame.destination().get()));
 		withProducer(p -> p.send(destination, message));
 	}
 
@@ -135,6 +135,15 @@ public class Session {
 	 */
 	public void close() throws JMSException {
 		this.<Void>withSession(s -> { s.close(); return null; });
+	}
+
+	@Override
+	public String toString() {
+		return ToStringBuilder
+				.create(this)
+				.append("connection", getConnection())
+				.append("session", this.delegate)
+				.toString();
 	}
 
 

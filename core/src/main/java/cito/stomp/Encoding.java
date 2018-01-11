@@ -67,22 +67,48 @@ public enum Encoding { ;
 			return;
 		}
 
-		buf.put(UTF_8.encode(frame.getCommand().name())).put(LF);
+		buf.put(UTF_8.encode(frame.command().name())).put(LF);
 
-		for (Entry<Header, List<String>> e : frame.getHeaders().entrySet()) {
+		for (Entry<Header, List<String>> e : frame.headers().entrySet()) {
 			for (String value : e.getValue()) {
 				buf.put(UTF_8.encode(e.getKey().value())).put(COLON).put(UTF_8.encode(value)).put(LF);
 			}
 		}
 
 		buf.put(LF);
+		frame.body().ifPresent(buf::put);
+		buf.put(NULL);
+	}
 
-		final ByteBuffer body = frame.getBody();
-		if (body != null) {
-			buf.put(body);
+	/**
+	 * 
+	 * @param buf
+	 * @return
+	 */
+	public static boolean isFrame(ByteBuffer buf) {
+		boolean nullFound = false;
+		for (int i = 1; i < 10; i++) {
+			int index = buf.limit() - i;
+			if (index < 0) {
+				break;
+			}
+			if (buf.get(index) == NULL) {
+				nullFound = true;
+				break;
+			}
 		}
 
-		buf.put(NULL);
+		if (!nullFound) {
+			return buf.limit() == 1 && buf.get(0) == LF; // beat
+		}
+
+		skipEoL(buf);
+		final CharBuffer command = readLine(buf);
+		try {
+			return Command.valueOf(command.toString()) != null;
+		} catch (IllegalArgumentException e) {
+			return false;
+		}
 	}
 
 	/**

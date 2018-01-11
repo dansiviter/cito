@@ -91,7 +91,7 @@ public class PathParamProducer {
 	public static String pathParam(InjectionPoint ip, PathParser parser, Message msg, DestinationChanged dc) {
 		final String destination;
 		if (msg != null) {
-			destination = msg.frame().destination();
+			destination = msg.frame().destination().get();
 		} else if (dc != null) {
 			destination = dc.getDestination();
 		} else {

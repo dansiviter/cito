@@ -33,6 +33,7 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
+import javax.ws.rs.core.MediaType;
 
 import org.apache.deltaspike.core.util.ReflectionUtils;
 import org.apache.deltaspike.core.util.bean.BeanBuilder;
@@ -128,8 +129,9 @@ public class BodyProducerExtension implements Extension {
 			final Frame frame = getContextualReference(this.beanManager, Message.class, false).frame();
 			final Serialiser serialiser = getContextualReference(this.beanManager, Serialiser.class, false);
 			final T body;
-			try (InputStream is = new ByteBufferInputStream(frame.getBody())) {
-				body = serialiser.readFrom(this.ip.getType(), frame.contentType(), is);
+			try (InputStream is = new ByteBufferInputStream(frame.body().get())) {
+				final MediaType contentType = frame.contentType().orElse(null);
+				body = serialiser.readFrom(this.ip.getType(), contentType, is);
 			} catch (IOException e) {
 				throw new IllegalStateException("Unable to serialise!", e);
 			}

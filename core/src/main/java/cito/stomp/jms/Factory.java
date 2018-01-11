@@ -145,14 +145,14 @@ public class Factory {
 	public Message toMessage(Session session, Frame frame) throws JMSException {
 		final Message msg;
 		if (frame.contains(CONTENT_LENGTH)) {
-			final ByteBuffer buf = frame.getBody();
+			final ByteBuffer buf = frame.body().get();
 			byte[] bytes = new byte[buf.remaining()];
 			buf.get(bytes);
 			final BytesMessage bm = session.createBytesMessage();
 			bm.writeBytes(bytes);
 			msg = bm;
 		} else {
-			msg = session.createTextMessage(UTF_8.decode(frame.getBody()).toString());
+			msg = session.createTextMessage(UTF_8.decode(frame.body().get()).toString());
 		}
 		copyHeaders(session, frame, msg);
 		return msg;
@@ -233,7 +233,7 @@ public class Factory {
 	 */
 	private void copyHeaders(Session session, Frame frame, Message msg) throws JMSException {
 		final MultivaluedMap<Header, String> headers = new MultivaluedHashMap<>();
-		headers.putAll(frame.getHeaders());
+		headers.putAll(frame.headers());
 
 		msg.setJMSCorrelationID(removeAndGetFirst(headers, CORRELATION_ID));
 
@@ -252,7 +252,7 @@ public class Factory {
 			msg.setStringProperty("session", sessionId);
 
 		// now the general headers
-		for (Entry<Header, List<String>> e : frame.getHeaders().entrySet()) {
+		for (Entry<Header, List<String>> e : frame.headers().entrySet()) {
 			if (IGNORE_HEADERS.contains(e.getKey()))
 				continue;
 			msg.setStringProperty(toJmsKey(e.getKey()), e.getValue().get(0));
