@@ -15,6 +15,11 @@
  */
 package cito.server;
 
+import static cito.annotation.OnDisconnect.Literal.onDisconnect;
+import static cito.annotation.OnSend.Literal.onSend;
+import static cito.annotation.OnSubscribe.Literal.onSubscribe;
+import static cito.annotation.OnUnsubscribe.Literal.onUnsubscribe;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -49,7 +54,6 @@ import cito.annotation.OnDisconnect;
 import cito.annotation.OnSend;
 import cito.annotation.OnSubscribe;
 import cito.annotation.OnUnsubscribe;
-import cito.annotation.Qualifiers;
 import cito.annotation.WebSocketScope;
 import cito.event.Message;
 import cito.scope.WebSocketContext;
@@ -89,7 +93,7 @@ public class ExtensionTest {
 		final ProcessObserverMethod<Message, ?> processObserverMethod = mock(ProcessObserverMethod.class);
 		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onConnected()));
+		when(observerMethod.getObservedQualifiers()).thenReturn(singleton(OnConnected.Literal.onConnected()));
 
 		this.extension.registerMessageEvent(processObserverMethod);
 
@@ -106,7 +110,7 @@ public class ExtensionTest {
 		final ProcessObserverMethod<Message, ?> processObserverMethod = mock(ProcessObserverMethod.class);
 		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSend("")));
+		when(observerMethod.getObservedQualifiers()).thenReturn(singleton(onSend("")));
 
 		this.extension.registerMessageEvent(processObserverMethod);
 
@@ -123,7 +127,7 @@ public class ExtensionTest {
 		final ProcessObserverMethod<Message, ?> processObserverMethod = mock(ProcessObserverMethod.class);
 		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("")));
+		when(observerMethod.getObservedQualifiers()).thenReturn(singleton(onSubscribe("")));
 
 		this.extension.registerMessageEvent(processObserverMethod);
 
@@ -140,7 +144,7 @@ public class ExtensionTest {
 		final ProcessObserverMethod<Message, ?> processObserverMethod = mock(ProcessObserverMethod.class);
 		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("")));
+		when(observerMethod.getObservedQualifiers()).thenReturn(singleton(onUnsubscribe("")));
 
 		this.extension.registerMessageEvent(processObserverMethod);
 
@@ -157,7 +161,7 @@ public class ExtensionTest {
 		final ProcessObserverMethod<Message, ?> processObserverMethod = mock(ProcessObserverMethod.class);
 		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
 		when(processObserverMethod.getObserverMethod()).thenReturn(observerMethod);
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onDisconnect()));
+		when(observerMethod.getObservedQualifiers()).thenReturn(singleton(onDisconnect()));
 
 		this.extension.registerMessageEvent(processObserverMethod);
 

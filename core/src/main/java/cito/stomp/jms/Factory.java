@@ -143,6 +143,7 @@ public class Factory {
 	 * @throws JMSException
 	 */
 	public Message toMessage(Session session, Frame frame) throws JMSException {
+		// FIXME buffer pool
 		final Message msg;
 		if (frame.contains(CONTENT_LENGTH)) {
 			final ByteBuffer buf = frame.body().get();
@@ -169,6 +170,8 @@ public class Factory {
 	public Frame toFrame(Message message, String subscriptionId) throws IOException, JMSException {
 		Builder frame = Frame.builder(Command.MESSAGE).header(SUBSCRIPTION, subscriptionId);
 		copyHeaders(message, frame);
+
+		// FIXME buffer pool
 
 		final String contentType = message.getStringProperty(CONTENT_TYPE.value());
 		final ByteBuffer buf;

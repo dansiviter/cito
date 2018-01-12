@@ -22,6 +22,7 @@ import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import javax.enterprise.util.AnnotationLiteral;
 import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
@@ -54,4 +55,32 @@ public @interface OnUnsubscribe {
 	 */
 	@Nonbinding
 	String value() default "**";
+
+
+	// --- Inner Classes ---
+
+	/**
+	 * Literal for {@link OnUnsubscribe}.
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [13 Jan 2018]
+	 */
+	public static final class Literal extends AnnotationLiteral<OnUnsubscribe> implements OnUnsubscribe {
+		private static final long serialVersionUID = 1L;
+
+		private final String value;
+
+		private Literal(String value) {
+			this.value = value != null ? value : "**";
+		}
+
+		@Override
+		public String value() {
+			return this.value;
+		}
+
+		public static OnUnsubscribe onUnsubscribe(String value) {
+			return new Literal(value);
+		}
+	}
 }

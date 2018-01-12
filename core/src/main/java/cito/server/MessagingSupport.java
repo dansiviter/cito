@@ -15,8 +15,6 @@
  */
 package cito.server;
 
-import static cito.annotation.Qualifiers.fromServer;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -32,6 +30,7 @@ import javax.ws.rs.core.MediaType;
 
 import org.slf4j.Logger;
 
+import cito.annotation.FromServer;
 import cito.event.Message;
 import cito.ext.Serialiser;
 import cito.stomp.Frame;
@@ -107,7 +106,7 @@ public class MessagingSupport {
 		this.log.debug("Broadcasting... [destination={}]", destination);
 		try {
 			final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).headers(headers).build();
-			this.msgEvent.select(fromServer()).fire(new Message(frame));
+			this.msgEvent.select(FromServer.Literal.fromServer()).fire(new Message(frame));
 		} catch (IOException e) {
 			this.log.warn("Unable to broadcast message! [destination=" + destination + "]", e);
 		}
@@ -235,7 +234,7 @@ public class MessagingSupport {
 		this.log.debug("Sending... [sessionId={},destination={}]", sessionId, destination);
 		try {
 			final Frame frame = Frame.send(destination, type, toByteBuffer(payload, type)).session(sessionId).headers(headers).build();
-			this.msgEvent.select(fromServer()).fire(new Message(frame));
+			this.msgEvent.select(FromServer.Literal.fromServer()).fire(new Message(frame));
 		} catch (IOException e) {
 			this.log.warn("Unable to send message! [sessionId=" + sessionId + ",destination=" + destination + "]", e);
 		}

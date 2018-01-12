@@ -15,6 +15,9 @@
  */
 package cito.server;
 
+import static cito.annotation.OnSend.Literal.onSend;
+import static cito.annotation.OnSubscribe.Literal.onSubscribe;
+import static cito.annotation.OnUnsubscribe.Literal.onUnsubscribe;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -40,7 +43,6 @@ import cito.annotation.OnDisconnect;
 import cito.annotation.OnSend;
 import cito.annotation.OnSubscribe;
 import cito.annotation.OnUnsubscribe;
-import cito.annotation.Qualifiers;
 import cito.event.Message;
 import cito.stomp.Command;
 import cito.stomp.Frame;
@@ -85,7 +87,7 @@ public class EventProducerTest {
 	@Test
 	public void message_SEND() {;
 		when(this.extension.getMessageObservers(OnSend.class)).thenReturn(Collections.singleton(this.observerMethod));
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSend("topic/*")));
+		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(onSend("topic/*")));
 
 		final Message event = new Message(
 				Frame.send("topic/foo", MediaType.APPLICATION_JSON_TYPE, "{}").build());
@@ -101,7 +103,7 @@ public class EventProducerTest {
 	@Test
 	public void message_SUBSCRIBE() {
 		when(this.extension.getMessageObservers(OnSubscribe.class)).thenReturn(Collections.singleton(this.observerMethod));
-		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onSubscribe("topic/*")));
+		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(onSubscribe("topic/*")));
 
 		final Message event = new Message(
 				Frame.builder(Command.SUBSCRIBE).destination("topic/foo").subscription("id").build());
@@ -118,7 +120,7 @@ public class EventProducerTest {
 	@Test
 	public void message_UNSUBSCRIBE() {
 		when(this.extension.getMessageObservers(OnUnsubscribe.class)).thenReturn(Collections.singleton(observerMethod));
-		when(this.observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(Qualifiers.onUnsubscribe("topic/*")));
+		when(this.observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(onUnsubscribe("topic/*")));
 		ReflectionUtil.<Map<String,String>>get(this.eventProducer, "idDestinationMap").put("id", "topic/foo");
 
 		final Message event = new Message(

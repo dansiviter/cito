@@ -15,7 +15,6 @@
  */
 package cito.server;
 
-import static cito.annotation.Qualifiers.fromServer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -49,6 +48,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
+import cito.annotation.FromServer;
 import cito.event.Message;
 import cito.ext.Serialiser;
 
@@ -76,7 +76,7 @@ public class SupportTest {
 
 	@Before
 	public void before() {
-		when(msgEvent.select(fromServer())).thenReturn(this.msgEvent);
+		when(msgEvent.select(FromServer.Literal.fromServer())).thenReturn(this.msgEvent);
 	}
 
 	@Test
@@ -208,7 +208,7 @@ public class SupportTest {
 
 	@After
 	public void after() {
-		verify(this.msgEvent, atLeastOnce()).select(fromServer());
+		verify(this.msgEvent, atLeastOnce()).select(FromServer.Literal.fromServer());
 		verifyNoMoreInteractions(this.log, this.msgEvent, this.registry, this.serialiser, this.principal);
 	}
 

@@ -52,7 +52,9 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
-import cito.annotation.Qualifiers;
+import cito.annotation.OnClose;
+import cito.annotation.OnError;
+import cito.annotation.OnOpen;
 import cito.event.Message;
 import cito.scope.WebSocketContext;
 import cito.stomp.Command;
@@ -102,7 +104,7 @@ public class AbstractEndpointTest {
 		final Map<String, List<String>> paramMap = singletonMap("httpSessionId", singletonList("httpSessionId"));
 		when(session.getRequestParameterMap()).thenReturn(paramMap);
 		final EndpointConfig config = mock(EndpointConfig.class);
-		when(this.sessionEvent.select(Qualifiers.onOpen())).thenReturn(this.sessionEvent);
+		when(this.sessionEvent.select(OnOpen.Literal.onOpen())).thenReturn(this.sessionEvent);
 		when(config.getUserProperties()).thenReturn(new HashMap<>());
 
 		this.endpoint.onOpen(session, config);
@@ -118,7 +120,7 @@ public class AbstractEndpointTest {
 		verify(config).getUserProperties();
 		verify(session).getUserProperties();
 		verify(this.registry).register(session);
-		verify(this.sessionEvent).select(Qualifiers.onOpen());
+		verify(this.sessionEvent).select(OnOpen.Literal.onOpen());
 		verify(this.sessionEvent).fire(session);
 		verifyNoMoreInteractions(session, config);
 	}
@@ -146,7 +148,7 @@ public class AbstractEndpointTest {
 		final Session session = mock(Session.class);
 		when(session.getId()).thenReturn("sessionId");
 		final Throwable cause = new Throwable();
-		when(this.errorEvent.select(Qualifiers.onError())).thenReturn(this.errorEvent);
+		when(this.errorEvent.select(OnError.Literal.onError())).thenReturn(this.errorEvent);
 		final Basic basic = mock(Basic.class);
 		when(session.getBasicRemote()).thenReturn(basic);
 
@@ -155,7 +157,7 @@ public class AbstractEndpointTest {
 		verify(session).getId();
 		verify(session).getUserPrincipal();
 		verify(this.log).warn(eq("WebSocket error. [id={},principle={},errorId={}]"), eq("sessionId"), isNull(), anyString(), eq(cause));
-		verify(this.errorEvent).select(Qualifiers.onError());
+		verify(this.errorEvent).select(OnError.Literal.onError());
 		verify(this.errorEvent).fire(cause);
 		verify(session).getBasicRemote();
 		verify(basic).sendObject(any(Frame.class));
@@ -168,7 +170,7 @@ public class AbstractEndpointTest {
 		final Session session = mock(Session.class);
 		when(session.getId()).thenReturn("sessionId");
 		final CloseReason reason = new CloseReason(CloseCodes.GOING_AWAY, "oooh");
-		when(this.sessionEvent.select(Qualifiers.onClose())).thenReturn(this.sessionEvent);
+		when(this.sessionEvent.select(OnClose.Literal.onClose())).thenReturn(this.sessionEvent);
 
 		this.endpoint.onClose(session, reason);
 
@@ -177,7 +179,7 @@ public class AbstractEndpointTest {
 		verify(this.log).info("WebSocket connection closed. [id={},principle={},code={},reason={}]", "sessionId", null, reason.getCloseCode(), reason.getReasonPhrase());
 		verify(this.beanManager).getExtension(Extension.class);
 		verify(this.registry).unregister(session);
-		verify(this.sessionEvent).select(Qualifiers.onClose());
+		verify(this.sessionEvent).select(OnClose.Literal.onClose());
 		verify(this.sessionEvent).fire(session);
 		verifyNoMoreInteractions(session);
 	}

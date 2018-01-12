@@ -40,7 +40,6 @@ import org.slf4j.Logger;
 
 import cito.QuietClosable;
 import cito.annotation.FromClient;
-import cito.annotation.Qualifiers;
 import cito.event.ClientMessageProducer;
 import cito.event.Message;
 import cito.scope.WebSocketContext;
@@ -81,7 +80,7 @@ public abstract class AbstractEndpoint extends Endpoint {
 		SecurityContextProducer.set(session, securityCtx);
 		try (QuietClosable c = webSocketContext(this.beanManager).activate(session)) {
 			this.registry.register(session);
-			this.sessionEvent.select(Qualifiers.onOpen()).fire(session);
+			this.sessionEvent.select(cito.annotation.OnOpen.Literal.onOpen()).fire(session);
 		}
 	}
 
@@ -109,7 +108,7 @@ public abstract class AbstractEndpoint extends Endpoint {
 		final String errorId = RandomStringUtils.randomAlphanumeric(8).toUpperCase();
 		this.log.warn("WebSocket error. [id={},principle={},errorId={}]", session.getId(), session.getUserPrincipal(), errorId, cause);
 		try (QuietClosable c = webSocketContext(this.beanManager).activate(session)) {
-			this.errorEvent.select(Qualifiers.onError()).fire(cause);
+			this.errorEvent.select(cito.annotation.OnError.Literal.onError()).fire(cause);
 			final Frame errorFrame = Frame.error().body(MediaType.TEXT_PLAIN_TYPE, format("%s [errorId=%s]", cause.getMessage(), errorId)).build();
 			session.getBasicRemote().sendObject(errorFrame);
 			session.close(new CloseReason(CloseCodes.PROTOCOL_ERROR, format("See server log. [errorId=%s]", errorId)));
@@ -125,7 +124,7 @@ public abstract class AbstractEndpoint extends Endpoint {
 		final WebSocketContext ctx = webSocketContext(this.beanManager);
 		try (QuietClosable c = ctx.activate(session)) {
 			this.registry.unregister(session);
-			this.sessionEvent.select(Qualifiers.onClose()).fire(session);
+			this.sessionEvent.select(cito.annotation.OnClose.Literal.onClose()).fire(session);
 		}
 		ctx.dispose(session);
 	}

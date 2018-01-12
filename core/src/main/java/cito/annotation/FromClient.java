@@ -22,6 +22,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
 
 /**
@@ -33,4 +34,19 @@ import javax.inject.Qualifier;
 @Qualifier
 @Target({ PARAMETER, FIELD })
 @Retention(RUNTIME)
-public @interface FromClient { }
+public @interface FromClient {
+	/**
+	 * Literal for {@link FromClient}.
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [13 Jan 2018]
+	 */
+	public static final class Literal extends AnnotationLiteral<FromClient> implements FromClient {
+		private static final long serialVersionUID = 1L;
+		private static final FromClient INSTANCE = new Literal();
+
+		public static FromClient fromClient() {
+			return INSTANCE;
+		}
+	}
+}

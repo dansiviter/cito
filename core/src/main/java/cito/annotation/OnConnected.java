@@ -24,6 +24,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
 
 /**
@@ -34,4 +35,19 @@ import javax.inject.Qualifier;
 @Qualifier
 @Target({METHOD, FIELD, PARAMETER, TYPE})
 @Retention(RUNTIME)
-public @interface OnConnected { }
+public @interface OnConnected {
+	/**
+	 * Literal for {@link OnConnected}.
+	 * 
+	 * @author Daniel Siviter
+	 * @since v1.0 [13 Jan 2018]
+	 */
+	public static final class Literal extends AnnotationLiteral<OnConnected> implements OnConnected {
+		private static final long serialVersionUID = 1L;
+		private static final OnConnected INSTANCE = new Literal();
+
+		public static OnConnected onConnected() {
+			return INSTANCE;
+		}
+	}
+}
