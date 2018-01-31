@@ -40,12 +40,13 @@ import javax.ws.rs.core.MediaType;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.slf4j.Logger;
 
 import cito.annotation.FromServer;
@@ -58,8 +59,10 @@ import cito.ext.Serialiser;
  * @author Daniel Siviter
  * @since v1.0 [25 Jul 2016]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class SupportTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
 	@Mock
 	private Logger log;
 	@Mock

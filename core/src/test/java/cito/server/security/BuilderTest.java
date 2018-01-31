@@ -37,10 +37,11 @@ import javax.annotation.security.RolesAllowed;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import cito.ReflectionUtil;
 import cito.server.SecurityContext;
@@ -55,8 +56,10 @@ import cito.stomp.Command;
  * @author Daniel Siviter
  * @since v1.0 [14 Apr 2017]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class BuilderTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
 	@Mock
 	private SecurityRegistry registry;
 	@Mock

@@ -32,10 +32,10 @@ import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
@@ -48,14 +48,17 @@ import cito.stomp.Frame;
  * @author Daniel Siviter
  * @since v1.0 [14 Apr 2017]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class SystemConnectionTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
 	@Mock
 	private Logger log;
 	@Mock
 	private ConnectionFactory connectionFactory;
 	@Mock
 	private Factory factory;
+
 	@InjectMocks
 	private SystemConnection connection;
 

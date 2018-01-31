@@ -24,11 +24,14 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import javax.enterprise.event.Event;
 
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoRule;
 import org.slf4j.Logger;
 
 import cito.event.Message;
@@ -41,8 +44,10 @@ import cito.stomp.Frame;
  * @author Daniel Siviter
  * @since v1.0 [28 Mar 2017]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class ErrorHandlerTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
 	@Mock
 	private Logger log;
 	@Mock
