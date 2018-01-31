@@ -24,6 +24,7 @@ import java.util.WeakHashMap;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
+import javax.enterprise.event.ObservesAsync;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.ObserverMethod;
 import javax.inject.Inject;
@@ -57,7 +58,7 @@ public class EventProducer {
 	 * 
 	 * @param msg
 	 */
-	public void message(@Observes Message msg) {
+	public void message(@Observes @ObservesAsync Message msg) {
 		if (msg.frame().isHeartBeat()) return;
 
 		final Extension extension = this.manager.getExtension(Extension.class);
