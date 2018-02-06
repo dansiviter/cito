@@ -214,8 +214,6 @@
 				<module>jacoco</module>
 			</modules>
 
-
-
 			<build>
 				<pluginManagement>
 					<plugins>

@@ -69,7 +69,7 @@ public class RequestorTest {
 
 	@Test
 	public void topic() throws JMSException {
-		final Destination dest = Mockito.mock(Topic.class);
+		final Destination dest = mock(Topic.class);
 		final TemporaryTopic tempDest = mock(TemporaryTopic.class);
 		when(this.context.createTemporaryTopic()).thenReturn(tempDest);
 

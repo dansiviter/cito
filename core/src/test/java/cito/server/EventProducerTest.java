@@ -88,7 +88,7 @@ public class EventProducerTest {
 	}
 
 	@Test
-	public void message_SEND() {;
+	public void message_SEND() {
 		when(this.extension.getMessageObservers(OnSend.class)).thenReturn(Collections.singleton(this.observerMethod));
 		when(observerMethod.getObservedQualifiers()).thenReturn(Collections.singleton(onSend("topic/*")));
 

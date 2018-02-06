@@ -15,6 +15,8 @@
  */
 package cito;
 
+import static java.util.Objects.requireNonNull;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -69,10 +71,7 @@ public enum Util { ;
 	 * @return
 	 */
 	public static <C extends Collection<?>> C requireNonEmpty(C collection) {
-		if (collection == null) {
-			throw new NullPointerException();
-		}
-		if (collection.isEmpty()) {
+		if (requireNonNull(collection).isEmpty()) {
 			throw new IllegalArgumentException("Collection is empty!");
 		}
 		return collection;

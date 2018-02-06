@@ -28,7 +28,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -179,11 +178,11 @@ public class ExtensionTest {
 	@SuppressWarnings("unchecked")
 	public void getObservers() {
 		final ObserverMethod<Message> observerMethod = mock(ObserverMethod.class);
-		getMessageObservers(this.extension).put(OnSubscribe.class, Collections.singleton(observerMethod));
+		getMessageObservers(this.extension).put(OnSubscribe.class, singleton(observerMethod));
 
 		final Set<ObserverMethod<Message>> results = this.extension.getMessageObservers(OnSubscribe.class);
 
-		assertEquals(Collections.singleton(observerMethod), results);
+		assertEquals(singleton(observerMethod), results);
 
 		verifyNoMoreInteractions(observerMethod);
 	}
@@ -206,7 +205,7 @@ public class ExtensionTest {
 		ReflectionUtil.set(this.extension, "webSocketContext", webSocketContext);
 		final AfterDeploymentValidation afterDeploymentValidation = mock(AfterDeploymentValidation.class);
 		final Bean<?> bean = mock(Bean.class);
-		when(this.beanManager.getBeans(WebSocketSessionHolder.class)).thenReturn(Collections.singleton(bean));
+		when(this.beanManager.getBeans(WebSocketSessionHolder.class)).thenReturn(singleton(bean));
 		when(this.beanManager.resolve(any(Set.class))).thenReturn(bean);
 		final CreationalContext creationalContext = mock(CreationalContext.class);
 		when(this.beanManager.createCreationalContext(bean)).thenReturn(creationalContext);
