@@ -39,11 +39,12 @@ import javax.enterprise.inject.spi.ProcessInjectionPoint;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import cito.annotation.Body;
 
@@ -54,10 +55,12 @@ import cito.annotation.Body;
  * @author Daniel Siviter
  * @since v1.0 [21 May 2017]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class BodyProducerExtensionTest {
 	@SuppressWarnings("serial")
 	private static final Map<String, String> COLLECTION = new HashMap<String, String>() { };
+
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
 
 	@Mock
 	private BeanManager beanManager;

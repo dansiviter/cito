@@ -40,16 +40,18 @@ import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.EncodeException;
 import javax.websocket.EndpointConfig;
+import javax.websocket.PongMessage;
 import javax.websocket.RemoteEndpoint.Basic;
 import javax.websocket.Session;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.slf4j.Logger;
 
 import cito.annotation.OnClose;
@@ -67,8 +69,10 @@ import cito.stomp.jms.Relay;
  * @author Daniel Siviter
  * @since v1.0 [15 Apr 2017]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class AbstractEndpointTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
 	@Mock
 	protected Logger log;
 	@Mock
@@ -87,6 +91,8 @@ public class AbstractEndpointTest {
 	private Extension extension;
 	@Mock
 	private WebSocketContext webSocketContext;
+	@Mock
+	private RttService rttService;
 
 	@InjectMocks
 	private AbstractEndpoint endpoint = new AbstractEndpoint() { };
@@ -122,6 +128,7 @@ public class AbstractEndpointTest {
 		verify(this.registry).register(session);
 		verify(this.sessionEvent).select(OnOpen.Literal.onOpen());
 		verify(this.sessionEvent).fire(session);
+		verify(this.rttService).start(session);
 		verifyNoMoreInteractions(session, config);
 	}
 
@@ -141,6 +148,17 @@ public class AbstractEndpointTest {
 		verify(this.relay).fromClient(any());
 		verify(this.messageEvent).fire(any());
 		verifyNoMoreInteractions(session, frame);
+	}
+
+	@Test
+	public void pong() {
+		final Session session = mock(Session.class);
+		final PongMessage pongMessage = mock(PongMessage.class);
+
+		this.endpoint.pong(session, pongMessage);
+
+		verify(this.rttService).pong(session, pongMessage);
+		verifyNoMoreInteractions(session, pongMessage);
 	}
 
 	@Test
@@ -196,6 +214,7 @@ public class AbstractEndpointTest {
 				this.messageEvent,
 				this.sessionEvent,
 				this.errorEvent,
-				this.extension);
+				this.extension,
+				this.rttService);
 	}
 }

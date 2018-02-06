@@ -37,11 +37,12 @@ import javax.jms.Topic;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 /**
  * Unit test for {@link Requestor}.
@@ -49,8 +50,10 @@ import org.mockito.junit.MockitoJUnitRunner;
  * @author Daniel Siviter
  * @since v1.0 [20 Apr 2017]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class RequestorTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
 	@Mock
 	private JMSContext context;
 	@Mock
@@ -66,7 +69,7 @@ public class RequestorTest {
 
 	@Test
 	public void topic() throws JMSException {
-		final Destination dest = Mockito.mock(Topic.class);
+		final Destination dest = mock(Topic.class);
 		final TemporaryTopic tempDest = mock(TemporaryTopic.class);
 		when(this.context.createTemporaryTopic()).thenReturn(tempDest);
 

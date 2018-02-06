@@ -29,10 +29,11 @@ import javax.websocket.Session;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.slf4j.Logger;
 
 import cito.QuietClosable;
@@ -45,8 +46,10 @@ import cito.annotation.WebSocketScope;
  * @author Daniel Siviter
  * @since v1.0 [22 Nov 2016]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class WebSocketContextTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
 	@Mock
 	private Logger log;
 	@Mock

@@ -50,10 +50,10 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
@@ -70,8 +70,9 @@ import cito.stomp.HeartBeatMonitor;
  * @author Daniel Siviter
  * @since v1.0 [25 Jul 2016]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class ConnectionTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
 
