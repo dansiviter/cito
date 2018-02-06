@@ -88,15 +88,12 @@ public class RelayTest {
 	@InjectMocks
 	private Relay relay;
 
-	@Before
-	public void before() {
+	@Test
+	public void fromClient_CONNECT() throws JMSException, LoginException {
 		when(this.connectionInstance.get()).thenReturn(this.connection);
 		when(this.securityCtxProvider.get()).thenReturn(this.securityCtx);
 		when(this.securityRegistry.isPermitted(any(Frame.class), eq(this.securityCtx))).thenReturn(true);
-	}
 
-	@Test
-	public void fromClient_CONNECT() throws JMSException, LoginException {
 		final Frame frame = Frame.builder(Command.CONNECT).header(Standard.HOST, "host").header(Standard.ACCEPT_VERSION, "1.1").build();
 		final Message msg = new Message("sessionId", frame);
 		this.relay.fromClient(msg);
@@ -111,6 +108,10 @@ public class RelayTest {
 
 	@Test
 	public void fromClient_STOMP() throws JMSException, LoginException {
+		when(this.connectionInstance.get()).thenReturn(this.connection);
+		when(this.securityCtxProvider.get()).thenReturn(this.securityCtx);
+		when(this.securityRegistry.isPermitted(any(Frame.class), eq(this.securityCtx))).thenReturn(true);
+
 		final Frame frame = Frame.builder(Command.STOMP).header(Standard.HOST, "host").header(Standard.ACCEPT_VERSION, "1.1").build();
 		final Message msg = new Message("sessionId", frame);
 		this.relay.fromClient(msg);
@@ -125,8 +126,9 @@ public class RelayTest {
 
 	@Test
 	public void fromClient_DISCONNECT() throws IOException {
+		when(this.securityCtxProvider.get()).thenReturn(this.securityCtx);
+		when(this.securityRegistry.isPermitted(any(Frame.class), eq(this.securityCtx))).thenReturn(true);
 		final Session session = mock(Session.class);
-
 		ReflectionUtil.<Map<String, Connection>>get(this.relay, "connections").put("sessionId", this.connection);
 		when(this.sessionRegistry.getSession("sessionId")).thenReturn(Optional.of(session));
 		when(session.isOpen()).thenReturn(true);
