@@ -31,10 +31,11 @@ import javax.jms.MessageConsumer;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import cito.stomp.Frame;
 
@@ -44,8 +45,10 @@ import cito.stomp.Frame;
  * @author Daniel Siviter
  * @since v1.0 [25 Jul 2016]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class SubscriptionTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
 	@Mock
 	private Session session;
 	@Mock

@@ -45,11 +45,12 @@ import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.jms.server.embedded.EmbeddedJMS;
 import org.apache.activemq.artemis.jms.server.management.JMSNotificationType;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.slf4j.Logger;
 
 import cito.ReflectionUtil;
@@ -66,8 +67,10 @@ import cito.server.Extension;
  * @author Daniel Siviter
  * @since v1.0 [17 Jan 2017]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class EventProducerTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
 	@Mock
 	private Logger log;
 	@Mock

@@ -26,12 +26,13 @@ import static org.mockito.Mockito.when;
 import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.Session;
 
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.slf4j.Logger;
 
 import cito.QuietClosable;
@@ -40,8 +41,10 @@ import cito.QuietClosable;
  * @author Daniel Siviter
  * @since v1.0 [17 Apr 2017]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class WebSocketSessionHolderTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
 	@Mock
 	public Logger log;
 

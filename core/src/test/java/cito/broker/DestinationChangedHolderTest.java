@@ -16,16 +16,15 @@
  */
 package cito.broker;
 
+import static cito.ReflectionUtil.getAnnotation;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import cito.QuietClosable;
-import cito.ReflectionUtil;
 import cito.event.DestinationChanged;
 import cito.event.DestinationChanged.Type;
 
@@ -38,7 +37,7 @@ import cito.event.DestinationChanged.Type;
 public class DestinationChangedHolderTest {
 	@Test
 	public void scope() {
-		Assert.assertNotNull(ReflectionUtil.getAnnotation(DestinationChangedHolder.class, ApplicationScoped.class));
+		assertNotNull(getAnnotation(DestinationChangedHolder.class, ApplicationScoped.class));
 	}
 
 	@Test

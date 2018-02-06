@@ -47,7 +47,7 @@ public class UtilTest {
 
 	@Test
 	public void getFirst_collection() {
-		final List<String> collection = Arrays.asList(new String[] { "first", "second" });;
+		final List<String> collection = Arrays.asList(new String[] { "first", "second" });
 		assertEquals("first", Util.getFirst(collection));
 	}
 

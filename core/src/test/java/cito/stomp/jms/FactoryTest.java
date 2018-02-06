@@ -36,8 +36,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
 
 import cito.ReflectionUtil;
 import cito.stomp.Frame;
@@ -50,7 +48,6 @@ import cito.stomp.Header.Standard;
  * @author Daniel Siviter
  * @since v1.0 [29 Oct 2016]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class FactoryTest {
 	private Factory factory;
 

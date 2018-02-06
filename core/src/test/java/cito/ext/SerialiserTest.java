@@ -32,12 +32,13 @@ import javax.enterprise.inject.Instance;
 import javax.ws.rs.core.MediaType;
 
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 /**
  * Unit tests for {@link Serialiser}.
@@ -45,8 +46,10 @@ import org.mockito.junit.MockitoJUnitRunner;
  * @author Daniel Siviter
  * @since v1.0 [16 Apr 2017]
  */
-@RunWith(MockitoJUnitRunner.class)
 public class SerialiserTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
 	@Mock
 	private Instance<BodyReader<?>> readers;
 	@Mock

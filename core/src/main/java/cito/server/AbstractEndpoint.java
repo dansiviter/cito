@@ -32,6 +32,7 @@ import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
+import javax.websocket.PongMessage;
 import javax.websocket.Session;
 import javax.ws.rs.core.MediaType;
 
@@ -67,6 +68,8 @@ public abstract class AbstractEndpoint extends Endpoint {
 	private Event<Session> sessionEvent;
 	@Inject
 	private Event<Throwable> errorEvent;
+	@Inject
+	private RttService rttService;
 
 	@OnOpen
 	@Override
@@ -81,6 +84,20 @@ public abstract class AbstractEndpoint extends Endpoint {
 		try (QuietClosable c = webSocketContext(this.beanManager).activate(session)) {
 			this.registry.register(session);
 			this.sessionEvent.select(cito.annotation.OnOpen.Literal.onOpen()).fire(session);
+		}
+
+		this.rttService.start(session);
+	}
+
+	/**
+	 * 
+	 * @param session
+	 * @param msg
+	 */
+	@OnMessage
+	public void pong(Session session, PongMessage msg) {
+		try (QuietClosable c = webSocketContext(this.beanManager).activate(session)) {
+			this.rttService.pong(session, msg);
 		}
 	}
 
