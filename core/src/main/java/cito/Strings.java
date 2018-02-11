@@ -25,17 +25,27 @@ import static java.lang.Character.isWhitespace;
  * @since v1.0 [8 Jul 2017]
  */
 public enum Strings { ;
-
-	public static boolean isEmpty(final CharSequence seq) {
+	/**
+	 * Verifies if the {@link String} is empty. This could be if it is {@code null} or empty.
+	 * 
+	 * @param seq the character sequence to check.
+	 * @return {@code true} if empty.
+	 */
+	public static boolean isEmpty(CharSequence seq) {
 		return seq == null || seq.length() == 0;
 	}
 
-	public static boolean isBlank(final CharSequence seq) {
-		int strLen;
-		if (seq == null || (strLen = seq.length()) == 0) {
+	/**
+	 * Verifies if the {@link String} is empty. This could be if it is {@code null}, empty, or just whitespace.
+	 * 
+	 * @param seq the character sequence to check.
+	 * @return {@code true} if blank.
+	 */
+	public static boolean isBlank(CharSequence seq) {
+		if (isEmpty(seq)) {
 			return true;
 		}
-		for (int i = 0; i < strLen; i++) {
+		for (int i = 0; i < seq.length(); i++) {
 			if (!isWhitespace(seq.charAt(i))) {
 				return false;
 			}

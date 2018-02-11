@@ -36,7 +36,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -81,7 +80,7 @@ public class SerialiserTest {
 
 	@Test
 	public void writeTo() throws IOException {
-		final OutputStream os = Mockito.mock(OutputStream.class);
+		final OutputStream os = mock(OutputStream.class);
 		final MediaType mediaType = MediaType.APPLICATION_JSON_TYPE;
 		@SuppressWarnings("unchecked")
 		final BodyWriter<SerialiserTest> writer = mock(BodyWriter.class);

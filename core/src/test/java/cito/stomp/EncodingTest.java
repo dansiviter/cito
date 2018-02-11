@@ -24,7 +24,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -71,7 +70,7 @@ public class EncodingTest {
 		assertEquals("subscription", header1.getKey().value());
 		assertEquals(1, header1.getValue().size());
 		assertEquals("a", header1.getValue().get(0));
-		assertEquals(ByteBuffer.wrap("body".getBytes(StandardCharsets.UTF_8)), frame.body().get());
+		assertEquals(ByteBuffer.wrap("body".getBytes(UTF_8)), frame.body().get());
 	}
 
 	@Test

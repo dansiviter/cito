@@ -118,7 +118,7 @@ public class EventProducer extends JmsContextHelper implements MessageListener {
 			final Type type = CREATED.contains(notifType) ? Type.ADDED : Type.REMOVED;
 
 			this.log.info("Destination changed. [type={},destination={}]", type, destination);
-			final cito.event.DestinationChanged evt = new cito.event.DestinationChanged(type, destination);
+			final DestinationChanged evt = new DestinationChanged(type, destination);
 			try (QuietClosable c = DestinationChangedHolder.set(evt)) {
 				on(evt);
 			}

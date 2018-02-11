@@ -125,7 +125,7 @@ public class MessagingSupportTest {
 		assertEquals("text/plain", msgEvent.frame().contentType().get().toString());
 
 		verify(this.log).debug("Broadcasting... [destination={}]", "destination");
-		verify(this.serialiser).writeTo(any(), any(Class.class), eq(MediaType.TEXT_PLAIN_TYPE), any(OutputStream.class));
+		verify(this.serialiser).writeTo(any(), any(Class.class), eq(TEXT_PLAIN_TYPE), any(OutputStream.class));
 	}
 
 	@Test
