@@ -1,5 +1,6 @@
 package cito.ext;
 
+import static cito.ReflectionUtil.set;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
@@ -9,6 +10,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -21,7 +23,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.lang.reflect.Type;
-import java.util.logging.Logger;
 
 import javax.enterprise.inject.Instance;
 import javax.json.bind.Jsonb;
@@ -36,6 +37,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
 
 /**
  * Unit tests for {@link JsonBSerialiser}.
@@ -117,6 +119,31 @@ public class JsonBSerialiserTest {
 		verify(jsonb).toJson(any(String.class), eq(String.class), any(OutputStream.class));
 		verifyNoMoreInteractions(jsonb);
 	}
+
+	@Test
+	public void destroy() throws Exception {
+		final Jsonb jsonb = mock(Jsonb.class);
+		set(this.serialiser, "jsonb", jsonb);
+
+		this.serialiser.destroy();
+
+		verify(jsonb).close();
+		verifyNoMoreInteractions(jsonb);
+	}
+
+	@Test
+	public void destroy_exception() throws Exception {
+		final Jsonb jsonb = mock(Jsonb.class);
+		set(this.serialiser, "jsonb", jsonb);
+		doThrow(new IllegalArgumentException()).when(jsonb).close();
+
+		this.serialiser.destroy();
+
+		verify(jsonb).close();
+		verify(this.log).warn(eq("Unable to close Jsonb!"), any(Throwable.class));
+		verifyNoMoreInteractions(jsonb);
+	}
+
 
 	@After
 	public void after() {

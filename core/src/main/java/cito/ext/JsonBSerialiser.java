@@ -46,9 +46,9 @@ public class JsonBSerialiser implements BodyWriter<Object>, BodyReader<Object> {
 	@Inject
 	private Logger log;
 	@Inject
-	private Instance<Jsonb> jsonb;
+	private Instance<Jsonb> jsonbInstance;
 
-	private volatile Jsonb instance;
+	private volatile Jsonb jsonb;
 
 	@Override
 	public boolean isReadable(Type type, MediaType mediaType) {
@@ -75,20 +75,20 @@ public class JsonBSerialiser implements BodyWriter<Object>, BodyReader<Object> {
 	 * @return
 	 */
 	private Jsonb getJsonb() {
-		if (this.jsonb.isUnsatisfied()) {
-			if (this.instance == null) {
-				this.instance = JsonbBuilder.create();
+		if (this.jsonbInstance.isUnsatisfied()) {
+			if (this.jsonb == null) {
+				this.jsonb = JsonbBuilder.create();
 			}
-			return this.instance;
+			return this.jsonb;
 		}
-		return this.jsonb.get();
+		return this.jsonbInstance.get();
 	}
 
 	@PreDestroy
 	public void destroy() {
-		if (this.instance != null) {
+		if (this.jsonb != null) {
 			try {
-				this.instance.close();
+				this.jsonb.close();
 			} catch (Exception e) {
 				this.log.warn("Unable to close Jsonb!", e);
 			}
