@@ -507,7 +507,7 @@ public class Frame {
 		 * @param headers
 		 * @return
 		 */
-		public Builder headers(Map<Header, String> headers) {
+		public Builder headers(@Nonnull Map<Header, String> headers) {
 			for (Entry<Header, String> e : headers.entrySet()) {
 				header(e.getKey(), e.getValue());
 			}

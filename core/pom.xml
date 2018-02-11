@@ -38,10 +38,7 @@
 		<dependency>
 			<groupId>javax.enterprise.concurrent</groupId>
 			<artifactId>javax.enterprise.concurrent-api</artifactId>
-			<version>1.0</version>
-			<scope>provided</scope>
 		</dependency>
-
 
 		<dependency>
 			<groupId>org.apache.commons</groupId>

@@ -18,6 +18,7 @@ package cito.stomp.ws;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,9 +26,15 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 import javax.websocket.DecodeException;
+import javax.websocket.EndpointConfig;
 
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import cito.stomp.Command;
 import cito.stomp.Frame;
@@ -39,13 +46,21 @@ import cito.stomp.Frame;
  * @since v1.0 [24 Nov 2017]
  */
 public class FrameDecoderTest {
+	@Rule
+	public MockitoRule mockito = MockitoJUnit.rule();
+
+	@Mock
+	private EndpointConfig config;
+
 	private FrameDecoder.Binary binary;
 	private FrameDecoder.Text text;
 
 	@Before
 	public void before() {
 		this.binary = new FrameDecoder.Binary();
+		this.binary.init(this.config);
 		this.text = new FrameDecoder.Text();
+		this.text.init(this.config);
 	}
 
 	@Test
@@ -63,5 +78,12 @@ public class FrameDecoderTest {
 		final String input = "MESSAGE\ndestination:wonderland\nsubscription:a\ncontent-length:4\n\nbody\u0000";
 		final Frame frame = text.decode(input);
 		assertEquals(Command.MESSAGE, frame.command());
+	}
+
+	@After
+	public void after() {
+		this.binary.destroy();
+		this.text.destroy();
+		verifyZeroInteractions(this.config);
 	}
 }

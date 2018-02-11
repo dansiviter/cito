@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
+import javax.enterprise.event.ObservesAsync;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -85,7 +86,7 @@ public class Relay {
 	 * 
 	 * @param evt
 	 */
-	public void fromServer(@Observes @FromServer Message evt) {
+	public void fromServer(@Observes @ObservesAsync @FromServer Message evt) {
 		if (this.log.isDebugEnabled()) {
 			this.log.debug("Message event from server. [sessionId={},command={}]", evt.sessionId(),
 					evt.frame().command());

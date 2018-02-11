@@ -28,10 +28,11 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import javax.enterprise.concurrent.ManagedScheduledExecutorService;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
@@ -64,8 +65,9 @@ public class Connection extends AbstractConnection {
 	private final Map<String, Session> txSessions = new ConcurrentHashMap<>();
 	private final Map<String, javax.jms.Message> ackMessages = new ConcurrentHashMap<>();
 
-	@Inject // XXX use ManagedScheduledExecutorService?
-	private ScheduledExecutorService scheduler;
+	@Resource
+	private ManagedScheduledExecutorService scheduler;
+
 	@Inject @FromBroker
 	private Event<Message> brokerMessageEvent;
 	@Inject

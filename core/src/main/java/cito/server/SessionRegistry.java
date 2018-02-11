@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 import javax.annotation.Nonnull;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
+import javax.enterprise.event.ObservesAsync;
 import javax.inject.Inject;
 import javax.websocket.EncodeException;
 import javax.websocket.Session;
@@ -107,7 +108,7 @@ public class SessionRegistry {
 	 * 
 	 * @param msg
 	 */
-	public void fromBroker(@Observes @FromBroker Message msg) {
+	public void fromBroker(@Observes @ObservesAsync @FromBroker Message msg) {
 		final String sessionId = msg.sessionId();
 		final Frame frame = msg.frame();
 		this.log.debug("Sending message to client. [sessionId={},command={}]",

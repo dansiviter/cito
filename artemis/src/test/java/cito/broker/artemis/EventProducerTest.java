@@ -167,7 +167,7 @@ public class EventProducerTest {
 		verify(this.beanManager).getExtension(Extension.class);
 		verify(extension).getDestinationObservers(cls);
 		verify(observerMethod).getObservedQualifiers();
-		verify(observerMethod).notify(any());
+		verify(observerMethod).notify(any(DestinationChanged.class));
 		verifyNoMoreInteractions(extension, observerMethod);
 	}
 

@@ -29,8 +29,8 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
 
+import javax.enterprise.concurrent.ManagedScheduledExecutorService;
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Provider;
@@ -87,7 +87,7 @@ public class ConnectionTest {
 	@Mock
 	private Factory factory;
 	@Mock
-	private ScheduledExecutorService scheduler;
+	private ManagedScheduledExecutorService scheduler;
 	@Mock
 	private Event<Message> brokerMessageEvent;
 	@Mock
