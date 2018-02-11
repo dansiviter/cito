@@ -76,7 +76,7 @@ public class MessagingSupport {
 		} catch (NoSuchMethodException | IllegalAccessException e) {
 			// do nothing!
 		}
-		FIRE_ASYNC = fireAsync;;
+		FIRE_ASYNC = fireAsync;
 	}
 
 	@Resource
@@ -412,10 +412,9 @@ public class MessagingSupport {
 		}
 		try {
 			return (CompletionStage<Void>) FIRE_ASYNC.invoke(this.msgEvent, msg);
+		} catch (RuntimeException e) {
+			throw (RuntimeException) e;
 		} catch (Throwable e) {
-			if (e instanceof RuntimeException) {
-				throw (RuntimeException) e;
-			}
 			throw new IllegalStateException(e);
 		}
 	}
