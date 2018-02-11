@@ -686,6 +686,8 @@ public class Frame {
 			case UNSUBSCRIBE:
 				assertExists(ID);
 				break;
+			default:
+				return;
 			}
 		}
 

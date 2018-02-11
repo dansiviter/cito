@@ -174,7 +174,7 @@ public class Connection extends AbstractConnection {
 		final Frame.Builder connected = Frame.connnected(version, this.sessionId, "localhost");
 
 		final Optional<HeartBeat> heartBeat = msg.frame().heartBeat();
-		if (!version.equals("1.0") && heartBeat.isPresent()) {
+		if (!"1.0".equals(version) && heartBeat.isPresent()) {
 			connected.heartbeat(HEARTBEAT_READ_DEFAULT, HEARTBEAT_WRITE_DEFAULT);
 		}
 

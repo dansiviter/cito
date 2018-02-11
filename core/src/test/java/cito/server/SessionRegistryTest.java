@@ -32,7 +32,6 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -143,7 +142,7 @@ public class SessionRegistryTest {
 	public void getSessions() {
 		final Principal principal = mock(Principal.class);
 		final Session session = Mockito.mock(Session.class);
-		getPrincipalSessionMap().put(principal, Collections.singleton(session));
+		getPrincipalSessionMap().put(principal, singleton(session));
 
 		final Set<Session> sessions = this.registry.getSessions(principal);
 		assertFalse(sessions.isEmpty());
@@ -161,7 +160,7 @@ public class SessionRegistryTest {
 		when(frame.command()).thenReturn(Command.MESSAGE);
 		final Session session = Mockito.mock(Session.class);
 		getSessionMap().put("sessionId", session);
-		getPrincipalSessionMap().put(NULL_PRINCIPLE, new HashSet<>(singleton(session)));
+		getPrincipalSessionMap().put(NULL_PRINCIPLE, singleton(session));
 		final Basic basic = mock(Basic.class);
 		when(session.getBasicRemote()).thenReturn(basic);
 
@@ -185,7 +184,7 @@ public class SessionRegistryTest {
 		when(frame.command()).thenReturn(Command.MESSAGE);
 		final Session session = Mockito.mock(Session.class);
 		getSessionMap().put("sessionId", session);
-		getPrincipalSessionMap().put(NULL_PRINCIPLE, new HashSet<>(singleton(session)));
+		getPrincipalSessionMap().put(NULL_PRINCIPLE, singleton(session));
 		final Basic basic = mock(Basic.class);
 		when(session.getBasicRemote()).thenReturn(basic);
 		final IOException ioe = new IOException();
