@@ -34,11 +34,10 @@ import cito.server.SecurityContext;
 public class WebSocketConfigurator extends Configurator {
 	@Override
 	public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
-		final HttpSession httpSession = (HttpSession) request.getHttpSession();
 		if (request.getUserPrincipal() == null) {
 			return;
 		}
-
+		final HttpSession httpSession = (HttpSession) request.getHttpSession();
 		final SecurityContext securityCtx = new WebSocketSecurityContext(request);
 		sec.getUserProperties().put(key(httpSession.getId()), securityCtx);
 	}
