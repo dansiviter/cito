@@ -69,14 +69,8 @@
 
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>tjws</artifactId>
-			<version>3.0.18.Final</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-client</artifactId>
-			<version>3.0.18.Final</version>
+			<version>3.0.24.Final</version>
 			<scope>test</scope>
 			<exclusions>
 				<exclusion>
