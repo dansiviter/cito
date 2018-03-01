@@ -17,8 +17,8 @@ package cito.server;
 
 import static java.util.Collections.emptyMap;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Resource;
@@ -44,6 +45,7 @@ import org.slf4j.Logger;
 import cito.annotation.FromServer;
 import cito.event.Message;
 import cito.ext.Serialiser;
+import cito.io.ByteBufferOutputStream;
 import cito.stomp.Frame;
 import cito.stomp.Header;
 
@@ -91,17 +93,19 @@ public class MessagingSupport {
 	@Inject
 	private Serialiser serialiser;
 
+	private Supplier<ByteBuffer> bufferSupplier = () -> ByteBuffer.allocate(4 * 1_024);
+
 	/**
 	 * Broadcast to all users and all sessions subscribed to the {@code destination}.
 	 * 
 	 * @param destination
 	 * @param payload the send payload.
-	 * @throws IOException 
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void broadcast(
 			@Nonnull String destination,
 			@Nonnull Object payload)
-	throws IOException
+					throws IOException
 	{
 		broadcast(destination, payload, (MediaType) null);
 	}
@@ -112,13 +116,13 @@ public class MessagingSupport {
 	 * @param destination the broadcast destination.
 	 * @param payload the send payload.
 	 * @param type the type to convert the data to.
-	 * @throws IOException 
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void broadcast(
 			@Nonnull String destination,
 			@Nonnull Object payload,
-			MediaType type)
-	throws IOException
+			@Nonnull MediaType type)
+					throws IOException
 	{
 		broadcast(destination, payload, type, emptyMap());
 	}
@@ -129,13 +133,13 @@ public class MessagingSupport {
 	 * @param destination the broadcast destination.
 	 * @param payload the send payload.
 	 * @param headers
-	 * @throws IOException 
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void broadcast(
 			@Nonnull String destination,
 			@Nonnull Object payload,
 			@Nonnull Map<Header, String> headers)
-	throws IOException
+					throws IOException
 	{
 		broadcast(destination, payload, null, headers);
 	}
@@ -147,12 +151,12 @@ public class MessagingSupport {
 	 * @param payload the send payload.
 	 * @param type the type to convert the data to.
 	 * @param headers
-	 * @throws IOException 
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void broadcast(
 			@Nonnull String destination,
 			@Nonnull Object payload,
-			MediaType type,
+			@Nonnull MediaType type,
 			@Nonnull Map<Header, String> headers)
 	throws IOException
 	{
@@ -173,7 +177,7 @@ public class MessagingSupport {
 	public CompletionStage<Void> broadcastAsync(
 			@Nonnull String destination,
 			@Nonnull Object payload,
-			MediaType type,
+			@Nonnull MediaType type,
 			@Nonnull Map<Header, String> headers)
 	{
 		this.log.debug("Async. broadcasting... [destination={}]", destination);
@@ -192,13 +196,13 @@ public class MessagingSupport {
 	 * @param session
 	 * @param destination the broadcast destination.
 	 * @param payload the send payload.
-	 * @throws IOException 
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void broadcastTo(
 			@Nonnull Principal principal,
 			@Nonnull String destination,
 			@Nonnull Object payload)
-	throws IOException
+					throws IOException
 	{
 		broadcastTo(principal, destination, payload, emptyMap());
 	}
@@ -210,14 +214,14 @@ public class MessagingSupport {
 	 * @param destination the broadcast destination.
 	 * @param payload the send payload.
 	 * @param type the type to convert the data to.
-	 * @throws IOException 
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void broadcastTo(
 			@Nonnull Principal principal,
 			@Nonnull String destination,
 			@Nonnull Object payload,
-			MediaType type)
-	throws IOException
+			@Nonnull MediaType type)
+					throws IOException
 	{
 		broadcastTo(principal, destination, payload, type, emptyMap());
 	}
@@ -229,14 +233,14 @@ public class MessagingSupport {
 	 * @param destination the broadcast destination.
 	 * @param payload the send payload.
 	 * @param headers
-	 * @throws IOException 
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void broadcastTo(
 			@Nonnull Principal principal,
 			@Nonnull String destination,
 			@Nonnull Object payload,
 			@Nonnull Map<Header, String> headers)
-	throws IOException
+					throws IOException
 	{
 		broadcastTo(principal, destination, payload, null, headers);
 	}
@@ -249,15 +253,15 @@ public class MessagingSupport {
 	 * @param payload the send payload.
 	 * @param type the type to convert the data to.
 	 * @param headers
-	 * @throws IOException 
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void broadcastTo(
 			@Nonnull Principal principal,
 			@Nonnull String destination,
 			@Nonnull Object payload,
-			MediaType type,
+			@Nonnull MediaType type,
 			@Nonnull Map<Header, String> headers)
-	throws IOException
+					throws IOException
 	{
 		// TODO inefficient to serialise the same frame each time
 		for (Session s : this.registry.getSessions(principal)) {
@@ -273,15 +277,15 @@ public class MessagingSupport {
 	 * @param payload the send payload.
 	 * @param type the type to convert the data to.
 	 * @param headers
-	 * @throws IOException 
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public CompletionStage<Void> broadcastToAsync(
 			@Nonnull Principal principal,
 			@Nonnull String destination,
 			@Nonnull Object payload,
-			MediaType type,
+			@Nonnull MediaType type,
 			@Nonnull Map<Header, String> headers)
-	throws IOException
+					throws IOException
 	{
 		// TODO inefficient to serialise the same frame each time
 		List<CompletableFuture<Void>> set = new ArrayList<>();
@@ -298,14 +302,14 @@ public class MessagingSupport {
 	 * @param destination
 	 * @param payload the send payload.
 	 * @param type the type to convert the data to.
-	 * @throws IOException
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void sendTo(
 			@Nonnull String sessionId,
 			@Nonnull String destination,
 			@Nonnull Object payload,
-			MediaType type)
-	throws IOException
+			@Nonnull MediaType type)
+					throws IOException
 	{
 		sendTo(sessionId, destination, payload, type, emptyMap());
 	}
@@ -316,13 +320,13 @@ public class MessagingSupport {
 	 * @param sessionId the user session identifier to send to.
 	 * @param destination
 	 * @param payload the send payload.
-	 * @throws IOException
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void sendTo(
 			@Nonnull String sessionId,
 			@Nonnull String destination,
 			@Nonnull Object payload)
-	throws IOException
+					throws IOException
 	{
 		sendTo(sessionId, destination, payload, null, emptyMap());
 	}
@@ -334,14 +338,14 @@ public class MessagingSupport {
 	 * @param destination
 	 * @param payload the send payload.
 	 * @param headers
-	 * @throws IOException
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void sendTo(
 			@Nonnull String sessionId,
 			@Nonnull String destination,
 			@Nonnull Object payload,
 			@Nonnull Map<Header, String> headers)
-	throws IOException
+					throws IOException
 	{
 		sendTo(sessionId, destination, payload, null, headers);
 	}
@@ -354,13 +358,13 @@ public class MessagingSupport {
 	 * @param payload the send payload.
 	 * @param type the type to convert the data to.
 	 * @param headers
-	 * @throws IOException 
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public void sendTo(
 			@Nonnull String sessionId,
 			@Nonnull String destination,
 			@Nonnull Object payload,
-			MediaType type,
+			@Nonnull MediaType type,
 			@Nonnull Map<Header, String> headers)
 	throws IOException
 	{
@@ -381,13 +385,13 @@ public class MessagingSupport {
 	 * @param type the type to convert the data to.
 	 * @param headers
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException if unable to serialise the payload.
 	 */
 	public CompletionStage<Void> sendToAsync(
 			@Nonnull String sessionId,
 			@Nonnull String destination,
 			@Nonnull Object payload,
-			MediaType type,
+			@Nonnull MediaType type,
 			@Nonnull Map<Header, String> headers)
 	throws IOException
 	{
@@ -420,19 +424,31 @@ public class MessagingSupport {
 	}
 
 	/**
+	 * Serialises the payload.
 	 * 
 	 * @param obj
 	 * @param type
-	 * @return the object as a {@link ByteBuffer} or {@code null} if {@code obj} was {@code null}.
+	 * @return the object serialised to a {@link ByteBuffer}.
+	 * @throws IOException if unable to serialise the payload.
+	 */
+	private ByteBuffer toByteBuffer(@Nonnull Object obj, @Nonnull MediaType type) throws IOException {
+		final ByteBuffer buf = this.bufferSupplier.get();
+		serialise(obj, type, buf);
+		buf.flip();
+		return buf;
+	}
+
+	/**
+	 * Serialises the payload.
+	 * 
+	 * @param obj
+	 * @param type
+	 * @param buf the buffer to serialise to.
 	 * @throws IOException
 	 */
-	private ByteBuffer toByteBuffer(Object obj, MediaType type) throws IOException {
-		if (obj == null) {
-			return null;
-		}
-		try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+	private void serialise(@Nonnull Object obj, @Nonnull MediaType type, ByteBuffer buf) throws IOException {
+		try (OutputStream os = new ByteBufferOutputStream(buf)) {
 			this.serialiser.writeTo(obj, obj.getClass(), type, os);
-			return ByteBuffer.wrap(os.toByteArray());
 		}
 	}
 

@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
+import javax.annotation.Nonnull;
+
 /**
  * Simple wrapper to use a {@link ByteBuffer} as an {@link InputStream}.
  * 
@@ -28,7 +30,7 @@ import java.nio.ByteBuffer;
 public class ByteBufferInputStream extends InputStream {
 	private final ByteBuffer buf;
 
-	public ByteBufferInputStream(ByteBuffer buf) {
+	public ByteBufferInputStream(@Nonnull ByteBuffer buf) {
 		this.buf = buf;
 	}
 

@@ -19,10 +19,11 @@ import static cito.ReflectionUtil.findField;
 import static cito.stomp.Command.SEND;
 import static java.util.Collections.emptyMap;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -105,7 +106,7 @@ public class MessagingSupportTest {
 
 		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
-		assertMessage(eventCaptor.getValue(), null, "destination", null);
+		assertMessage(eventCaptor.getValue(), null, "destination", null, true);
 
 		verify(this.log).debug("Broadcasting... [destination={}]", "destination");
 		verify(this.serialiser).writeTo(any(), any(Class.class), isNull(), any(OutputStream.class));
@@ -141,8 +142,8 @@ public class MessagingSupportTest {
 		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent, times(2)).fire(eventCaptor.capture());
 
-		assertMessage(eventCaptor.getAllValues().get(0), "session0", "destination", null);
-		assertMessage(eventCaptor.getAllValues().get(1), "session1", "destination", null);
+		assertMessage(eventCaptor.getAllValues().get(0), "session0", "destination", null, true);
+		assertMessage(eventCaptor.getAllValues().get(1), "session1", "destination", null, true);
 
 		verify(this.log).debug("Sending... [sessionId={},destination={}]", "session0", "destination");
 		verify(this.log).debug("Sending... [sessionId={},destination={}]", "session1", "destination");
@@ -167,8 +168,8 @@ public class MessagingSupportTest {
 		verify(this.msgEvent, times(2)).fire(eventCaptor.capture());
 
 		final Message msgEvent1 = eventCaptor.getAllValues().get(1);
-		assertMessage(eventCaptor.getAllValues().get(0), "session0", "destination", TEXT_PLAIN_TYPE);
-		assertMessage(eventCaptor.getAllValues().get(1), "session1", "destination", TEXT_PLAIN_TYPE);
+		assertMessage(eventCaptor.getAllValues().get(0), "session0", "destination", TEXT_PLAIN_TYPE, true);
+		assertMessage(eventCaptor.getAllValues().get(1), "session1", "destination", TEXT_PLAIN_TYPE, true);
 
 		assertEquals("session1", msgEvent1.frame().session().get());
 		assertEquals("destination", msgEvent1.frame().destination().get());
@@ -189,7 +190,7 @@ public class MessagingSupportTest {
 
 		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
-		assertMessage(eventCaptor.getValue(), "sessionId", "destination", null);
+		assertMessage(eventCaptor.getValue(), "sessionId", "destination", null, true);
 
 		verify(this.log).debug("Sending... [sessionId={},destination={}]", "sessionId", "destination");
 		verify(this.serialiser).writeTo(any(), any(Class.class), isNull(), any(OutputStream.class));
@@ -201,7 +202,7 @@ public class MessagingSupportTest {
 
 		final ArgumentCaptor<Message> eventCaptor = ArgumentCaptor.forClass(Message.class);
 		verify(this.msgEvent).fire(eventCaptor.capture());
-		assertMessage(eventCaptor.getValue(), "sessionId", "destination", TEXT_PLAIN_TYPE);
+		assertMessage(eventCaptor.getValue(), "sessionId", "destination", TEXT_PLAIN_TYPE, true);
 
 		verify(this.log).debug("Sending... [sessionId={},destination={}]", "sessionId", "destination");
 		verify(this.serialiser).writeTo(any(), any(Class.class), eq(TEXT_PLAIN_TYPE), any(OutputStream.class));
@@ -222,7 +223,7 @@ public class MessagingSupportTest {
 	 * @param destination
 	 * @param contentType
 	 */
-	private static void assertMessage(Message msg, String sessionId, String destination, MediaType contentType) {
+	private static void assertMessage(Message msg, String sessionId, String destination, MediaType contentType, boolean hasBody) {
 		assertNull(msg.sessionId());
 		assertEquals(SEND, msg.frame().command());
 		if (sessionId == null) {
@@ -235,6 +236,11 @@ public class MessagingSupportTest {
 			assertFalse(msg.frame().contentType().isPresent());
 		} else {
 			assertEquals(contentType, msg.frame().contentType().get());
+		}
+		if (hasBody) {
+			assertTrue(msg.frame().body().isPresent());
+			assertEquals(0, msg.frame().body().get().position());
+			assertTrue(msg.frame().body().get().limit() > 0);
 		}
 	}
 }

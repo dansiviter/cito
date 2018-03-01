@@ -16,6 +16,8 @@
  */
 package cito.ext;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,9 +33,6 @@ import javax.json.bind.JsonbBuilder;
 import javax.ws.rs.core.MediaType;
 
 import org.slf4j.Logger;
-
-import cito.ext.BodyReader;
-import cito.ext.BodyWriter;
 
 /**
  * {@link BodyWriter} and {@link BodyReader} for {@code application/json} type using Json-B.
@@ -52,7 +51,7 @@ public class JsonBSerialiser implements BodyWriter<Object>, BodyReader<Object> {
 
 	@Override
 	public boolean isReadable(Type type, MediaType mediaType) {
-		return mediaType.isCompatible(MediaType.APPLICATION_JSON_TYPE);
+		return mediaType.isCompatible(APPLICATION_JSON_TYPE);
 	}
 
 	@Override
@@ -62,7 +61,7 @@ public class JsonBSerialiser implements BodyWriter<Object>, BodyReader<Object> {
 
 	@Override
 	public boolean isWriteable(Type type, MediaType mediaType) {
-		return mediaType.isCompatible(MediaType.APPLICATION_JSON_TYPE);
+		return mediaType.isCompatible(APPLICATION_JSON_TYPE);
 	}
 
 	@Override
